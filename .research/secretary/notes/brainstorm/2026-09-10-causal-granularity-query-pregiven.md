@@ -135,3 +135,34 @@ Query-aware selectionはcausal性を壊さない。一方、Queryを用いて未
 KVを直接削除・圧縮する場合は `position_id / RoPE / attention_mask / cache_position / multimodal special token` を必ずセットで追う。StreamingVLMのcontiguous/shrink positionと、StreamMemのoriginal temporal position保持+YaRNは対照的な設計軸として扱う。
 
 詳細はNotion「Awesome Streaming Video Understanding調査」の `2026-09-10 再監査：Causal粒度 × Query事前提示` に同期した。
+
+## 2026-09-10 17:20 JST 明日MTGに持参したい論点
+
+MTGでは調査ログの列挙ではなく、`Evidence / Interpretation / Ask` の順で説明する。
+
+### Evidenceとして持っていく
+
+- Awesome-Streaming-Video-UnderstandingのA候補4件の比較表。
+- StreamingVLMの公開実装で確認した `1 sec chunk -> past_key_values再利用 -> KV eviction -> contiguous 3D RoPE` の処理フロー。
+- StreamMemは8-frame clip-level causal、StreamAgentはclip-level causal、StreamForestはpaper上frame-orientedだが公開eval pathはprefixをまとめて推論する場合がある、というcausal粒度の差。
+- Queryはt=0から既知という今回の前提。
+
+### Interpretationとして持っていく
+
+- 今回の研究条件は `query-known, chunk-causal, compute-incremental streaming VideoQA` と置くと整理しやすい。
+- Sequential Loaderの役割は速度最適化よりも、future chunkへのアクセスを禁止するinformation-access contract。
+- Queryが最初から既知なので、query-aware memory selectionはcausal性を壊さず利用できる。
+- 最初からVLM内部KVを改造するより、Frozen VLM + external query-aware memoryから始めると研究寄与を分離しやすい。
+
+### Askとして先生に相談したい候補
+
+1. causal条件はframe-levelまで要求するか、chunk-levelを正式条件としてよいか。
+2. 初期研究の中心をKV cache改造ではなく、Sequential Loader + Query-aware Agent Memoryに置いてよいか。
+3. baselineを `current chunk only -> query-agnostic bounded memory -> query-aware bounded memory -> query-aware agent memory` とするか。
+4. 次の実験対象datasetと、長時間動画の最低durationをどこに置くか。
+
+### MTG前にあると強い最小追加情報
+
+- 1枚で分かる研究構成図: `Query(t=0) -> Sequential Loader -> Frozen VLM -> Query-aware Memory -> Answer`。
+- A候補4件の比較表に `causal granularity / compute incrementality / query timing / memory` の4列。
+- 可能ならSequential Loaderの現在実装がfuture accessをどこまで禁止できているかの確認。これは既存研究との差分を説明するために重要。
