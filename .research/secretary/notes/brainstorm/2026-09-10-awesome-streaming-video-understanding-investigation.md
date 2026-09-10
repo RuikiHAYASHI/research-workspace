@@ -168,3 +168,20 @@ A候補について以下を詳細化する。
 - `.research/secretary/todos/2026-09-10.md`
 - `.agents/skills/brainstorm/SKILL.md`
 - https://github.com/Yang011013/Awesome-Streaming-Video-Understanding
+
+## 2026-09-10 A判定4件の深掘りとNotion同期
+
+一次スクリーニングを保守的に適用した結果、Streaming modeについてA候補として扱う4件を次に絞った。
+
+- StreamingVLM: 新規frame到着時に過去KVを再利用し、短いrecent vision windowと長めのtext windowを維持する。Inf-Streams-Evalは20本のfull sports game、平均2.12時間で、infinite modeではfull streamを継続処理する。trainingは24秒chunk / 12秒overlapのstreaming-oriented SFTであり、inference時のonline weight updateではない。
+- StreamForest: streaming側は1 FPSでcurrent frameを高解像度処理し、古いframeをFine-grained Spatiotemporal WindowからPersistent Event Memory Forestへevent単位で移す。offline benchmarkではwhole-video access + 最大2048 frameのuniform samplingを使うため、streaming Evidenceとは分離して扱う。
+- StreamMem: 動画長と将来queryを未知とし、各time stepで固定長のincoming clipを受け取ってKV memoryを更新する。実験では1 clip=8 frames、fixed KV budgetを維持し、training-free / query-agnostic。offline benchmarkのlength-dependent FPS設定はstrict streaming Evidenceとは分離する。
+- StreamAgent: 224x224 / 1 FPSでframeを処理し、video clipを順番にencode、clip内部でもchunk-wise incremental prefillする。KVはCPUへlong-term memoryとしてoffloadし、query時にlayer-adaptive selective recallする。future anticipationは未来frameの観測ではなく、到着後に実行するtool actionの計画である。
+
+今回の研究へ持ち込む実装原則は、Sequential Loaderを単なるI/Oではなくinformation-access policyとして扱い、query timestampを超えるframeだけでなく未来由来feature / scene boundary / sampling indexも禁止すること。memoryは recent visual buffer / event-semantic memory / retrieval memory の複数tierに分け、stream中のwriteはquery-agnostic寄り、query到着後のreadはquery-awareにする。Agent actionとして KEEP / SUMMARIZE / MERGE / FORGET / RETRIEVE / ANSWER / WAIT を候補とする。
+
+Streaming結果とoffline long-video結果は今後も分離し、QA accuracyだけでなくvideo duration、observation FPS / chunk size、memory budget、GPU/CPU memory、latency、query timestamp、future-access violationを記録する。
+
+詳細な説明、論文URL、モデル図はNotion「Awesome Streaming Video Understanding調査」に保存した。
+
+- https://app.notion.com/p/3d777f89f3cd80338e21d0ec7e68f349
