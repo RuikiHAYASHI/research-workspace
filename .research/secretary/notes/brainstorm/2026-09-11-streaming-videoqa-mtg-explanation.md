@@ -70,3 +70,35 @@ next chunk
 ## 現在の方向性
 
 MTGでは「StreamingVLMを詳しく説明すること」自体を目的にせず、StreamingVLM等を根拠として、今回の研究では `future accessの制御` と `Query-awareな記憶判断` を分けて設計したい、という研究上の問いへつなげる。
+
+## 2026-09-11 01:44 JST 更新: 研究案は指導側から既に提案済みの場合の流れ
+
+研究案そのものを説得・提案する必要はない。MTGの役割は、指導側から提示された方向を受けて自分がどのように問題設定を理解し、どの既存研究を調べ、次の実験条件をどう解釈したかを確認することに置く。
+
+推奨する説明順は次の通り。
+
+1. **前回提案の受け止めを一文で確認**
+   - 「前回いただいた、Streaming VideoQAでQueryを使いながら必要な過去情報を残す方向について、まず問題設定と既存研究を整理しました。」
+2. **今回のStreaming VideoQAの定義を共有**
+   - Queryはt=0から既知。
+   - videoはchunk単位で時間順に到着。
+   - future chunkにはアクセスしない。
+   - memory更新やfull-prefix再推論禁止はStreamingの定義そのものとは分けて扱う。
+3. **なぜ4論文を調べたかを説明**
+   - future accessなし、hidden offline preprocessingなし、長時間streamを扱う仕組みという観点で候補を絞った。
+4. **4論文は一言ずつのみ報告**
+   - StreamingVLM = efficient incremental processing / bounded KV。
+   - StreamForest = event memory。
+   - StreamMem = bounded query-agnostic memory。
+   - StreamAgent = query-aware agent decision。
+   - 詳細は質問された場合だけ説明する。
+5. **4本を通して得た整理を共有**
+   - Streamingという共通ラベルでもcausal granularityとmemory設計は異なる。
+   - 今回の研究に近い要素は一つの論文に全部あるのではなく、4本に分散している。
+6. **認識確認のAskで終える**
+   - chunk-level causalという理解でよいか。
+   - past raw video rereadを許すか。
+   - External Memoryをまず主対象としてよいか。
+   - 初期baseline / dataset / video durationをどう置くか。
+
+この構成では「難しさ」や「今回の研究仮説」は、先生がすでに研究方向を共有しているため独立した長い説明にせず、定義と既存研究の整理からAskへつなぐための短い補助説明に留める。
