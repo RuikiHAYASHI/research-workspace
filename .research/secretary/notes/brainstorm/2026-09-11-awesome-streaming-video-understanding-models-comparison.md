@@ -117,3 +117,34 @@ StreamAgentはAgent利用という意味では非常に近い。一方で今回�
 - `Online` とした手法でも、benchmark別のoffline evaluation pathが併存する場合がある。
 - 動画長は代表設定であり、同一benchmark・同一sampling rateでの公平な比較ではない。
 - Agent判定は論文中の明示的構成を優先した保守的な分類。
+
+## 2026-09-11 13:34 JST: 残り17モデルの論文図・読み方をMTG Notionへ同期
+
+先に詳細化した StreamingVLM / StreamForest / StreamMem / StreamAgent を除く17件について、各論文の代表Figureを確認し、現在のMTG Notionページ末尾に **論文図 + 図の読み方 + 今回の研究に対する要点** を追記した。
+
+- MTG Notion: https://app.notion.com/p/3d777f89f3cd80dab6c5f6efc924e337
+- 対象: CogStream / ProAssist / Flash-VStream / LiveVLM / StreamFormer / LiveCC / ViSpeak / LION-FS / STREAMMIND / STREAMCHAT (2501.13468) / DisPider / StreamChat (2412.08646) / MMDuet / VideoLLaMB / VideoLLM-MoD / VideoLLM-online / VideoStreaming
+- 図はarXiv論文HTMLに含まれるFigure画像をNotionへ取り込み、AI生成の再構成図には置き換えていない。
+
+### 図から見える大分類
+
+17件は、中心機構だけを見ると次の4群に整理しやすい。
+
+1. **Memory圧縮・検索系**: CogStream / Flash-VStream / LiveVLM / STREAMCHAT / VideoLLaMB / VideoStreaming
+2. **選択的計算・効率化系**: LION-FS / STREAMMIND / VideoLLM-MoD / DisPider
+3. **Streaming interaction・発話タイミング系**: ProAssist / ViSpeak / StreamChat / MMDuet / VideoLLM-online / LiveCC
+4. **Causal representation backbone系**: StreamFormer
+
+### 今回の研究へ特に効く比較
+
+- **LiveVLM / VideoStreaming**: stream中のmemory write時には実Queryを使わず、Query到着後のread / retrievalでQuery-awareになる。`q=t0` からwriteをQuery-awareにする今回の案との対照が明確。
+- **CogStream**: Query-aware compressionを行うため今回の案に近いが、stream中に到着するcurrent questionを軸とする設計で、最初から固定Queryを保持する設定とは分けて監査する必要がある。
+- **STREAMCHAT / VideoLLaMB**: short/long-term、tree/recurrent memoryなどExternal Memory設計の比較対象として重要。
+- **STREAMMIND / LION-FS / DisPider**: Memory内容そのものより「いつ重い推論を起動するか」「perceptionとreactionをどう分離するか」のAgent/system設計として参考になる。
+- **StreamChat / MMDuet / VideoLLM-online**: Query後もstreamが進む・任意timestampで対話する設定が中心で、今回の`future chunkへのaccess contract`とQuery timingを混同しない。
+
+### 注意
+
+- MMDuetなど、論文の中心貢献が新規network blockではなくinteraction formatにあるものは、専用のarchitecture box図ではなく論文の中心概念Figureを採用した。
+- StreamChat (2412.08646) はArchitecture Figure 3も存在するが、NotionではまずStreamingの差が最も分かるFigure 2を採用し、Cross-Attention / V-FFN / Parallel 3D-RoPEのarchitecture説明を本文で補った。
+- これは図ベースの方法理解であり、17件すべてのcode-level causality / sampler / preprocessing監査を完了したことを意味しない。
