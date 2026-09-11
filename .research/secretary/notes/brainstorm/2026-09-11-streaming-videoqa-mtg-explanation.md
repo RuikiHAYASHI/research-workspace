@@ -102,3 +102,17 @@ MTGでは「StreamingVLMを詳しく説明すること」自体を目的にせ�
    - 初期baseline / dataset / video durationをどう置くか。
 
 この構成では「難しさ」や「今回の研究仮説」は、先生がすでに研究方向を共有しているため独立した長い説明にせず、定義と既存研究の整理からAskへつなぐための短い補助説明に留める。
+
+## 2026-09-11 12:58 JST 更新: StreamAgentとの近さと差分候補
+
+StreamAgentは、Query semantics・過去memory・current clipを使ってAgentが次の観測や回答タイミングを決めるため、今回の `Query-aware Agent + Streaming Video` に最も近い既存研究である。したがって今後は「StreamAgentと似ている」こと自体ではなく、どの条件・memory contract・評価軸で差分を作るかを中心に整理する必要がある。
+
+現時点の差分候補:
+
+- **Query timing**: StreamAgentはstream途中でQueryが来る設定を含む。一方、今回はQueryを `t=0` から既知とし、最初のchunkからmemory write / keep / deleteをQuery-awareにできる。
+- **主対象**: StreamAgentはanticipatory planning、回答タイミング、観測位置、KV selective recallまで含む。一方、今回はまず `何をMemoryに残すか` というmemory management自体を切り出して評価する方向が候補。
+- **Memoryの定義**: 今回はVLM内部KVとは別のExternal Memoryを主対象に置き、`KEEP / SUMMARIZE / DELETE` をAgent actionとして明示する候補。
+- **Access contract**: Sequential Loader側でfuture accessを禁止し、さらにpast raw video rereadも禁止するなら、「捨てた情報は本当に失われる」というより強いmemory selection problemにできる。
+- **比較可能性**: current chunk only / query-agnostic bounded memory / query-aware bounded memory / agent memoryの段階比較により、Agent化そのものの効果を分離して測る候補。
+
+この差分はまだexploratoryであり、新規性の主張として確定していない。特にStreamAgentの正式なQuery timing・memory update contract・raw video access条件と、今回採用する実験条件を並べて確認する必要がある。
