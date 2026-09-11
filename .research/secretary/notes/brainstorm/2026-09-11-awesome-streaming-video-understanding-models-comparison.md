@@ -148,3 +148,50 @@ StreamAgentはAgent利用という意味では非常に近い。一方で今回�
 - MMDuetなど、論文の中心貢献が新規network blockではなくinteraction formatにあるものは、専用のarchitecture box図ではなく論文の中心概念Figureを採用した。
 - StreamChat (2412.08646) はArchitecture Figure 3も存在するが、NotionではまずStreamingの差が最も分かるFigure 2を採用し、Cross-Attention / V-FFN / Parallel 3D-RoPEのarchitecture説明を本文で補った。
 - これは図ベースの方法理解であり、17件すべてのcode-level causality / sampler / preprocessing監査を完了したことを意味しない。
+
+## 2026-09-11: 調査を通した現時点の印象と研究位置づけ
+
+Awesome-Streaming-Video-Understanding掲載モデルを横断して見た結果、MTG冒頭で共有すべき印象を次のように整理した。
+
+### Streaming研究の風潮
+
+今回見た範囲では、Streaming Video Understandingは単に「future frameを見ない」ことだけを競う段階ではなく、**長時間のstreamをboundedな計算量・Memoryで処理し続けること**が中心課題になっている。具体的には、KV eviction / pruning、recent window、event-level compression、hierarchical memory、CPU offload + retrieval、selective computation、proactive interactionなどに設計が分岐している。
+
+### chunk / clip単位の逐次入力は珍しくない
+
+frame-by-frameだけがStreamingではなく、1秒単位、数frame単位、8-frame clip等でcurrent chunkをまとめて処理し、その後に次chunkへ進む方式は複数存在する。したがって今回のSequential Loaderでchunkを時間順に渡し、future chunkを禁止する設定は、既存研究から外れた特殊な設定ではない。
+
+ただし、**chunk-level causalであることと、過去計算を完全に再利用することは別**。full observed prefixを再計算してもfutureを使わなければcausalであり、KV/stateをreuseするかは効率性・実装設計の軸である。
+
+### Query timingは今回の設定の重要な差分候補
+
+多くの手法では、Queryはstream途中または後から到着する、あるいはcaption / proactive assistantのため固定Query自体がない。Query未知のままMemoryを書き、Query到着後にretrieveする設計も目立つ。
+
+そのため、**Queryを `t=0` から既知として、最初のchunkからMemory write / keep / summarize / deleteにQueryを使う**設定は、今回調査した範囲では主流ではない。
+
+### 研究アイデアは部分的には既存研究と重なる
+
+Streaming、bounded memory、semantic/event memory、Query-aware retrieval、Agentによるdecisionという各要素は既存研究に存在する。特にStreamAgentはQuery + history + current clipを用いて観測・WAIT・回答等を決定するため、今回の研究方向に最も近い。
+
+したがって、新規性を「StreamingにAgentを使う」「Memoryを使う」だけには置けない。
+
+現時点の差分候補は、次の組み合わせにある。
+
+- Queryを動画開始時 `t=0` から既知にする。
+- Sequential Loader側でfuture accessを明示的に禁止する。
+- VLM内部KVとは別のExternal Memoryを主対象にする。
+- Agentが `KEEP / SUMMARIZE / DELETE` を最初のchunkからQuery-awareに決める。
+- 必要ならpast raw video rereadも禁止し、「捨てた情報は本当に失われる」memory selection問題にする。
+
+これはまだexploratoryな差分候補で、新規性確定ではない。特にStreamAgentのQuery timing / memory update / raw video access contractとの厳密比較が次の重要確認点。
+
+### MTG Notionの上部構成も更新
+
+現在のMTG Notionでは、論文個別説明より前を次の順へ整理した。
+
+1. Streaming VideoQAの定義
+2. 既存研究を調べて分かったこと・現時点の印象
+3. 既存研究を読む目的
+4. 各論文の詳細
+
+これにより、個別論文の説明を先に並べるのではなく、**調査から得た研究上の意味を先に共有してからEvidenceとして各論文を見る**構成にした。
