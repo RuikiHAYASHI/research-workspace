@@ -3,7 +3,7 @@ date: 2026-09-15
 project: agentic-streaming-videoqa
 status: approved
 topic: streaming-text-memory-inference
-source: 2026-09-11 MTG + current implementation request
+source: 2026-09-11 MTG + current implementation request + 2026-09-15 Codex handoff boundary
 ---
 
 # Streaming Text Memory 推論パイプライン実装Spec
@@ -23,6 +23,8 @@ source: 2026-09-11 MTG + current implementation request
 - baseline commit: `38eff9ce480271e85b94def34cf51979a6c8a7ce`。
 - `sequential_loader` は別repoの基盤機能として扱い、研究固有ロジックを追加しない。
 - 現行repoは50Saladsを `sequential_loader` のpublic API経由で読むacceptance smokeのみを持ち、model / question / memory / QA loopは未実装。
+- ChatGPT上のGitHub操作では、`tamaki-lab/*` は原則read-onlyとして扱う。書き込みはユーザーが個別に明示した場合のみ例外とする。
+- 実装作業はCodexへ引き継ぎ、Codexが利用できる研究サーバ上のlocal worktreeで行う。local worktreeとGitHub remoteは別状態として扱う。
 
 ## 必須挙動
 
@@ -117,6 +119,53 @@ VLM実行device / dtypeはCLIまたは既存Transformersのloading経路で指�
 
 既存 `scripts/smoke_sequential_loader.py` はloader acceptance用途として維持し、Streaming QA本体へ置換しない。
 
+## Codex引き継ぎ / 操作境界
+
+### Codexが担当してよい作業
+
+- 実装開始前に、研究サーバ上の対象repository、branch、HEAD commit、dirty state、局所 `AGENTS.md` / `CLAUDE.md` 等を確認する。
+- `tamaki-lab/2026_09_hayashi_streaming_video_qa` のlocal worktreeで、本specに必要な最小コード・test・config変更を行う。
+- `tamaki-lab/sequential_loader` は原則として既存public APIのread-only依存として扱い、本specの都合だけで変更しない。
+- fake / stub modelを用いるunit test、compile/import check、既存smokeなど、短時間かつ安全な検証は実装作業に含めてよい。
+- local worktree上で生成したdiffを確認し、本spec外の変更やユーザーの既存dirty changeを混ぜない。
+- GitHub上のCompany文書は実装判断のSSOTとして参照する。
+
+### Codexが自動で行ってはいけない作業
+
+- `git commit`、`git push`、Pull Request作成、merge。これらはユーザーの明示指示がある場合のみ行う。
+- 長時間GPU run、full-video benchmark、大規模評価、training。コード実装の許可から実験run許可を推定しない。
+- `tamaki-lab/sequential_loader` の仕様変更や研究固有ロジック追加。
+- dataset、model、checkpoint、split、prompt研究方針など、本specで未決の研究判断を独自に固定すること。
+- local worktreeへの変更を、GitHub remoteへ反映済みとみなすこと。
+
+### ChatGPT側の操作境界
+
+- ChatGPTは `tamaki-lab/*` のGitHub repositoryを原則read-onlyで調査する。
+- GitHub上の `tamaki-lab/*` へのファイル作成・更新・削除、commit相当の書き込みは、ユーザーがその操作を個別に明示した場合のみ行う。
+- Company repository `RuikiHAYASHI/research-workspace` は研究文脈のSSOTとして、Company skillのworkflowに従って更新できる。
+
+## ユーザー側で行う外部作業
+
+Codex / ChatGPTから直接到達できないserver、credential、dataset配布元に関する操作はユーザー担当とする。
+
+### 必須になる可能性が高い作業
+
+- 別serverに存在するEgoCross datasetを、実装・実験を行う研究serverへ `rsync` / `scp` 等でコピーする。
+- コピー先のdataset rootをCodexへ伝える。
+- コピー前後でdisk容量、file数、directory構造、read permissionを確認する。
+- source serverやstorageへのSSH認証、VPN、mount、権限付与など、人間側のcredentialが必要な操作を行う。
+- Hugging Face等で利用規約同意や個人tokenが必要なgated dataset / modelを使用する場合、必要な認証・同意を行う。
+
+EgoCross datasetのコピーは**データ配置上の外部作業**であり、EgoCross固有手法・Reflective Dialogueを今回の実装へ導入することを意味しない。
+
+また、現在の実装baselineは既存50Salads接続を利用する。EgoCross datasetを本実装の入力datasetへ変更する場合は、dataset adapter / split / annotation contractが変わるため、Codexが独自に置換せず、別途ユーザー指示またはspec addendumで確定する。
+
+### ユーザー作業待ちの扱い
+
+- datasetコピーなど外部作業が未完了でも、fake model / mock inputで検証可能なコード実装・unit testは先に進めてよい。
+- 実datasetを必要とするsmokeに到達した時点でdataset rootが利用不能なら、その項目を未検証として停止し、必要なユーザー作業を具体的に報告する。
+- 外部resource不足を理由に、別datasetや別checkpointへ勝手に置換して成功扱いにしない。
+
 ## 対象外
 
 - EgoCross固有処理、Reflective Dialogue、Teacher/Solver Agent。
@@ -159,6 +208,18 @@ VLM/checkpointと実データが利用できる環境では、少数frameまた�
 - EOF後にfinal answerが保存される。
 
 GPUを使う長時間full-video runや精度評価は、この実装承認には含めない。
+
+## Codex完了報告に必要な情報
+
+Codexは実装作業の終了時に、少なくとも次をユーザーへ報告する。
+
+- 実際に編集したrepository / branch /開始時HEAD commit。
+- 変更したファイルと各変更の目的。
+- 実行したunit / smoke / compile等と結果。
+- datasetやGPU不足等により未検証の項目。
+- ユーザー側で次に必要な外部作業。
+- commit / push / PRを行ったか否か。未指示なら行っていないことを明示する。
+- local worktreeがdirtyのままなら、その状態と今回変更との区別。
 
 ## 実装後に未検証として残すもの
 
