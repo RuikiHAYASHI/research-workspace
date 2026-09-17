@@ -1,7 +1,7 @@
 ---
 date: 2026-09-18
 project: agentic-streaming-videoqa
-status: draft
+status: approved
 topic: egocross-action-trace-viewer-refactor
 source: 2026-09-18 user request + standard EgoCross manifest investigation + trace viewer implementation
 last_updated: 2026-09-18
@@ -173,7 +173,6 @@ feat/step-11-trace-viewer-verification
 
 ### Blocking
 
-- 本文書は`draft`であり、コード変更、branch作成、commit、GPU / Qwen Agent runを許可しない。
 - 21 frameのAgent実行には、実装完了後にユーザーからGPU利用を含む明示許可が必要である。実装許可と実run許可は分離する。
 
 ### Non-blocking
@@ -195,7 +194,7 @@ GPU / Qwen Agent runは、実装承認とは別に、実装完了後の明示許
 
 ## Implementation Handoff
 
-- approved spec: 本文書（現時点ではdraft）
+- approved spec: 本文書
 - 実装目的: action関連EgoCross traceを全frameで読み、選択frameの情報を重複なく表示するviewerへrefactorする。
 - 基準repository/commit: `feat/step-11-trace-viewer-verification` の clean HEAD `647701e`。
 - 変更scope: viewer static UI、viewer test、action record選定検証、利用文書。
