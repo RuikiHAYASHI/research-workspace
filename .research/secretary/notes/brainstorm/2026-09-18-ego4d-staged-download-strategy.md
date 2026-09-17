@@ -62,3 +62,35 @@ C. **Canonical Video中心**：最長時間文脈が最初から研究の主評�
 
 - `.research/lab/projects/agentic-streaming-videoqa/README.md`
 - `.research/lab/projects/agentic-streaming-videoqa/meetings/2026-09-11-mtg.md`
+
+## 2026-09-18 追記：共同利用を前提とした網羅性・540ss・センサーの整理
+
+### ユーザーの前提変更
+
+本データは個人研究専用ではなく、研究室内で用途があれば別の利用者にも使ってもらうことを想定する。このため、前節の「最小研究用サブセット」は唯一の推奨方針ではない。共有ストレージ容量、研究室のライセンス・アクセス管理、実利用頻度を前提として配布構成を再検討する。今回もNotionは更新しない。
+
+### 追加Evidence
+
+- [公式Videos](https://ego4d-data.org/docs/data/videos/)：Clipはbenchmarkに対応するcanonical video由来の抜粋であり、全canonical videoの時系列を覆うとは説明していない。`full_scale`と`clips`を両方置けば連続動画とbenchmark単位ファイルを提供できる一方、映像内容が一部重複する。Canonical Videoは30 FPS、AAC音声へ正規化。Clipは30 FPS VP9、別圧縮設定。`clips_540ss`は存在すると文書にあるがS3/CLIでのv2_1可用性は未確認。
+- [公式Start Here](https://ego4d-data.org/docs/start-here/)：概算full-scale約7 TB、clips約1 TB、annotations約2 GB、raw components約20 TB、features約220 GB。両動画を全取得するなら概算約8 TB＋付帯データ・管理用の空き領域が必要。実際のマニフェストに基づく見積りを優先。
+- [AV Diarization](https://ego4d-data.org/docs/benchmarks/av-diarization/)、[Social Interactions](https://ego4d-data.org/docs/benchmarks/social/)：AV系には話者・音声発話区間・文字起こし・顔追跡など、Socialにはlooking at me / talking to me（対人注視／呼びかけ）注釈がある。ただし装着者の視線座標という別種のGazeセンサーデータを意味しない。AVのclipは概ね5分。
+- [Gaze](https://ego4d-data.org/docs/data/gaze/)：Gaze CSVは一部動画のみ別データ`--datasets gaze`で取得。burned-in gazeも別種。すべてのClipから装着者のgaze座標が得られるわけではない。
+- [IMU](https://ego4d-data.org/docs/data/imu/)：IMUも別CSV、欠測や部分欠落がある。
+- [Unprocessed Data](https://ego4d-data.org/docs/data/unprocessed_data/)：raw components、burned-in gaze動画、binaural audio、third-person動画等は別配布。raw data全体の取得は特段の用途がない限り優先しない。資料上欠損例も記載。
+- [v2.1 Updates](https://ego4d-data.org/docs/updates/)：Goal-Stepに関連するgrouped videosは既存データを結合した別の配布物で、`--benchmarks goalstep`と`full_scale`を使う説明がある。`clips`だけでv2.1 Goal-Stepの映像配布が網羅されるという前提は不可。
+- [CLI README](https://github.com/facebookresearch/Ego4d/blob/main/ego4d/cli/README.md)では`annotations`は「大半のbenchmark」の注釈。現行[config.py](https://github.com/facebookresearch/Ego4d/blob/main/ego4d/cli/config.py)では`gaze`, `imu`, `3d`, `egotracks`, `paco_annotations`, `paco_frames`等を別datasetに列挙。`clips_540ss`と`annotations_540ss`の公式docs／現行CLIリストの差は未検証。
+
+### 解釈・提案（未決定）
+
+1. **共有の標準セット候補**：`full_scale`＋`clips`＋`annotations`＋top-level `ego4d.json`、各dataset manifestを保存。容量が約8 TBを超えて確保でき、複数利用者がbenchmark形式をそのまま必要とするなら合理的。ただしライセンスが他者への再配布や共有を自動許可するわけではないため、研究室内共有形態と許諾を先に確認する。
+2. **重複回避候補**：容量優先ならfull_scaleを保存し、必要なclipだけ公式版を取得するか切り出す。ただし再切り出しファイルは公式Clipと符号化・境界が同一とは限らず公式benchmark再現性要件を確認する。
+3. **540ssは用途別の追加**：低計算量／通信・解像度検証が多ければ、小さな代表サブセットの`video_540ss`（必要に応じて`clips_540ss`）を追加する価値がある。しかし`full_scale`＋`clips`＋全540ss二重取得は目的なしでは重複増大。BBox・ピクセル座標はリサイズに合わせ変換または版対応annotationを確認する。
+4. **Clipのみ全取得でも『全タスク・全センサーデータ網羅』ではない**：AV・Socialのベンチマーク用Clipを含みうるが、Clipがない未注釈時間、センサーgaze、IMU、追加3D・raw component、v2.1 grouped videos等が別。さらに注釈の密度・欠測はdatasetごと異なり、video全取得でも全時間にすべてのGTがあるわけではない。
+5. **メタデータ在庫表**：manifestとmetadata/annotationsを突き合わせ、video UID、clip UID、benchmark、split、時間幅、has_gaze/has_imu、別配布物所在、サイズ、取得状況を記録すれば共同利用の要望時に説明可能。現時点で実manifest、ストレージ容量、アクセス権、ダウンロード成否は未確認。
+
+### 次の判断（未合意）
+
+- 研究室共有領域で約8 TB以上＋余裕を確保できるか、利用者のライセンス資格と共有ポリシーを満たすか。
+- 全`clips`を便利な公式benchmarkファイルとして持つか、必要に応じて切り出す方針にするか。
+- 540ssは対象UID限定で良いか、頻出ニーズがあるか。現在v2_1での各dataset利用可否は`ego4d --list-datasets --version v2_1`およびマニフェスト実確認が必要。
+- AV/Social、Gaze、IMU、3D等の利用見込みを調べて、動画以外の別dataset取得対象を決める。
