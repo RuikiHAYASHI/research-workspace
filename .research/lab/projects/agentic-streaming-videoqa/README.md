@@ -1,9 +1,9 @@
 ---
 project: agentic-streaming-videoqa
 status: active
-summary: EgoCross画像列で、現在画像だけを観測し過去text stateだけを更新する最小Agentプロトタイプを実装・短時間実データ検証済み。
+summary: 操作時に更新できるAgentデモと、長尺動画を逐次処理する2--3段階Streaming VideoQAの最小実装を次段階として試作する。
 created: 2026-09-10
-last_updated: 2026-09-16
+last_updated: 2026-09-18
 ---
 
 # エージェント型オンラインストリーミングVideoQAの研究
@@ -24,6 +24,8 @@ YouTubeなどのライブ配信を想定し、動画を先頭から逐次的に�
 
 2026-09-16に、`2026_09_hayashi_egocross_observation`の`feat/step-07-agent-reproducibility`で最小text-state Agentを実装した。各frameではQwen3-VLが現在画像一枚だけから観測文を作り、同じモデルのtext-only方策が前stateと観測文から`ADD`・`UPDATE`・`KEEP`・`FLAG_UNCERTAIN`・`CLOSE_EVENT`を選ぶ。決定的Reducerがbounded stateへ反映し、state前後と生出力をJSONLに保存する。ID 224の1 frameとID 1の5 frameを実Qwenで確認し、最終QA・正解率・全件実行は未実施である。
 
+2026-09-18のMTGで、既存の実行済みtrace viewerを、操作時にAgent実行・プロンプト変更を試せる最小デモへ発展させる方針を確認した。並行して、長尺動画を逐次ロードし、区間ごとのQwen出力を保存・集約して最終回答へつなぐ2--3段階の最小Streaming VideoQAを試作する。初期構成はPythonの同期的な逐次処理を優先し、サーバ連携やノード接続UIは後続候補とする。
+
 ## マイルストーン
 
 - [ ] 研究方針を整理する
@@ -37,6 +39,10 @@ YouTubeなどのライブ配信を想定し、動画を先頭から逐次的に�
 - [x] 1 frameずつVLMへ入力してtext Memoryを逐次更新する最小Pythonプロトタイプを作成する
 - [ ] 動的chunk長・multi-timescale memory・重要イベント用Memory等の研究候補を既存研究と比較する
 
+- [ ] 操作時にAgentを実行し、プロンプト・区間長等を変更して結果を確認できる最小デモを試作する
+- [ ] 長尺動画を逐次ロードし、区間ごとのQwen出力を保存・集約して最終回答を出す2--3段階の最小Agentパイプラインを作る
+- [ ] `sequential_loader` のAdapterが意図するデザインパターンと一致しているかを確認する
+
 ## 更新履歴
 
 | 日付 | 内容 |
@@ -46,3 +52,4 @@ YouTubeなどのライブ配信を想定し、動画を先頭から逐次的に�
 | 2026-09-10 | プロジェクト作成。オンラインストリーミングVideoQAの対象と境界を記録。 |
 | 2026-09-11 | MTGでchunk-level causal設定を確認し、Agent/Memory差分調査と最小text Memoryプロトタイプを次段階に設定。 |
 | 2026-09-16 | EgoCrossの現在画像観測とtext-only state更新を分けた最小Agentを実装し、短い実Qwen runでtraceを確認。 |
+| 2026-09-18 | MTGで、操作可能なAgentデモと長尺動画を逐次処理する最小Streaming VideoQAの試作方針を確認。 |
