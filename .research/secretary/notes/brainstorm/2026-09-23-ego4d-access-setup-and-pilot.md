@@ -102,3 +102,57 @@ Ego4Dライセンス承認後のAWS access ID / secret keyを受領した。大�
 - 現在のStreaming VideoQA研究だけを最小コストで進める場合は、まずfull_scale＋必要annotationsで開始し、benchmark再現時にclipsを追加する段階取得も可能。
 
 この項目も探索案であり、バッチツール実装・全量DL・clips全量DLの決定ではない。
+
+
+## 2026-09-23 21:03 追記：Windows pilot → 容量ベースbatch → Mac/NAS本番の具体フロー
+
+### フェーズA: Windowsでfull_scale manifest取得
+
+- PowerShellではPATH問題を避けるため `python -m ego4d.cli.cli` 形式に統一する。
+- `--version v2_1 --datasets full_scale` をUID未指定・`-y`なしで実行する。
+- CLIがmanifestを保存し、S3 object metadataから全対象の容量見積りを出した時点で `n` を入力して全量downloadを止める。
+- 現行CLIではv2_1指定時のdataset保存先は `<output>/v2/full_scale/` となる。
+
+### フェーズB: 1動画pilot
+
+- `manifest.csv` を読み、実際のUID列を確認して1件を選ぶ。
+- `--video_uids <UID>` で1本だけ対象にし、CLIの事前容量見積りを確認して許容可能なら取得する。
+- 取得前後の時刻と実ファイル容量から実測転送速度を算出する。
+- 同じコマンドを再実行し、完了済みファイルが既存file/version/sizeチェックでスキップされることを確認する。
+- pilotの結果として「平均MB/s」「1本の代表サイズ」「再実行挙動」を残す。
+
+### フェーズC: 全UID inventory
+
+- `full_scale/manifest.csv` をSSOTとして全video UIDを抽出し、重複除去する。
+- benchmark単位には物理分割しない。同一canonical videoが複数benchmarkで使われる可能性があるため、video UID単位で一度だけ取得する。
+- 各UIDのS3 object `content_length` を取得し、`video_uid,size_bytes` inventoryを生成する。
+- 空UID fileをCLIへ渡さないことをrunner側で必須チェックにする。
+
+### フェーズD: 容量ベースbatch
+
+- 50 UID固定ではなく、pilotの実測速度と運用上の監視頻度からtarget GBを決める。
+- 例: pilotが40 Mbps程度なら約18 GB/h。8時間batchを狙うならおよそ140 GBを目標にする。ただし実際の本番回線で再測定して決める。
+- plannerはinventoryを読み、各batchの合計容量がtargetに近づくよう `batch_000.txt`, `batch_001.txt` ... を自動生成する。
+- batch fileは1行1 UID、headerなし。人手編集を前提にしない。
+
+### フェーズE: 公式CLIで順次取得
+
+- 自作runnerは動画を直接HTTP/S3 downloadせず、各batchに対して公式CLIを `--video_uid_file` 付きで呼ぶ。
+- datasetは1 CLI invocationにつき1種類を基本とする。
+- batchごとに開始時刻、終了時刻、対象UID数、期待容量、exit status、ログを残す。
+- 完了済み動画は公式CLIの既存file/version/sizeチェックに委ね、失敗UIDだけ再投入できるようにする。
+
+### フェーズF: Mac/NAS本番
+
+- Windows pilotで確立した引数はMacでも共通で、差分はPython/AWS CLI導入とoutput path。
+- Mac/NAS上でまず1 batchだけcanary実行し、NAS書込権限・実測速度・既存file skipを再確認してから残batchへ進む。
+- 本番のbatch target GBはWindowsの回線速度ではなくMac/NAS側canaryの実測値で再計算する。
+
+### Benchmark Clips
+
+- `full_scale`はcanonical video、`clips`はbenchmark用canonical clipで別dataset・別UID体系。
+- full_scaleの物理管理はbenchmark別にせずvideo UIDで一意管理する。
+- clipsは既存benchmark reproductionが必要になった段階で別途clip UID単位で取得する候補。
+- 研究室共通archiveとしてはfull_scale + annotations + clipsを保持する価値があるが、現在のStreaming VideoQAの最小取得順はfull_scaleを優先し、clipsは後段でもよい。
+
+このフローは運用設計の探索段階であり、planner/runnerのコード実装やMac/NAS本番実行はまだ未着手。
