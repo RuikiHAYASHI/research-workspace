@@ -193,3 +193,13 @@ Ego4Dライセンス承認後のAWS access ID / secret keyを受領した。大�
 - 失敗時の再実行方法
 
 この方針は探索段階であり、新規utility repositoryの作成・実装はまだ行っていない。
+
+
+## 2026-09-23 追記：LinuxサーバとNASの配置方針
+
+- 本番では「コードをNAS上に置く」必要はなく、Linuxサーバのユーザーhome等へutility repositoryをcloneし、Ego4D CLIのoutputだけNAS mount pathへ向ける構成を基本候補とする。
+- 例: code = `~/ego4d-downloader`, data = `/mnt/nas/.../ego4d`。
+- NAS上にrepositoryをcloneすることも技術的には可能だが、実行権限、ファイルI/O、共有領域の運用を考えるとcodeとdataを分離する方が単純。
+- LinuxのAWS CLI v2はAWS公式install scriptでcurrent-user installが可能。現行公式手順は `curl -fsSL https://awscli.amazonaws.com/v2/install.sh | bash` で、既定では `$HOME/.local/share/aws-cli` と `$HOME/.local/bin` を使うためsudoは必須ではない。
+- handoff READMEにはLinux/macOSのAWS CLI公式URLと最小コマンドを記載し、環境固有のNAS mount pathは先輩側で設定する。
+- 本番credentialをrepositoryへ置かず、実行者のAWS profileを使う。個人credentialの平文共有は避ける。
