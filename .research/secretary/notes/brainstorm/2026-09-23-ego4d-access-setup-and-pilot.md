@@ -203,3 +203,15 @@ Ego4Dライセンス承認後のAWS access ID / secret keyを受領した。大�
 - LinuxのAWS CLI v2はAWS公式install scriptでcurrent-user installが可能。現行公式手順は `curl -fsSL https://awscli.amazonaws.com/v2/install.sh | bash` で、既定では `$HOME/.local/share/aws-cli` と `$HOME/.local/bin` を使うためsudoは必須ではない。
 - handoff READMEにはLinux/macOSのAWS CLI公式URLと最小コマンドを記載し、環境固有のNAS mount pathは先輩側で設定する。
 - 本番credentialをrepositoryへ置かず、実行者のAWS profileを使う。個人credentialの平文共有は避ける。
+
+
+## 2026-09-23 追記：Ego4D downloader utility repoをCodexへ実装委譲する方針
+
+- ユーザーがLinuxサーバ上で新規utility repositoryを作成し、そのrepository内でCodexに実装を依頼する。
+- Codexは実装前にresearch-workspaceの現行Company文脈、`.agents/skills/research-spec/SKILL.md`、`.agents/skills/engineering-task/SKILL.md`、agentic-streaming-videoqaのREADME、関連brainstorm/specを読む。
+- 最初に新規repositoryの`specs/`へimplementation specを作成し、目的、scope、CLI、credential境界、log/run summary、Windows/Linux/macOS、local/server pilot、batch/inventory/verification、success criteriaを固定する。
+- 既存Companyの実例に合わせ、Stepごとにbranchを作り、Step内のmicro stepは同じbranchへ個別commitする。Step末尾のtestが通る前に次branchへ進まない。
+- commit本文の粒度・形式は既存specを調査して合わせる。branch名・commit数・タイミングをプロンプト側で固定せず、既存mdから運用を復元してspecへ明記する。
+- 今回のCodex依頼ではbranch作成とscope内commitを明示許可するが、push/PRは別指示があるまで行わない。
+- 実動画の大容量downloadは実装作業の一部として自動開始しない。短いmanifest取得、dry-run相当、1 UID canary/pilotなど、ユーザーがサーバ上で明示的に実行できるtest pathを整備する。
+- AWS credential、Secret Access Key、credential file、動画本体、大容量raw logをGitへ含めない。
