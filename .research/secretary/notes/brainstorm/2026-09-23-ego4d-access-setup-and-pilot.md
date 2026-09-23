@@ -82,3 +82,23 @@ Ego4Dライセンス承認後のAWS access ID / secret keyを受領した。大�
 - v2_1を指定しても現行CLIのdataset保存ディレクトリはmajor版の `v2` になる。
 - アクセス資格の14日失効に注意。
 - pilotだけならannotations約2GBを先に落とす必要はない。目的が「動画1本のアクセス確認」であればfull_scale manifest取得→1 UID取得で十分。
+
+## 2026-09-23 追記：本番バッチ方式とBenchmark Clips
+
+### バッチ方式の現在の方向性
+
+- 50 UID固定分割は簡単だが、動画ごとの容量差によりバッチの所要時間が大きく揺れる。
+- 本番候補は、manifestをSSOTとして全UIDを読み、S3 object metadataのcontent_lengthを取得して `size_bytes` inventoryを作り、合計容量が目標値に近くなるよう自動分割する方式。
+- pilotで実測転送速度を得た後、例えば「6〜12時間程度で終わる容量」を1バッチ目標にする。容量ベースにすると再起動・監視の区切りが安定する。
+- batch_000.txt等は人が編集せず、plannerが自動生成する。runnerは各batchを `--video_uid_file` で公式CLIへ順番に渡し、ログと完了状態を残す。
+- 完了判定はプロセス終了だけでなく、CLIの既存ファイル検証・manifest.ver・ローカルファイルサイズ等を使う。失敗UIDだけ再投入できる構成を候補とする。
+- バッチファイルを残す価値は、再実行、監査、残件把握、別OS（Windows/Mac）への引き継ぎが容易になる点にある。
+
+### Benchmark Clipsの整理
+
+- 公式の `clips` datasetは各benchmark向けに切り出されたCanonical Clipsで、full_scaleとは別ファイル。
+- 研究室共通データとして既存benchmark再現も視野に入れるなら、`full_scale`に加えて`clips`と`annotations`を保存する候補は維持する。
+- ただし `--benchmarks EM/FHO/...` でfull_scaleの一部を別途ダウンロードする必要はない。full_scale全量を取得するなら、そのbenchmark subsetは既に含まれる。
+- 現在のStreaming VideoQA研究だけを最小コストで進める場合は、まずfull_scale＋必要annotationsで開始し、benchmark再現時にclipsを追加する段階取得も可能。
+
+この項目も探索案であり、バッチツール実装・全量DL・clips全量DLの決定ではない。
