@@ -54,3 +54,31 @@ Ego4Dライセンス承認後のAWS access ID / secret keyを受領した。大�
 - 1〜3動画pilotの再実行動作
 
 このメモは探索段階であり、NAS上での実行、コード実装、TODO追加はまだ行っていない。
+
+## 2026-09-23 追記：Windowsローカル/HDDでの1本pilot
+
+### 制約更新
+
+- ユーザー本人はNASへアクセスできない。
+- まずWindows端末のローカルディスクまたは外付け/内蔵HDDへCanonical Videoを1本程度取得して、認証・CLI・保存・再実行を確認する。
+- NAS本番取得は先輩側の環境で実施する可能性があり、先輩はMacBookを使用。
+
+### Windows pilotの推奨順
+
+1. Windows用AWS CLI v2を導入し、PowerShellで `aws --version` を確認。
+2. `aws configure --profile ego4d` でcredentialを保存。Access Key / Secret KeyはGitやチャットへ貼らない。region/outputはEgo4D公式READMEどおり空欄でよい。
+3. Python仮想環境を用意し `pip install ego4d`。PowerShellで `ego4d --help` を確認。
+4. `ego4d --list-datasets --version v2_1 --aws_profile_name ego4d` で資格確認。
+5. 保存先を例 `D:\ego4d_test` として作成。空き容量を確認。
+6. `full_scale` をUID指定なし・`-y`なしで開始し、manifest取得と容量見積りまで進め、確認で `n` を入力して全量DLは止める。
+7. `D:\ego4d_test\v2\full_scale\manifest.csv` の実列を確認し、1件の `video_uid` を選ぶ。
+8. `--video_uids <UID>` で1本のみ取得。CLIの容量見積りがローカル空き容量に対して大きい場合は `n` で止め別UIDを試す。
+9. 同じコマンドを再実行し、取得済みファイルがスキップされることを確認。
+10. pilot成功後に、Mac/NAS側では同じEgo4D CLI引数を使い、OS差は主にAWS CLI導入方法と保存パスだけに限定する。
+
+### 注意
+
+- Windows PowerShellのパスは引用符で囲む。
+- v2_1を指定しても現行CLIのdataset保存ディレクトリはmajor版の `v2` になる。
+- アクセス資格の14日失効に注意。
+- pilotだけならannotations約2GBを先に落とす必要はない。目的が「動画1本のアクセス確認」であればfull_scale manifest取得→1 UID取得で十分。
