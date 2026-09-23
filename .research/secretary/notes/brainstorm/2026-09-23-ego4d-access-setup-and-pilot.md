@@ -156,3 +156,40 @@ Ego4Dライセンス承認後のAWS access ID / secret keyを受領した。大�
 - 研究室共通archiveとしてはfull_scale + annotations + clipsを保持する価値があるが、現在のStreaming VideoQAの最小取得順はfull_scaleを優先し、clipsは後段でもよい。
 
 このフローは運用設計の探索段階であり、planner/runnerのコード実装やMac/NAS本番実行はまだ未着手。
+
+
+## 2026-09-23 追記：ローカルCodex開発と先輩へのhandoff方針
+
+### 現在の方向性
+
+- ユーザー本人はWindowsローカルでpilotと運用ツール開発を行う。
+- downloader本体は公式Ego4D CLIに任せ、自作部分はmanifest処理、S3 size inventory、容量ベースbatch、runner、verification、run summaryに限定する。
+- ローカルGit repositoryでCodexに実装・修正・テストを担当させ、変更履歴をGit commitとrun summaryで残す。
+- 大容量動画、AWS credential、Secret Access Key、生のcredential fileはrepositoryへ入れない。
+- raw download logは肥大化しやすいため原則gitignoreし、追跡対象にはrunごとの要約（日時、dataset、batch、UID数、予定容量、実容量、所要時間、成功/失敗UID、CLI/Python version等）を残す。
+- Windowsでpilotとdry-run相当を通した後、先輩へrepositoryとREADMEを渡し、Mac/NAS側で小さいcanaryを再実行してから本番batchへ進む。
+- Mac/NAS側ではoutput pathと環境導入だけを差し替え、batch generationとrunnerのインターフェースはWindowsと共通にする。
+
+### サーバ権限について
+
+- 現行AWS公式Linux installerはcurrent-user installをサポートし、既定では `$HOME/.local/share/aws-cli` と `$HOME/.local/bin` を使うため、sudoは必須ではない。
+- ただし研究室サーバ側の外部通信、curl/unzip利用、PATH、software installation policyは別途確認が必要。
+- NAS本番環境でuser-space installが可能なら、先輩側でAWS CLI / Python venv / ego4d CLIをユーザー領域へ導入する選択肢がある。
+
+### handoff時にREADMEへ必要な項目
+
+- supported OS / tested OS
+- Python / ego4d CLI / AWS CLI versions
+- credential setup（secret値そのものは含めない）
+- manifest取得
+- pilot
+- inventory生成
+- batch生成
+- canary run
+- full run
+- rerun/resume時の挙動
+- logs / run summaryの場所
+- data directoryがgitignoreされていること
+- 失敗時の再実行方法
+
+この方針は探索段階であり、新規utility repositoryの作成・実装はまだ行っていない。
