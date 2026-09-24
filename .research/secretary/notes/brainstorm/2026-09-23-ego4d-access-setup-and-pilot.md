@@ -215,3 +215,39 @@ Ego4Dライセンス承認後のAWS access ID / secret keyを受領した。大�
 - 今回のCodex依頼ではbranch作成とscope内commitを明示許可するが、push/PRは別指示があるまで行わない。
 - 実動画の大容量downloadは実装作業の一部として自動開始しない。短いmanifest取得、dry-run相当、1 UID canary/pilotなど、ユーザーがサーバ上で明示的に実行できるtest pathを整備する。
 - AWS credential、Secret Access Key、credential file、動画本体、大容量raw logをGitへ含めない。
+
+
+## 2026-09-24 追記：Ego4D downloader repository監査
+
+対象:
+- `RuikiHAYASHI/2026_09_hayashi_ego4d_downloader`
+- GitHub上のmain: `99577c292da2af4e68f9a8a3f8b867de20d1f8f7`
+- GitHub default branch: `feat/step-06-local-pilot-docs` (`5fa7fa567bcdd040f265b540c35f33ab2da327c1`)
+
+### 確認済み事実
+
+- repositoryのdefault branchがmainではなく`feat/step-06-local-pilot-docs`になっている。
+- mainはそのfeature branchをmergeした後、Linux setup README commitを追加しており、default branchより2 commit先にいる。
+- approved spec `specs/2026-09-23-ego4d-v2-1-downloader-implementation-spec.md` は初期scopeをfull_scaleのみとし、clips、動画/annotation download等を対象外としている。
+- commit `5fa7fa5` で、clips、annotations、visualization、features、narrations向けの機能が一括追加され、7 fileが大きく変更された。test fileはこのcommitで変更されていない。
+- 現在の `ego4d_downloader/cli.py` は `from .direct import DIRECT_DATASET_PRESETS, fetch_narrations, run_direct_download` をimportする。
+- mainおよびdefault branchの`ego4d_downloader/`一覧には`direct.py`が存在しない。したがって現在のpackage entrypointはimport時に失敗する可能性が高い。
+- READMEは`features` presetが複数feature datasetをまとめて取得すると記載するが、その実装元となる`direct.py`はGitHub上で確認できない。
+- 初期specでは容量ベースbatchが主要契約だったが、最新NAS helperの既定経路は50 UID固定batchへ変更されている。容量ベース実装自体は残っているがhandoffの主経路ではない。
+- latest expansion commitは既存の「1 Step = 1 branch / 1 micro Step = 1 commit / Step末尾test」運用と整合していない。
+
+### 解釈
+
+現在の主問題は機能数ではなく、Authorityとintegrationの崩れである。full_scale-only approved specの外側へ複数dataset機能を一括追加したため、実装契約、test coverage、README、Git branch状態が同期していない。
+
+### 復旧候補
+
+1. default branchをmainへ戻し、clone/通常閲覧の正本を明確にする。
+2. 実downloadを一旦停止し、mainで`python -m ego4d_downloader --help`とunit testを確認する。
+3. 欠落している`direct.py`について、local-only未commitなのか、誤ってcommit漏れしたのかをサーバworktreeで確認する。
+4. clips/direct datasets/narrations/fixed-count batchを新しいspecまたはaddendumへ昇格し、現在のapproved specとの差分を明示する。
+5. 新scopeをStep単位へ分解し、direct datasetごとのofficial CLI契約とtestを追加してから再実装する。
+6. featuresは複数datasetを一括でofficial CLIへ渡さず、現行Ego4D CLIのdataset一覧とmulti-dataset挙動を確認した上で、必要ならdatasetごとに1 invocationへ分ける。
+7. full_scale/clipsの物理downloadはUID単位管理を維持し、capacity-basedとfixed-countのどちらを本番正本にするかをspecで再決定する。
+
+この監査ではdownloader repository自体へのcode変更、branch変更、default branch変更、download実行は行っていない。
