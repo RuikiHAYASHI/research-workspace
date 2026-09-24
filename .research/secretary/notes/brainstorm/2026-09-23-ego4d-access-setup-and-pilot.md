@@ -251,3 +251,57 @@ Ego4Dライセンス承認後のAWS access ID / secret keyを受領した。大�
 7. full_scale/clipsの物理downloadはUID単位管理を維持し、capacity-basedとfixed-countのどちらを本番正本にするかをspecで再決定する。
 
 この監査ではdownloader repository自体へのcode変更、branch変更、default branch変更、download実行は行っていない。
+
+
+## 2026-09-24 22:18 追記：video経路を凍結し、残datasetを公式CLIで独立取得する方針
+
+### 現在確認できている状態
+
+- ユーザーの実サーバ環境ではannotationsの実ファイル一式が `v2/annotations/` に存在する。
+- ユーザー申告によりclipsも取得済みであることを確認済みとして扱う。
+- `.ego4d-downloader/` にはfull_scale / clipsのUID batch、manifest、run log、report、stateが生成済みであり、video系の運用経路は既に独立した作業単位として成立している。
+- 貼付treeでは `v2/viz/` はdirectoryのみでfileが見えないため、visualizationの取得完了は別途確認が必要。
+
+### 公式CLI上の重要な境界
+
+- `--video_uids` / `--video_uid_file` はofficial CLIのvideo dataset向けfilterである。
+- official CLI sourceは、要求datasetがすべてnon-videoの場合、video_uids指定はignoredと明示する。
+- 現行`DATASETS_VIDEO`は `full_scale`, `clips`, `components/videos`, `video_540ss`。
+- よってfeatures、annotations、viz、imu、gaze、3d等を既存UID textで直接filterする設計にはしない。
+- 今回の目的が「取得可能なものをできるだけ保存」であるため、non-video datasetはdataset全体をofficial CLIで1 datasetずつ取得する方が単純で安全。
+
+### 推奨する二経路
+
+1. Video queue:
+   - full_scale / clips（必要なら後でvideo_540ss）
+   - 既存のUID batch runnerを維持する。
+   - 既存batchを変更せずrerunする。
+
+2. Dataset queue:
+   - non-video dataset名を1行1datasetでtextへ列挙する。
+   - 各datasetについて `python -m ego4d.cli.cli --datasets <dataset>` を1 invocationずつ実行する。
+   - multi-dataset 1 invocationは避ける。現行official CLIではdataset loop後のversion bookkeepingが最後のdatasetの値を再利用する実装になっているため、dataset単位実行を安全側とする。
+   - datasetごとにlog / success markerを残し、失敗時は同じofficial commandをrerunする。
+
+### features
+
+- official docsで現行featureとしてSlowFast、Omnivore video、Omnivore image、Omnivore video FP16が案内されている。
+- featuresはcanonical videoから抽出されたprecomputed featuresであり、raw `components/videos`を保存していなくても利用できる。
+- corrected current featuresを優先し、`*_deprecated`系は取得不要。
+- UID filterはofficial CLIではnon-video datasetに効かないため、全取得目的ならfeature datasetごとに丸ごと取得する。
+- subsetだけ必要になった場合はmanifest subset + `--manifest-override-path`の検討余地はあるが、今回のfull archive目的では不要。
+
+### components/videosを取らない場合の整理
+
+- `components/videos`約20TBはraw/unprocessed系の元video componentsであり、canonical `full_scale`、clips、annotations、featuresを使うための必須依存ではない。
+- raw video componentsを保存しないことで失う主な能力は、元camera componentから独自に再処理・再エンコードする経路。
+- processed IMU / gaze、3D annotations/scans、features等はraw video componentsがなくても独立取得候補。
+- raw componentsのうち `components/imu`, `components/gaze`, `components/binaural_audio`, `components/burned_in_gaze`, `components/3rd_person_video` は`components/videos`とは別datasetとして公式docsにある。archive目的なら容量と必要性を見て追加可能。
+- full annotations取得済みなのでNarrations Onlyを別途取得する必要はない（既に`narration.json`等が存在）。
+- `video_540ss`はfull_scaleのdownscaled derivativeなので、full_scaleを保存するならsemantic contentとしては重複が大きい。特定baselineが540ssを要求しない限り優先度は低い。
+- `annotations_540ss`は公式forumで別downloadをhostしない旨が案内されており、必要ならtransform notebook経由。
+- visualizationは研究入力として必須ではないが約500MBなのでarchive目的なら取得候補。
+
+### 次の実装候補
+
+既存video codeを変更せず、独立した`dataset queue runner`を追加する。最初にofficial `--list-datasets --version v2_1`結果を保存し、そのavailable dataset名をSSOTとして、exclude listに`components/videos`、deprecated feature、既取得annotations/clipsを置く。各datasetは必ず1 invocationで実行し、実行前size estimate、log、success/failureをdataset単位で保存する。
