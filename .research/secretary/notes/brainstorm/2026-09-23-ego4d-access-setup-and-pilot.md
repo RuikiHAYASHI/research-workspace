@@ -305,3 +305,18 @@ Ego4Dライセンス承認後のAWS access ID / secret keyを受領した。大�
 ### 次の実装候補
 
 既存video codeを変更せず、独立した`dataset queue runner`を追加する。最初にofficial `--list-datasets --version v2_1`結果を保存し、そのavailable dataset名をSSOTとして、exclude listに`components/videos`、deprecated feature、既取得annotations/clipsを置く。各datasetは必ず1 invocationで実行し、実行前size estimate、log、success/failureをdataset単位で保存する。
+
+
+## 2026-09-24 追記：Ego4D archive取得対象の現在判断
+
+Notion「Ego4D ダウンロード手順」に、公式Start Here / CLI / Features / Unprocessed Data / Videos / Gaze / IMU、および現行 `facebookresearch/Ego4d@main` の `config.py` を突合した取得対象表を追記した。
+
+現在の判断:
+- 取得済み: `annotations`, `clips`, `ego4d.json`。
+- 取得する: `full_scale`, `viz`, processed `imu` / `gaze`, 3D系、現行precomputed features、EgoTracks / PACO / benchmark artifacts / model checkpointsのうちv2.1で利用可能なもの。
+- raw auxiliary componentsも、`components/imu`, `components/gaze`, `components/binaural_audio`, `components/burned_in_gaze`, `components/3rd_person_video` は容量に余裕がある限り取得する。
+- 取得しない: `components/videos`（約20TB）、540ss系の重複派生物、deprecated feature、annotations取得済みのためNarrations Onlyの別取得。
+- video UID filterはofficial CLIのvideo dataset（`full_scale`, `clips`, `components/videos`, `video_540ss`）向け。non-video datasetはdataset単位で1 invocationずつ取得する。
+- `components/videos`を保存しなくても、processed IMU/gaze、precomputed features、3D、model checkpointsは独立して利用可能。raw IMU/gazeはraw video componentsなしだと利用価値が相対的に下がるが、archive候補としては残す。
+
+実サーバtreeから、`full_scale`はmanifestのみ、`viz`はdirectoryのみで実file完了未確認と扱う。clipsはユーザー側で取得済み確認済み。
