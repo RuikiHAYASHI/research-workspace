@@ -320,3 +320,25 @@ Notion「Ego4D ダウンロード手順」に、公式Start Here / CLI / Feature
 - `components/videos`を保存しなくても、processed IMU/gaze、precomputed features、3D、model checkpointsは独立して利用可能。raw IMU/gazeはraw video componentsなしだと利用価値が相対的に下がるが、archive候補としては残す。
 
 実サーバtreeから、`full_scale`はmanifestのみ、`viz`はdirectoryのみで実file完了未確認と扱う。clipsはユーザー側で取得済み確認済み。
+
+
+## 2026-09-24 23:31 追記：研究室共通Ego4D datasetの保存範囲を簡略化
+
+Notion「Ego4D ダウンロード手順」に英語dataset名の日本語説明と、保存範囲をLevel分けした判断表を追記した。
+
+現在の推奨正本:
+- Level 1（中核）: ego4d.json, annotations, full_scale, clips, viz。保存する。
+- Level 2（追加の実測sensor）: imu, gaze。保存する。
+- Level 3（特定task専用）: 3d系, EgoTracks, PACO, fut_loc, social_test等。現在は保存しない。
+- Level 4（precomputed features）: SlowFast / Omnivore系。現在は保存しない。特定baseline再現時に取得する。
+- Level 5（model/checkpoint・推論結果）: av_models, lta_models, sta_models, vq2d_models, moments_models, nlq_models, vq2d_detections等。dataset本体ではないため保存しない。
+- Level 6（raw components）: components/videosを含むraw component群。基本保存しない。processed canonical dataを優先する。
+- 540ss系、deprecated features、Narrations Onlyは重複・旧版のため保存しない。
+
+理由:
+- Ego4D公式はCanonical Videoを主要な利用形態として位置づけている。
+- IMUはcanonical video timestampsへ正規化されたprocessed CSV、gazeもprocessed CSVが提供され、raw componentsなしでも利用できる。
+- precomputed featuresはcanonical videosから既存modelで抽出した派生物で、元データではない。
+- raw dataは公式docsでも通常利用には推奨されず、特殊用途向け。
+
+この整理により、研究室共通datasetの最終候補は ego4d.json + annotations + clips + full_scale + viz + imu + gaze とする。
