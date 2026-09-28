@@ -123,3 +123,38 @@ Question selection => run settings => existing turn-based run/results
 3. 復元: dataset→動画→質問→runの各画面についてブラウザreload、browser back/forward、server restart、削除済み動画、失敗preview、処理中run、過去runをテスト。
 4. 特に未決: click直後の詳細を専用画面とするかmodalとするか、previewの冒頭長・音声は原則無音、すべてのrun中にページ離脱してよいか/キャンセル確認が要るか、サーバ再起動後に選択frameを再生成するか。
 5. 現段階は方針候補。research-spec、TODO、コードの自動変更はしない。
+
+
+## 2026-09-29 02:03 JST 追記: 識別しやすい動画カード・時間フィルター・再起動後の再実行
+
+### ユーザーの新たな方向性
+
+1. サーバ再起動後、実行途中からの厳密なresumeは要求しない。対象動画・質問・設定を再選択または復元し、**動画先頭から新しいrunとして再実行する**のでよい。ただし「サーバ起動だけでGPU実行を自動開始」か「画面から再実行操作で開始」かは実装時に明確化が必要。現在の探索候補は誤操作・重複runを避けられる後者。既存artifactは旧run IDで保持し、新run IDを別に作り、旧runへ勝手に追記しない。
+2. video IDは人間が識別するには不十分。カード上で見つけ直しやすい表示を設け、特定動画での繰返し動作確認を容易にする。
+3. 一覧のフィルター・並べ替え、とくに動画長の昇順・降順を設ける。
+
+### UIの有力候補
+
+- PCで4列のposter card、hover中はそのカードだけ無音冒頭preview。各カードは「サムネイル、利用者が登録した任意の別名（なければ説明/質問文の冒頭など既存metadataから得られる表示）、動画長、関連質問数、コピー可能な正式video ID、取得状態」を持つ。情報量が過密になる場合はIDを二行目の小さい文字にし、全文は詳細・コピー操作で確認できる。
+- 動画タイトルがannotationに存在するとは仮定しない。人間が付ける任意alias（例: 研究確認用A）、お気に入り、最近使用した対象、直接URL、過去runから同じ動画へ移動、を検討する。aliasと正規video_idを別フィールドに保持し、元データや評価IDは変更しない。
+- 長尺VideoQAで同一videoに複数questionがある場合、一覧は動画単位で一つのカードへgroup化し、クリック後に質問一覧を出す。別名・お気に入りはvideo単位、実行履歴は(dataset, video, question, config, run_id)単位で管理。
+- datasetによってEgo4D full_scaleとclipsが混在する場合はasset type/splitを識別子と表示に含め、同名stemを誤結合しない。
+- 画面上部の操作候補: ID/別名/質問文による検索、動画長範囲（全件、短尺、中尺、長尺またはmin/max）、取得済みのみ、質問ありのみ、お気に入りのみ、並べ替え [動画長:短→長／長→短、ID順、最近使用]。検索・sort・filterはURL queryに表現してreload/back後に復元する。
+- 時間は秒の数値で索引し、表示は mm:ss / hh:mm:ss。duration不明は末尾、同じdurationはstable IDでtie-break。データセット付属durationと実ファイル計測値が異なる場合は出所を明示する。
+- 初期30〜50件のページング/追加読込は維持するが、検索・filter・sortはbackendの**全索引へ適用してから**page sliceを返す。現在画面にある50件だけをsortする誤実装を避ける。index作成時にannotation/manifestのdurationを優先し、全動画をdecodeしない。
+- 既存AVA BrowserのSQLite indexing、GET videosのLIMIT/OFFSET、ファイル差分更新は参考。ユーザーの動画識別ニーズとQA紐付けはWorkbench側で定義。
+
+### リロード・サーバ再起動の境界（先の探索案を具体化）
+
+- 単純なbrowser reload/back/forward: run_idが生存していればGETだけで既存runへ戻り、POSTによる重複runを作らない。dataset/video/question/filter/sort/pageはURL由来で復元。
+- サーバ再起動: active reader/model sessionは失われる。実行中だった旧runを新runと混同せず、中断として区別し、旧artifactを閲覧可能にする。保存済み対象とsettingsから新runとして**動画先頭から再実行**する。サーバ起動だけでGPUを自動占有する挙動は未決。新runを起こす場合はUIに「先頭から再実行」を明示し、二重POST防止。
+- 完了したrunの記録は再起動後も履歴として残し、閲覧目的のGETで勝手に再実行しない。実行中だったrunを再実行する場合も旧ID上書きは禁止。thumbnailの旧runは現在のserver session-only契約に従う。
+- IDからの直接URL、alias、お気に入り、最近使用はrestart後に失われない保存先が必要。未実装・未承認なので保存schemaはspec段階で決定。
+
+### 反例・評価条件・未決
+
+- 質問文から作る表示ラベルは問いの要約であって動画内容の真の題名とは限らない。LLMによる自動タイトル作成は余計なGPU負荷/未来映像使用の問題があるため初期scopeから外す。
+- サムネイル1枚では類似動画を区別しにくいのでalias、正式IDコピー、質問文、最近使用/お気に入りの複数経路を確保する。動画内の複数サムネイル生成は後続候補。
+- ページ跨ぎでduration sortが正しいか、未知durationの位置、同一durationで順序が安定するか、長さfilterとデータ取得有無、表示されたvideoにquestionが正しくgroup化されるか検証する。
+- 動画未取得・別名の重複・同一stemのfull_scale/clip・索引更新・古い直接URL・restart後の旧run表示・新runの重複実行をテスト対象にする。
+- 次の大きな選択は「別名をどこへ保存するか」「再起動後に自動runか、再実行ボタンか」「動画の詳細を専用画面にするか」。いずれも未確定探索。research-spec/TODO/コードは自動変更しない。
