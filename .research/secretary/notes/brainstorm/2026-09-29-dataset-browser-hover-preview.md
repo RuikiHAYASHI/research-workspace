@@ -340,3 +340,66 @@ datasetアイコンを1クリック
 - Video-MMEの取得手順・license、元annotation ID、メディア/字幕の配置、実映像ファイルの一部欠損、同一動画3問のgrouping、動画長フィルターの出所を取得前に確認する。
 - dataset選択カードで動画一覧アイコンを1クリック、右QAからrun画面1クリック、sidebar/direct URLからの遷移、戻る/進む/reloadで対象dataset/video/questionを失わないことを検証する。アイコンのhit area/キーボード操作/説明を確保。
 - この追記はbrainstormとして方向性を記録するもので、既存承認済spec、TODO、研究コード、データダウンロードには着手しない。今後Video-MMEの採用・取得・接続を仕様化する際はcurrent Company skill/Gateに従う。
+
+
+## 2026-09-29 追記: 現在の責務別ディレクトリ構成を維持してデータセットを増やす
+
+### ユーザーの意図・採用方向
+
+- 現在のWorkbenchの責務別ディレクトリ構成は評価されており、今回のブラウザ追加と今後のデータセット増加のために既存構造を壊さない。
+- Datasetを増やすたびに、増えるPythonファイルは主としてそのdataset固有の取り込み・注釈対応処理に限定する。LongVideoBenchに加えて初代Video-MMEを接続する場合、共通UI/Agent/reader/run処理をコピペしてdatasetごとの実装へ分岐させない。
+- 機能・責務に沿った配置を維持する。必要な新しい単位は既存の適切なパッケージ配下へ追加し、明確に独立した責務が肥大化した場合に限り新たな小パッケージを検討する。フラットmodule構成への後退、大規模なrename・一括移動、暫定互換wrapperの乱立を避ける。
+- 「今回の実使用はLongVideoBenchと追加取得候補Video-MME、Ego4Dは今回対象外」という最新ユーザーscopeを維持する。
+
+### 調査時のEvidenceと限界
+
+- 2026-09-25 implemented Company spec `specs/2026-09-25-sequential-loader-workbench-refactor-implementation-spec.md` は `src/longvideoqa_workbench/` の `config/`, `core/`, `dataset/`, `reader/`, `sampling/`, `model/`, `agent/`, `records/`, `interfaces/`, `web/` という責務分離を現行構成として記録している。YAML、prompts/en、sequential_loader公開API、1 window/turn、artifact契約等を保護する。
+- GitHubのWorkbench remoteで直接閲覧できるのは `feat/step-10-qwen-preflight` の `7544cd869d4bb9a1d05e64c932922304210b0e02`（9/24）の旧フラット構成のみで、ここでは `adapters/base.py` と `registry.py` にdataset/model registry、`adapters/longvideobench.py` にLVB固有annotation、`contracts.py` に共通QuestionSampleが存在する。local9/25実装済みとするCompanyの新構成はGitHubから実ファイルを直接確認できない。**実装直前に対象local worktreeの現行ツリーと差分を確認し、旧remoteの場所へ機械的に追加しない。**
+- 旧LVB実装の `get_question(question_id)` は注釈と実動画パス存在を同時に検査する。大量動画のcatalog表示は「注釈がある」ことと「動画がローカル取得済み」を区別できるように責務を分ける候補で、既存推論用validationを弱めない。
+- 既存Company specは `sequential_loader` の公開APIから前方向読取する実行契約を定める。新Video-MMEの元動画形式を確認せずに既存LVB loaderを使えると仮定しない。必要な追加公開source adapterは別の責務・Gateで扱う。
+
+### 推奨する機能ごとの責務境界（仮ファイル名、仕様ではない）
+
+```text
+configs/                 dataset/model登録、profile/recipe（既存配置維持）
+prompts/en/              Agent向け原文prompt（既存維持）
+src/longvideoqa_workbench/
+  config/                登録済dataset root、profile/recipeの解決・検証
+  core/                  共通のVideo/Question参照・契約・状態遷移
+  dataset/               dataset固有annotation解析・ID/動画/質問対応
+    base.py              共通dataset契約（既存に同等があれば再利用）
+    registry.py          登録済dataset adapterの選択
+    longvideobench.py    LVBだけの注釈schema/locator
+    videomme.py          初代Video-MMEだけの注釈schema/locator
+    catalog.py           共通表示用の正規化metadataへの変換・索引窓口
+  reader/                推論用の前方向reader、loader公開API接続
+  sampling/              共通frame/window採用規則
+  model/                 Qwen等モデル接続
+  agent/                 観測・集約・最終回答の既存pipeline
+  records/               runの不変設定・turn・artifact保存
+  interfaces/            server入口/API: dataset一覧、動画検索、QA詳細、
+                         preview、個人設定/フォルダ、翻訳、run操作を分ける
+  web/                   共通サイドバー、dataset browser、4列動画card、
+                         QAパネル、run view（現在のasset方式を尊重）
+tests/                   dataset別fixture/test＋共通catalog/API/UI/run回帰
+```
+
+- ファイル名は概念上の例。現行local treeを見てすでに存在するbase/registry等を再利用する。`catalog.py` の責務が増えた場合のみ `dataset/catalog/` 等の小パッケージ化を検討するが、最初から過剰に階層を増やさない。
+- 永続的なuser folders/favorites/recents/alias/translation cacheは`records/`の研究run artifactと混同しない。既存の永続化責務を調査後、例えば`core/`内のlibrary service＋`interfaces/` API、または独立責務が十分大きい場合に限り`library/`等の新パッケージを追加し、SQLite等のDBは実動画やrepo source treeから分離する。フォルダは論理コレクションであって物理ファイル移動ではない。
+- dataset adapterの共通出力はdataset登録キー/版/split、配布元正式video/question IDの有無、アプリ内部の安定参照、元の質問・選択肢、durationとその出所、相対動画locator、取得状態等を明確にする。**配布元IDが欠けている場合、行番号やソート順位で正式IDを捏造しない。** 表示用aliasも公式IDとは別。
+- データセットごとの`list_videos`/QA列挙/解決と共通catalogの一覧・検索・duration filter・sort・ページングを切り分ける。推論用`get_question`/readerは厳密な存在検証を維持。hover previewは推論reader/Agent turnから分離する。
+- route/handler追加により`interfaces/server.py`一ファイルが肥大化する場合は責務別helperを同パッケージ内へ切り出すが、既存API入口・URL契約は維持。web側も現在のフレームワーク非依存のstatic asset契約を保ち、必要時だけ機能別JS moduleにする。
+- 翻訳はdataset adapterやAgent promptには入れず、質問原文と選択肢を表示用に翻訳する独立service。正解ラベルをUIへ漏らさず、モデルへの入力は元の注釈を維持する。
+
+### 別案と棄却/保留
+
+- datasetごとに独自の画面、検索、プレビュー、DB、run orchestrationを一式複製する案は棄却寄り。バグ修正やリロード安定性がdataset数倍に分岐するため。
+- 共通`dataset.py`や`server.py`へ新datasetのif/elifと機能一式を集中させる案は棄却寄り。新dataset追加時の回帰範囲が全体に広がるため。
+- 現行10パッケージの全面再編・別frontend framework導入は保留。既存の機能とtest構成を尊重し、必要最小限の拡張とする。
+
+### 実装前の受入候補と未確認点
+
+1. Video-MMEの追加が基本的に`dataset/`の新adapterと登録/config/fixtureの追加で済み、既存Agent・model・sampling・recordsのdataset固有分岐を増やさないこと。
+2. LongVideoBench既存runとartifact schema、CLI・server API、前方読取・時間/画像選択、サムネイル、既存prompt挙動は非回帰。
+3. 1動画複数QA、ID不在の表示と内部キーの区別、取得不足、フォルダのdataset横断参照、全索引へのsort/search、reload/restartがdataset間で共通に動作すること。
+4. 実装対象worktreeの最新ディレクトリとdirty変更、実Video-MME annotation schemaと媒体形式、loader追加の必要性はGitHubから未確認。実装・コード書込み・run・spec作成は本brainstormでは行わない。
