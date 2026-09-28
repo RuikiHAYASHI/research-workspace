@@ -287,3 +287,56 @@ Question selection => run settings => existing turn-based run/results
 - 同一datasetの複数登録rootや版に対応する場合は選択可能な登録元/版を明示して異なるデータを混ぜない。
 - UI初回表示のレイテンシ、metadata未集計・index作成中・一部取得・QAなし・不正なdataset URL・reload/back/forwardを検証。
 - 現時点は探索UI案であり、登録カタログAPIや新規asset取込等の実装許可ではない。README、approved spec、実コード、TODOを変更しない。
+
+
+## 2026-09-29 追記: 今回はEgo4Dを使わず、次のdataset候補は初代Video-MME／各画面へのワンクリック遷移
+
+### ユーザーによる今回のscope修正（以前のEgo4Dカード例を上書きする最新方針）
+
+- **今回のWorkbenchの実使用対象にはEgo4Dを入れない。** 9/25 MTGのEgo4Dダウンロード・研究室保管作業と今回のWorkbench実装対象は別。Ego4Dの登録、UIでの有効表示、推論adapter接続やQAの準備を今回の前提にしない。既取得データの削除、取得停止、将来の不採用を意味しない。
+- 現行接続先LongVideoBenchにもう一つVideoQA datasetを加えたい意向であり、**追加取得候補は初代Video-MME**。まだダウンロード済みとも採用・adapter実装済みともみなさない。配布元の動画・注釈・利用条件・サイズ/構成を確認した後に取得計画とdataset adapterの対象scopeを別途定める。
+- 以前に示したデータセット選択画面のEgo4Dカードは今回の実使用画面例から除外し、LongVideoBench＋Video-MME（未取得/準備中）に修正する。未取得のVideo-MMEを即実行可能なように表示しない。
+- 正式な配布元IDがない場合に並び順等から架空IDを作らない、原本metadataとユーザー別名/内部キーを区別する既存ルールはVideo-MMEにも適用する。
+
+### Video-MME公式資料で確認済みの前提
+
+- 初代Video-MMEの公式READMEでは900 videos、2,700 human-annotated QA、動画長11秒〜約1時間で短・中・長尺を含む。公式評価では動画、字幕、音声の入力条件を扱う。READMEに学術研究用途限定および無断配布等の制限が明記されている。
+- 公式: https://github.com/MME-Benchmarks/Video-MME 。Video-MME-v2 https://github.com/MME-Benchmarks/Video-MME-v2 は**別物**であり、800 videos、3,200 QA等のv2構成を今回の初代Video-MMEへ流用しない。
+- 初期接続候補は既存LongestVideoBenchと同様に元の質問・選択肢を維持し、映像のみでの逐次処理を基準にする案。字幕/音声の扱いはbenchmark条件と因果境界を確認して別途選ぶ。動画ごとに複数questionを持つこと、question IDやvideo keyの実際のフィールド形を配布schemaから確認し、推測で正規IDを作らない。
+- 現時点では取得コマンド、実ファイル位置、ローカル取得成否、adapter実装状態を確認していない。downloadやGPU runは実施していない。
+
+### ワンクリック導線（動画と推論を含む）
+
+- 左サイドバーのホーム、dataset、お気に入り、最近使用、フォルダは**アイコンまたは項目を1回クリックして目的の一覧/詳細へ直行**する。繰り返し同じ選択画面を踏ませない。戻る・reload・direct URLが成立する状態管理を維持。
+- 画面1のdatasetカードはhover/選択で右説明を表示し、カード上の「動画一覧へ」アイコンを**1クリック**するとそのdatasetの動画ブラウザへ遷移する。「カード選択→右パネルで再度確認→ボタン」の余分な手順を強制しない。カード選択による右説明表示も残す。
+- 画面2の動画カードは画像hoverで内部preview、同時に右欄で質問/選択肢の仮表示。カード上に別の操作アイコンを設け、☆お気に入り、フォルダ追加、質問表示、▶推論設定へ、を独立させる。preview clickと推論実行開始を混同しない。
+- 「▶推論設定へ」アイコンからは、クリック済みの動画・質問・dataset contextを持って推論設定/既存turn UIの入口へ**1クリックで移動**。questionが1件だけならそれを引継ぎ、複数あるのに未選択なら右側QAパネルの質問選択へフォーカスする等して、先頭の問を黙って採用しない。右パネルで質問を選んだ後はその問の「▶推論へ」アイコンが1クリック遷移。
+- 遷移のクリックではdataset index全件decodeもQwen runも開始しない。重い実推論の開始は既存の明示「実行」操作とし、reload/backや右パネルhoverだけでGPUが回らない設計候補。
+- 推論画面にもホーム、動画へ戻る、最近使用、実行履歴へのナビゲーションを配置し、どの段階でも最初から選び直せる。run途中の「閲覧画面から離れる」と「runをcancelする」は別操作。
+- Video-MMEが未取得/準備中なら動画一覧/推論への操作は誤動作させず状態と必要な手順を示す。
+
+### 画面例（現在の採用候補ではなく、探索UI）
+
+```text
+[左: ホーム / ☆ / 最近 / フォルダ]
+[中央: Dataset cards]
+  LongVideoBench  [一覧へ ↗]  ローカル登録の状態に従う
+  Video-MME       [準備中]   次の取得候補／未取得扱い
+[右: dataset概要・取得/QA/索引状態]
+
+datasetアイコンを1クリック
+    ↓
+[中央: videoカード 4列＋検索/動画長sort]
+  [poster, ☆, folder+, QA, ▶推論設定へ]
+[右: hover中の動画の原文質問・選択肢・日本語訳切替、question切替と▶推論へ]
+    ↓
+[選択したdataset/video/questionを引き継いだ推論設定画面]
+    ↓ 明示操作でrun作成・次turn
+[既存turn推論UI]
+```
+
+### 追加の確認観点・保留
+
+- Video-MMEの取得手順・license、元annotation ID、メディア/字幕の配置、実映像ファイルの一部欠損、同一動画3問のgrouping、動画長フィルターの出所を取得前に確認する。
+- dataset選択カードで動画一覧アイコンを1クリック、右QAからrun画面1クリック、sidebar/direct URLからの遷移、戻る/進む/reloadで対象dataset/video/questionを失わないことを検証する。アイコンのhit area/キーボード操作/説明を確保。
+- この追記はbrainstormとして方向性を記録するもので、既存承認済spec、TODO、研究コード、データダウンロードには着手しない。今後Video-MMEの採用・取得・接続を仕様化する際はcurrent Company skill/Gateに従う。
