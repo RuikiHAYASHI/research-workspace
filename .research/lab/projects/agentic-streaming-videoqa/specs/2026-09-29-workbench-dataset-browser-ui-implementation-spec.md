@@ -6,13 +6,14 @@ topic: workbench-dataset-browser-ui-implementation
 source: 2026-09-25 MTG, 2026-09-29 brainstorm, current user instructions
 last_updated: 2026-09-29
 scope: LongVideoBench browser UI; Video-MME research only
+git_strategy: integrate previous phase to main, create phase branch, merge Step branches into phase
 ---
 
 # LongVideoQA Workbench: データセット・動画ブラウザの実装計画
 
 ## 0. Authorityと状態
 
-本書は実装計画のdraftであり、作成そのものはコード変更・branch作成・commit・download・GPU runの許可ではない。承認済みの既存推論契約を維持し、blocking項目を解消してユーザーが明示承認した後にStepを実装する。過去の壁打ち中のEgo4Dカード例、右側動画preview案より、今回のユーザー指示を優先する。承認時にstatusをapproved、必須検証が完了したらimplementedとする。
+本書は実装計画のdraftであり、文書更新そのものは研究コード変更・branch作成・commit・download・GPU runの実行ではない。後続のCodexに渡すユーザーの実装指示とresearch-spec/engineering-taskのGateに従い、blocking項目を解消してから作業する。現在のユーザー指示により、前フェーズのcommit整理とmainへの非破壊的統合を今回の新branch作成より先に行う手順を本書に追加する。過去の壁打ち中のEgo4Dカード例、右側動画preview案より、今回のユーザー指示を優先する。承認時にstatusをapproved、必須検証が完了したらimplementedとする。
 
 参照: .research/secretary/notes/brainstorm/2026-09-29-dataset-browser-hover-preview.md、meetings/2026-09-25-mtg.md、specs/2026-09-25-sequential-loader-workbench-refactor-implementation-spec.md、specs/2026-09-25-workbench-target-stream-and-hierarchical-memory-spec.md。
 
@@ -26,7 +27,7 @@ scope: LongVideoBench browser UI; Video-MME research only
 
 ## 2. 現行実装の基点と保全
 
-Companyの2026-09-25 implemented仕様は、src/longvideoqa_workbench/配下の config/ core/ dataset/ reader/ sampling/ model/ agent/ records/ interfaces/ web/ の責務分離、configs/のYAML、prompts/en、既存run/turn API、frame thumbnailのserver session-only契約を記録している。一方、GitHubで直接取得できるWorkbench remoteはfeat/step-10-qwen-preflight、7544cd869d4bb9a1d05e64c932922304210b0e02（9/24旧フラット版）のみ。Companyに記録された9/25 localのfeat/step-11-initial-qwen-run / 7957b66およびfeat/final-answer-evidence-trace / e0d1c70の現物、dirty、worktreeはGitHubから未確認。旧remoteを現行の代わりに使わない。
+Companyの2026-09-25 implemented仕様は、src/longvideoqa_workbench/配下の config/ core/ dataset/ reader/ sampling/ model/ agent/ records/ interfaces/ web/ の責務分離、configs/のYAML、prompts/en、既存run/turn API、frame thumbnailのserver session-only契約を記録している。一方、GitHubで直接取得できるWorkbench remoteはfeat/step-10-qwen-preflight、7544cd869d4bb9a1d05e64c932922304210b0e02（9/24旧フラット版）のみ。Companyに記録された9/25 localのfeat/step-11-initial-qwen-run / 7957b66およびfeat/final-answer-evidence-trace / e0d1c70の現物、dirty、worktreeはGitHubから未確認。旧remoteを現行の代わりに使わない。今回のGit操作対象は**研究コードWorkbenchリポジトリのlocal main**であり、Companyのresearch-workspace@mainへの本spec保存とは別。研究コードremoteには9/29確認時点でmain branchをGitHub経由で直接確認できず、local mainの存在・HEAD・追跡関係も実装前の監査対象とする。
 
 Codexは着手前にCompany main、現local tree、AGENTS/CLAUDE、branch/HEAD、status、既存未追跡文書・dirty、sequential_loaderの公開API、config、dataset、reader、interfaces、web、records、testsをread-only監査し、基点となるclean commitを記録する。ユーザーの未commit/未追跡作業をstage/commit/上書きしない。矛盾があれば作業を止め、根拠と選択肢を報告する。sequential_loader自体の変更が必要なら別の承認Gateを通す。
 
@@ -84,11 +85,41 @@ browser reload/back/forwardは選択値/検索条件を復元し、既存runはG
 
 server再起動でactive reader sessionが消えた場合、旧runのtext artifact・設定は閲覧用に保持し、旧runへの追記や厳密resumeはしない。「先頭から再実行」明示ボタンで別run_idを発行して最初から実行。server起動だけでGPU処理は始めない。旧thumbnailは現在のsession-only契約を維持。folder/星/最近使用/別名は同じ永続DBを再openして戻す。DB領域自体が削除された場合は復元不能と明示。欠損video/無効URL/多重クリック・競合を安全に表示・抑止する。
 
-## 7. Step・branch・micro-step・commit規約
+## 7. 前フェーズのmain統合 → 今回のフェーズbranch → Step別branch
 
-ここからはapproved後のCodex計画。**1 Step = 1 branch、1 micro step = 検証後1 commit**。各Stepは直前Stepの全micro成功後の最終commitを基点として次branchを作成。micro専用branchを作らず、未検証の複数microをまとめてcommitしない。Step末尾のテスト失敗は同一branch内でfix:/test: commitし、合格まで次へ進まない。既存dirty/未追跡を混ぜない。main merge、push、PR、force pushは別の明示指示がない限り禁止。
+**今回のユーザー指定Git方針:** 研究コードWorkbenchの現在のcommitを整理し、前フェーズの実装をlocal mainへ取り込んでから、今回の新しいフェーズbranchを作成する。さらにフェーズ内の各Stepにも別branchを作る。Git graphでmain・フェーズbranch・Step branchの三系統を追跡できる構成とする。**Step番号は今回の実装で1から**とし、前フェーズ統合の準備にはStep 0等の番号を付けない。
 
-各commitの表題は日本語の完結した文。本文は箇条書きでなく一つの日本語段落で「対象、変更、理由、実施した検証と結果、既存への影響、次工程」を自然な文章で記載する。未実施の検証は未実施と書く。dataset動画・注釈・model重み・credentials・outputs・DB/cacheをcommitしない。
+### 実装準備（Step番号外）: 前フェーズのcommit監査とmain統合
+
+1. Company記録とlocal現物から、現在の作業branch、main、全worktree、HEAD、未commit/未追跡、既存Step/feature branchの親子関係、mainに未統合のcommit、remote追跡、保護ルールをread-onlyで一覧化。git log --graph --all --decorate、status、merge-base、branch包含関係とdiffを使い、実在するHEADとmerge対象を決める。Company文書に記録された旧SHAだけを根拠に自動選択しない。
+2. 前フェーズの変更とユーザー由来のdirty/未追跡差分を分ける。未commitの前フェーズ関連作業があれば、変更意図が明確で承認対象に含まれるものだけ既存の適切な作業branch上で論理単位にcommitして整理する。無関係なユーザー変更・docsを勝手に編集、stage、破棄しない。git add .、reset --hard、clean、force、無断rebase/squash/cherry-pick、履歴書換えは行わない。区別不能なら停止して根拠を報告する。
+3. 前フェーズの各既存Step commitとtests、既存Reader/Agent/UI/artifact回帰を確認。最新branchがすべての前フェーズ変更を包含しているか確認し、独立した未統合branchがあれば差分・統合順を説明する。重複取り込みやコードの欠落を起こさない。
+4. local mainを確認し、前フェーズの検証済み先端を**git merge --no-ff**でmainへ取り込む。mainに並行変更があれば競合/非互換を監査し、明らかな衝突だけを解消・再検証。基点や競合が判断不能ならmainは変更せず停止する。既存履歴と元branchを残し、見た目のグラフのために不要な空commitや人工的な分岐を捏造しない。
+5. 統合後mainで短時間の必須回帰（Workbench・sequential_loader関連test、compile、CLI help、許可されたfake smoke）を実施し、mainのmerge commit SHA、採用した前フェーズ先端SHA、結果、clean statusを記録する。失敗なら新フェーズを開始せず同じ統合の範囲で対処する。push、PR、remote mainへの反映は**別の明示指示がない限り行わない**。
+6. mainへの統合完了・clean・検証成功後に限り、**今回のフェーズ親branch** feat/workbench-dataset-browser-phase をそのmain HEADから作成する。既存branch名と衝突する場合は勝手に上書きせず確認する。今回のStep 1はこのフェーズbranchから作る。
+
+### 3系統のGitグラフと統合の方向
+
+~~~text
+前フェーズの開発branch ----（既存micro commits）----\
+                                                  \
+main               ------------------------------- M0 ------------------------------ Mfinal
+                                                    \                                /
+phase: feat/workbench-dataset-browser-phase          P--M1--M2--M3--M4--M5--M6--M7
+                                                       \ / \ / \ / \ / \ / \ / \ /
+step branches:                                        S1  S2  S3  S4  S5  S6  S7
+~~~
+
+M0は**前フェーズ→mainの統合commit**、Pはmainの統合済HEADから切るフェーズbranchの基点（branch作成自体はcommitを作らない）、S1～S7はStep別branch上の検証済みmicro commits、M1～M7はそれぞれStep branch→phase branchの**--no-ff merge commits**。Mfinalはフェーズ完了後に許可された場合だけphase→mainの統合commit。図は概念図で、実際のグラフ配置はGit UIや既存履歴に依存する。Pに飾りの空commitを作らない。mainは各Stepの途中で更新しない。**今回は「前フェーズのmain統合」は明示された手順だが、今回のフェーズの最終main統合は完了レビュー後の別の明示判断とする。**
+
+### Step別branchとmicro commitの必須ルール
+
+- **1 Step = 専用branch、1 micro step = 検証成功後の独立した1 commit**。micro専用branchは作らない。Step 1 branchはフェーズbranchの最新HEADから作成。Step nを完了したらStep branch上で末尾test/回帰とdiffを確認し、フェーズbranchへ git merge --no-ff で戻し、そのmerge commitを記録する。**Step n+1 branchはフェーズbranchのその最新merge commitから作る**。旧案の「Step branchから次Step branchを直接切る」方式は採用しない。
+- Step branchからmainへ直接mergeしない。各Step branchをphaseへ戻さず次Stepに進まない。フェーズbranchで未検証の独自実装を増やさない。全Step終了後のmain反映はフェーズbranch一本から行う。
+- 各microは実装→関連test→diff→commit。未検証の複数microをまとめない。Step末尾の失敗は同じStep branchでfix:/test: commitを作り、再検証後にphaseへ統合する。競合・想定外変更・他worktreeによる更新を確認したら古い内容で強制上書きしない。
+- Git mergeの履歴を保持し、意図的なsquash/fast-forward/rebaseではなく、--no-ff mergeでフェーズとStepの境界を残す。ただしmainの保護設定や権限と競合する場合は迂回せず停止・報告する。
+- commit表題は日本語の完結した文。本文は箇条書きにせず、一つの日本語段落で「対象・変更内容・理由・実施した検証と結果・既存への影響・次工程」を記す。未検証は理由と未実施を明記する。前フェーズ整理commitも同規約に準じる。
+- データセット動画/注釈、モデル重み、credentials、outputs、SQLite/preview cacheをcommitしない。mainのmerge commitとフェーズ/Stepのbranch名・各SHA・test結果を毎回記録する。push/PR/remote mergeは別許可。
 
 ### Step 1: 現行基点の監査とdataset catalog
 branch: feat/workbench-browser-catalog
@@ -172,7 +203,7 @@ branch: test/workbench-browser-integration
 ## 8. approved前のblocking事項
 
 1. 翻訳provider: ローカルtext-only翻訳器か、ユーザーが明示許可した外部APIか。無断の外部送信/GPU起動は禁止。依存、品質、翻訳キャッシュのversionと接続方法を固定する。
-2. 現行local Workbenchのbranch/HEAD/worktree/dirtyとAPI構成。旧remoteを最新版とみなさない。
+2. 現行local Workbenchのmain/開発branch/HEAD/worktree/dirtyとAPI構成、前フェーズの未統合commit、今回の統合対象・順序を確認する。旧remoteを最新版とみなさない。mainの保護設定、競合、未追跡の扱いが未解決なら統合しない。
 3. 永続DBのrepo外配置、backup、単一ユーザーか複数利用者かの単位と権限。
 4. preview実動画のcodec/Range/NAS負荷を代表動画で確認し、clip秒数、cache容量・並列数を確定。未許可ならfake契約のみ。
 5. cancelがモデル呼出し中に即時かturn境界か。既存sessionとrun status契約に合わせる。
@@ -183,4 +214,4 @@ non-blockingはカードの細かな間隔/文言、実際の画面幅に合わ�
 
 受入は、中央が左右より広いdataset/video画面、PC4列のcard内hover1本preview＋右QA、元ID非捏造、全索引search/sort後のpage、folder/星のrestart永続、翻訳原文切替、アイコン1クリックでrun設定へ、reload/back時の誤POSTなし、server restart後の別ID先頭再実行、既存LongVideoBench/reader/Agent/records/CLI/API/thumbnailの非回帰で判定する。
 
-実装対象はlocal Workbenchの監査済みclean基点。Step 1～7のみ。Video-MME/Ego4D接続、download、実GPU、push/merge/PRは非許可。短時間fake unit/integration、compile、CLI help、loopback smokeの範囲で検証し、長時間runは別途許可を要する。
+実装対象は、前フェーズをlocal mainへ検証済みで統合したclean基点から切るフェーズ親branchと、その子となるStep 1～7。**前フェーズ→local mainとStep→phaseの--no-ff mergeは今回指定のGit手順**。今回のphase→mainは完了レビューと別の明示承認が必要。Video-MME/Ego4D接続、download、実GPU、push/PR/remote反映は非許可。短時間fake unit/integration、compile、CLI help、loopback smokeの範囲で検証し、長時間runは別途許可を要する。
