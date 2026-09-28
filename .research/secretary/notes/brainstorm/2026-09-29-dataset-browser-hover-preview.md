@@ -436,3 +436,8 @@ tests/                   dataset別fixture/test＋共通catalog/API/UI/run回帰
 未決はVideo-MME取得/利用条件・実schema・reader対応、preview実測とcache、翻訳器、DB配置/共有、restart再実行トリガー、cancel境界。受入テストは複数dataset・一動画複数質問・ID欠損・欠損動画・検索sort・preview/翻訳競合・reload/back・restart・従来LVB runの非回帰を含む。GitHubで見えるWorkbench remoteは9/24旧版であり、9/25 local実装はGitHubで現物未確認。spec/実装に進む前に現行作業木・dirty状態を再確認する。
 
 **spec引き継ぎ候補:** データセット選択→動画探索→原文QA選択→既存turn推論への安定した導線。今回の探索を理由にspec・コード・TODO・dataset download・GPU runを自動変更しない。
+
+
+## 2026-09-29 追記：実装計画specへの引き継ぎ
+
+本topicの統合された実装計画（現時点draft）は [2026-09-29-workbench-dataset-browser-ui-implementation-spec.md](../../../lab/projects/agentic-streaming-videoqa/specs/2026-09-29-workbench-dataset-browser-ui-implementation-spec.md) を参照。初代Video-MMEはread-only調査のみ、今回の接続/downloadは対象外。dataset・video一覧の中央列は左右より広くする。Stepごとbranch、micro stepごとcommitを同specに記録した。過去の探索履歴は保持し、承認前のコード変更権限と混同しない。
