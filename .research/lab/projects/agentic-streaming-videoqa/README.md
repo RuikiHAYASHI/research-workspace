@@ -1,9 +1,9 @@
 ---
 project: agentic-streaming-videoqa
 status: active
-summary: 操作時に更新できるAgentデモと、長尺動画を逐次処理する2--3段階Streaming VideoQAの最小実装を次段階として試作する。
+summary: Ego4D動画を取得中。Workbench基盤を踏まえ、データ選択UI、3段階Agentの責務・編集性、イベント記録を再設計する。
 created: 2026-09-10
-last_updated: 2026-09-18
+last_updated: 2026-09-25
 ---
 
 # エージェント型オンラインストリーミングVideoQAの研究
@@ -26,22 +26,33 @@ YouTubeなどのライブ配信を想定し、動画を先頭から逐次的に�
 
 2026-09-18のMTGで、既存の実行済みtrace viewerを、操作時にAgent実行・プロンプト変更を試せる最小デモへ発展させる方針を確認した。並行して、長尺動画を逐次ロードし、区間ごとのQwen出力を保存・集約して最終回答へつなぐ2--3段階の最小Streaming VideoQAを試作する。初期構成はPythonの同期的な逐次処理を優先し、サーバ連携やノード接続UIは後続候補とする。
 
+2026-09-25に、`sequential_loader` 公開APIでLongVideoBenchを先頭からEOFまで前方向decodeし、YAML recipeの可変区間・画像上限、英語prompt、3段階Agent、artifact、ローカル画面を接続するリファクタリングを完了した。Workbench統合ブランチは `refactor/sequential-loader-workbench`（`a4d6aa5`）、ローダー側は `feat/longvideobench-source-adapter`（`e44efbf`）。生成動画と擬似モデルの短時間検証は完了し、実LongVideoBench・実Qwenでの速度と精度は未検証である。
+
+2026-09-25に、ローダーへ対象frameだけをRGB化する前方ストリームを追加し、Workbenchへ読取モード、全frame構造化観測、追記型観測・イベント台帳、可変長物語、上限超過時だけの章圧縮、根拠参照付き最終回答を実装した。ローダー182件、Workbench 86件の短時間テストと、両リポジトリを接続した生成動画確認に成功した。実LongVideoBench・実Qwenでの精度と速度は未検証である。
+
+2026-09-25のMTGで、Ego4Dの基本データセットを整理しつつ`full_scale`動画を取得する方針を確認した。Workbenchは、対象動画・質問・メタデータを確認できる入口、分かりやすい時刻・設定表示、リロード時の安定性を改善する。研究コードでは、状況理解・情報集約・最終回答の3段階Agentの責務と編集点を明示し、重要イベントを保存するJSON形式とpromptを設計する。
+
 ## マイルストーン
 
 - [ ] 研究方針を整理する
-- [ ] 動画ストリームを逐次読み込む最小実装を作成する
+- [x] 動画ストリームを逐次読み込む最小実装を作成する
 - [ ] VideoQAデータセット候補を調査する
 - [x] 逐次動画ローダーの取得順出力・バッファ付きタイムスタンプ順出力を実装する
-- [ ] 逐次動画ローダーの利用サンプルと説明を整備する
+- [x] 逐次動画ローダーの利用サンプルと説明を整備する
 - [x] 先行研究の逐次入力方法を調査する
 - [ ] Agent系Streaming Video Understanding / VideoQAの既存機能と未解決点を整理する
 - [ ] Agent / Streaming VideoQAにおけるMemory表現をtext / KV / feature等に分類する
 - [x] 1 frameずつVLMへ入力してtext Memoryを逐次更新する最小Pythonプロトタイプを作成する
 - [ ] 動的chunk長・multi-timescale memory・重要イベント用Memory等の研究候補を既存研究と比較する
 
-- [ ] 操作時にAgentを実行し、プロンプト・区間長等を変更して結果を確認できる最小デモを試作する
-- [ ] 長尺動画を逐次ロードし、区間ごとのQwen出力を保存・集約して最終回答を出す2--3段階の最小Agentパイプラインを作る
-- [ ] `sequential_loader` のAdapterが意図するデザインパターンと一致しているかを確認する
+- [x] 操作時にAgentを実行し、プロンプト・区間長等を変更して結果を確認できる最小デモを試作する
+- [x] 長尺動画を逐次ロードし、区間ごとのQwen出力を保存・集約して最終回答を出す2--3段階の最小Agentパイプラインを作る
+- [x] `sequential_loader` のAdapterが意図するデザインパターンと一致しているかを確認する
+- [ ] Ego4Dの取得対象・取得状況・用途をまとめた説明書を作る
+- [ ] Workbenchでデータセット、動画、質問、メタデータを確認してから実行できる入口を整える
+- [ ] 状況理解・情報集約・最終回答のAgent責務と編集点を明示する
+- [ ] 重要イベントを保存するJSON形式と、各Agent用promptを設計する
+- [ ] Qwen3-VLの複数frame入力とオーケストレーションの実装例を調査する
 
 ## 更新履歴
 
@@ -53,3 +64,6 @@ YouTubeなどのライブ配信を想定し、動画を先頭から逐次的に�
 | 2026-09-11 | MTGでchunk-level causal設定を確認し、Agent/Memory差分調査と最小text Memoryプロトタイプを次段階に設定。 |
 | 2026-09-16 | EgoCrossの現在画像観測とtext-only state更新を分けた最小Agentを実装し、短い実Qwen runでtraceを確認。 |
 | 2026-09-18 | MTGで、操作可能なAgentデモと長尺動画を逐次処理する最小Streaming VideoQAの試作方針を確認。 |
+| 2026-09-25 | sequential_loader接続、YAML recipe、英語prompt、可変window、3段階Agent、artifact、ローカル画面を統合し、短時間検証を完了。 |
+| 2026-09-25 | 対象frame専用RGB変換、全frame観測台帳、可変長物語・章圧縮、最終回答の根拠追跡を実装し、短時間検証を完了。 |
+| 2026-09-25 | MTGでEgo4Dの取得方針、Workbenchの入口・表示改善、3段階Agentの責務明示とイベントJSON設計を確認。 |
