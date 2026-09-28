@@ -68,3 +68,58 @@ tags: [brainstorm, research, workbench, dataset-browser, hover-preview]
 - `.research/lab/projects/agentic-streaming-videoqa/specs/2026-09-25-workbench-target-stream-and-hierarchical-memory-spec.md`
 - `tamaki-lab/2026-08-21-ava-browser`: `app/indexer.py`, `app/main.py`, `app/media.py`
 - `RuikiHAYASHI/2026_09_hayashi_longvideoqa_workbench`: GitHubで確認できる9/24版 `src/longvideoqa_workbench/server.py`, `adapters/longvideobench.py`, `web/app.js`
+
+
+## 2026-09-29 01:56 JST 追記: 4列サムネイル内ホバー再生・全画面の状態復元
+
+### ユーザーからの追加希望（前段案を更新）
+
+- 画面1のデータセット名・説明カードは維持する。
+- 画面2の動画一覧は左側の縦リストではなく、PCで横4列・縦方向に並ぶサムネイルカードのグリッドへ変更する。各カードは動画アイコン/代表サムネイル・video ID・長さ等を持つ。
+- カーソルをカード画像に合わせたとき、**そのカード画像の内部だけ**動画冒頭の無音previewに切り替える。別のカードへの移動で前カードを停止して通常サムネイルへ戻す。右側の常設動画preview欄を前提にしない。
+- クリックは対象動画の詳細・QA選択へ進む確定操作。右側の詳細欄は、残す場合でも動画再生と重複させず、クリック後の詳細画面または選択概要に位置付け直す。選択後の詳細表示形式は未決。
+- すべての段階（dataset選択、動画一覧、動画詳細/質問選択、実行設定、run中/結果）で、ブラウザreload・戻る/進む後に不整合やエラーを起こさず、妥当な直前状態に戻ることを重要要件とする。
+
+### UI候補（探索）
+
+```text
+Dataset cards (name + description + availability)
+      ↓
+Video browser: [search/filter] + 4-column thumbnail card grid
+  [poster + ID] [poster + ID] [poster + ID] [poster + ID]
+  [poster + ID] [poster + ID] [poster + ID] [poster + ID]
+       hover => only target card swaps poster to muted preview
+       click => video detail / linked questions
+      ↓
+Question selection => run settings => existing turn-based run/results
+```
+
+- 画面幅に応じて4→2→1列、カード比率16:9、全カードには画像の遅延読込を適用。
+- 一覧は索引からページング/追加取得する。動画全件デコードも動画全件に対するvideo elementの即時loadも行わない。
+- previewはhover滞留後（仮目安200〜300ms）に開始、`muted`/`playsInline`/`preload=none`、必要なら短尺・低解像度clip cache。再生は原則同時1本、hover解除/画面離脱/画面非表示ではpauseしsourceを解放。古い非同期結果が新しいhover先を書き換えないようAbortControllerまたは要求世代番号でガード。
+- タッチやキーボードでhoverできない利用者にも、カードfocus・選択・再生操作を用意する。画像のloading/error時はposterを保持し、一覧全体をエラーにしない。
+- video cardクリックはプレビュー操作ではなく選択行為。前方decodeの研究用readerやQwen runを起動しない。
+
+### 再読込・戻る/進むのための状態所有（提案、未実装）
+
+| 種別 | 正本/復元手段 | 戻る/リロード時 |
+| --- | --- | --- |
+| dataset ID、video ID、question ID、検索、フィルタ、ページ | URL/path/query（IDを検査） | URLから復元。戻る/進むは履歴の表示変更であり、Agentを起動しない。 |
+| 未実行のrun設定/prompt変更 | URLへ秘密情報を載せない。必要ならブラウザのdraft保存＋dataset/question整合確認 | 確認画面の編集を復元可能にするが、実行済みrunへ勝手に反映しない。 |
+| hover対象、短尺動画の再生位置 | 一時UI state | リロード後はサムネイルから再開。autoplayを再起動しない。 |
+| run_id・確定したsettings・各turn・結果・状態 | サーバ側artifact/安定ID。URLにrun_idを含める | GETで既存記録を再構成。ページreloadや戻るだけでPOSTしない。 |
+| 実行中reader/model/session | サーバ側プロセス管理 | 同一server lifetimeのブラウザreloadでは既存runへ再接続。server restartでは状況を判定し、予期しない自動再実行をしない。 |
+| 実行時の選択frame thumbnail | 現行approved契約はserver session内のみ | server存続時は表示可能。server restart後は非永続と明示、文字結果/metadataを表示。画像の再生成・永続化を要求するなら別途仕様判断。 |
+
+- 選択済み動画の欠損、まだ取得されていないファイル、索引更新、未知のdataset/video/question IDは、クラッシュせず説明付きempty/error stateと前画面へ戻る導線を提供する。
+- ダブルクリックや複数タブからのrun作成・次turn実行には、processing lockとrequest idempotency検討が必要。既存runを再取得するGETと新規POSTを混同しない。
+- ブラウザreloadとサーバ再起動、任意の前ターン表示とreader sessionを戻すことは別。現在のapproved仕様では過去turn閲覧はread-onlyで、進行は最新位置からの次turnだけ。ブラウザbackで処理済みturnがundoされるわけではない。
+- 前回実装メモにはbrowserの複数run間サムネイル黒化対策があり、run別URL/cache identifierの回帰を保持する。
+
+### 評価軸・失敗条件・次に決めること
+
+1. UI: 4列でIDが可読か、hoverしたカード以外の動画を取得しないか、戻る/進むの体験が自然か。
+2. 資源: 初回一覧時間、サムネイル/preview初回準備時間、同時video再生数、NAS読取、preview clip生成・cache容量。Ego4D大量動画・不適合codecでも画面が詰まらないか。
+3. 復元: dataset→動画→質問→runの各画面についてブラウザreload、browser back/forward、server restart、削除済み動画、失敗preview、処理中run、過去runをテスト。
+4. 特に未決: click直後の詳細を専用画面とするかmodalとするか、previewの冒頭長・音声は原則無音、すべてのrun中にページ離脱してよいか/キャンセル確認が要るか、サーバ再起動後に選択frameを再生成するか。
+5. 現段階は方針候補。research-spec、TODO、コードの自動変更はしない。
