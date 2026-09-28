@@ -403,3 +403,36 @@ tests/                   dataset別fixture/test＋共通catalog/API/UI/run回帰
 2. LongVideoBench既存runとartifact schema、CLI・server API、前方読取・時間/画像選択、サムネイル、既存prompt挙動は非回帰。
 3. 1動画複数QA、ID不在の表示と内部キーの区別、取得不足、フォルダのdataset横断参照、全索引へのsort/search、reload/restartがdataset間で共通に動作すること。
 4. 実装対象worktreeの最新ディレクトリとdirty変更、実Video-MME annotation schemaと媒体形式、loader追加の必要性はGitHubから未確認。実装・コード書込み・run・spec作成は本brainstormでは行わない。
+
+
+## 2026-09-29 追記：全壁打ちの統合整理（最新の方向性）
+
+> 過去の探索履歴は保持する。この節は後続指示を反映した現時点の要約であり、古い「Ego4Dを今回の画面に表示」「動画previewを右欄へ」「右欄を廃止」といった案に優先する。まだexploratoryであり、approved specではない。
+
+### 目的・対象
+9/25 MTGで課題になった「データセット・動画・質問を把握してから実行する入口」を改善する。現行の因果的逐次推論・Agent・実行記録を維持する。今回の実使用はLongVideoBench、次の取得・接続候補は初代Video-MME（未取得・未実装）。Video-MME-v2と混同しない。Ego4Dは今回のWorkbench実行対象外であり、別途の研究室ダウンロード・保管とは分ける。
+
+### 画面・操作
+- 全画面共通の左サイドバー：ホーム、☆お気に入り、◷最近使った、利用者作成フォルダ（ChatGPTのプロジェクトに似た論理コレクション）、必要に応じrun履歴。アイコン1クリックで該当画面へ直行、途中でホームへ戻り最初から選び直せる。
+- dataset選択：中央カードに名称、説明、QA有無、動画・質問件数、取得/欠損/索引状態（未知は未知と表示）、右にdataset詳細。カード内「動画一覧へ」アイコンから直接1クリックで遷移。Video-MMEは実際の取得・接続が済むまで未取得/準備中として表示。
+- 動画一覧：PCで横4列・縦スクロールの16:9サムネイルカード。別名、正式ID（存在する場合）、動画長、質問件数、取得状態、☆、フォルダ追加、QA、推論設定へ等の独立した操作。カードhoverではそのカード内だけ動画冒頭を無音previewし、右欄には質問文・選択肢・質問ID等を表示。クリックで選択固定し、右欄へカーソルを移しても消さない。QA複数なら右欄で質問を切替、QAなしならその旨を明示。
+- 「推論設定へ」アイコンはdataset/video/questionを引き継いで1クリック遷移。未選択の複数質問から先頭を勝手に選ばない。画面への遷移だけではQwenを起動せず、実際のrun/次turnは明示操作。
+- 右欄の質問文/翻訳アイコンのクリックで、質問と選択肢をオンデマンド日本語訳。原文との切替、選択肢順とID維持、結果のキャッシュを候補とする。翻訳は閲覧専用で、元annotationやモデルに渡す原文を変更しない。翻訳器と外部送信条件は未決。
+
+### 検索・管理・速度
+- 正式ID、任意別名、配布元のタイトル/説明、関連質問文で検索。動画長の短→長・長→短、長さ範囲、取得済み/QAあり/お気に入り、最近使用順などで絞込・並び替え。索引全体に適用してからページング（初期30～50件程度）、画面内の数件のみsortしない。検索のたびに動画decodeしない。
+- 配布元に正式IDがない場合は「提供IDなし」と表示し、行番号・並び順から架空の正式IDを作らない。必要な内部参照はdataset/版/split/実在locator由来の別キーとし、原本IDやaliasと混同しない。曖昧な紐付けを別動画に引き継がない。
+- フォルダ、星、最近使用、別名は実動画を移動せずアプリ側の永続DB（SQLite候補）に保存。同じ動画は複数フォルダへ登録可能な案。フォルダ削除で元動画やrunは削除しない。server再起動を跨ぐにはDBの保存領域自体を維持する。
+- dataset画面は登録metadataのみ。動画一覧はannotation/manifest等の軽量indexを参照し、全動画decode・全件サムネイル/ffprobe・全尺変換を入口で行わない。thumbnail lazy、hoverは原則同時1本・滞留200～300ms程度、直接配信または必要時だけ短尺軽量preview cache。失敗時poster fallback、古い非同期結果を無視。
+
+### 状態と研究契約
+- dataset/video/question、検索/filter/sort/page、フォルダ等はURL/永続状態からreload/back/forward時に再構築。hover再生位置は揮発でよい。runはrun_idと確定設定・artifactで別管理し、閲覧GETで勝手に再POSTしない。
+- ホーム移動・画面離脱とrun cancelは別操作。server再起動でactive readerが失われたrunは旧記録を保ち、新run_idで動画先頭から再実行する。厳密resumeは不要。再起動だけでGPUを動かすか明示「先頭から再実行」かは未決で、現在の安全側候補は後者。旧runサムネイルのsession-only契約は無断で変更しない。
+- Browserのpreview/翻訳/検索は研究用sequential_loader・Agent turnへ影響させず、未来frameを推論へ流さない。元の選択肢・正解ラベル・実行設定と成果物の安全条件を守る。
+
+### 構成・実装前確認
+9/25 Company記録の `config/ core/ dataset/ reader/ sampling/ model/ agent/ records/ interfaces/ web/` と既存configs、prompts/enを維持。データセット固有注釈と動画・質問対応は主に`dataset/`下のLongVideoBench/Video-MME専用adapterで増やし、共通catalog・検索・preview・翻訳・folder・推論をコピーしない。利用者DBはrun成果物と分離。ファイル名・追加箇所は現行local treeを見て確定し、全体再編をしない。
+
+未決はVideo-MME取得/利用条件・実schema・reader対応、preview実測とcache、翻訳器、DB配置/共有、restart再実行トリガー、cancel境界。受入テストは複数dataset・一動画複数質問・ID欠損・欠損動画・検索sort・preview/翻訳競合・reload/back・restart・従来LVB runの非回帰を含む。GitHubで見えるWorkbench remoteは9/24旧版であり、9/25 local実装はGitHubで現物未確認。spec/実装に進む前に現行作業木・dirty状態を再確認する。
+
+**spec引き継ぎ候補:** データセット選択→動画探索→原文QA選択→既存turn推論への安定した導線。今回の探索を理由にspec・コード・TODO・dataset download・GPU runを自動変更しない。
