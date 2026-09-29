@@ -68,3 +68,54 @@ AとBで同一動画・question・window境界・frame選択・モデル版・ge
 - 対象候補: Pythonオーケストレータ、roleごとの入出力/可視化、イベントJSONの重要度、image/video入力比較、fake test/短時間smoke。
 - 対象外: 自律分散Agent導入、Webが直接モデル呼出し、モデルのstage別多重ロード、無許可GPU実験・dataset download・push・main統合。
 - 主な未決: event call分離/重要度の定義、baseline mode、Qwen video入力メタデータとprocessor対応、比較用動画/評価。
+
+## 2026-09-29 23:57 JST 追記：3 Agentの責務、テキスト記憶、クラスから分かる運用
+
+### ユーザー追加要件
+
+Agentが情報を**テキストとして蓄積**し、次の動画区間へ引き継げる構成を詳しく検討する。参照したオーケストレーションのサンプル同様に、コード上でAgentクラス・設定を見れば担当役割、モデル、入出力、実行順序がひと目で分かる形を優先する。まず3 Agentの責務から設計する。この段階はexploratoryであり、新しいAgent classやschemaの実装許可ではない。
+
+### 責務案（3 Agentを維持）
+
+1. **Situation Agent（状況理解）**: 現在windowの選択済みframe、実timestamp、質問を受け、フレームごとの見える対象・行為・変化、関連度、観測不能・不確実性を構造化テキストとして返す。選択肢、過去の全文脈、未来window、最終回答は入力・生成対象にしない。全frame被覆のvalidationに失敗したら次段階へ黙って渡さない。
+2. **Memory Agent（情報集約と記憶更新）**: 検証済み現在観測と直前の明示的なtext memoryを入力とし、イベントの時刻・説明・frame参照・重要性理由・不確実性と、新版の時系列text narrativeを返す。過去と矛盾する記述は黙って上書きせず更新根拠を残す。全観測・全イベント・全memory版をappend-only保存する一方、次windowへ渡すのは現在版のbounded working memoryと必要な章参照。質問関連度と将来の状況理解に重要な状態変化は別に考える。選択肢/最終回答は原則渡さない。
+3. **Answer Agent（最終回答）**: EOF後に初めて質問・選択肢・最終text memoryと根拠イベント/時刻を受け取って回答、参照event/frame/time、未確実事項を返す。原動画の再decodeや未来情報へのアクセスはしない。
+
+**オーケストレータは4番目の推論Agentではなく、Pythonの決定的な進行管理役。** 1windowのread→Situation→validation→Memory→validation→commit、EOF→Answerを進め、stage status/記録/cancel/モデル呼出しを統制。個別Agentへ生の全会話履歴を暗黙転送せず、型付き入力で渡す。Microsoft Agent FrameworkのSequentialBuilder/Agentの定義方式は可読性の参考とするが、フレームワーク導入は未決。ドキュメント https://learn.microsoft.com/en-us/agent-framework/workflows/orchestrations/sequential
+
+### 重要なmemory stateの分離
+
+- **一次記録／observations**: 時刻・frame ID・観測テキスト。全件追記、削除せず検証可能にする。
+- **event ledger**: 変化や出来事、証拠frameと重要性／不確実性。全件追記、重要なものをworking memoryの前面に採用するか分ける。
+- **working text memory**: 前版＋新イベントを明示的に更新した最新の人が読める時系列文章。現在何が起きているか、過去の重要な状態変化、未解決事項、根拠ID、対象時刻・versionを持つ。
+- **chapters/archive**: budget超過時だけ古い範囲を根拠IDつきで章へ整理する。原記録は消さない。現行の単純単語切断を知的な記憶選別と混同しない。
+
+各windowで、prev memory versionを読込み、validated observationからeventsを得て、Memory Agentがnext textを書き、schemaと参照を検証してsnapshotとappend-only版を保存する。失敗時は直前の正常版を維持し、run/stageにerrorを残す。過去の長文を毎回全文連結して入力しない。
+
+### 可読なコード構成候補（疑似コード）
+
+~~~python
+model = Qwen3VLAdapter(model_id=model_id)
+agents = {
+    "situation": SituationAgent(model=model, config=config.situation),
+    "memory": MemoryAgent(model=model, config=config.memory, memory_store=store),
+    "answer": AnswerAgent(model=model, config=config.answer),
+}
+orchestrator = VideoQAOrchestrator(**agents)
+~~~
+
+これは実装済みAPIではない。Agent定義にname/role、prompt ID/hash、model adapter、generation、input/output schema、validation、memory read/write、editable settingsを見える形で揃え、設定はrun開始時にsnapshot化する。Qwenは共通lazy-loaded adapterで1 instanceを共有し、Agent classごとに重みを3個ロードしない。Webは構成・traceを表示し、Qwen呼出しはPythonだけが行う。
+
+### Memory Agent内部の比較候補
+
+- A: 1呼出しでevents＋narrative（現行baselineに近い。1windowあたりSituation1＋Memory1）。
+- B: 同じMemory Agentの内部でevent extraction/selectionとtext memory updateを別々にモデル呼出し（1windowあたりSituation1＋Memory2）。責務を見える化できる一方、latency/token/VRAMが増える。第4 Agentへ責務変更したのではなく、1 Agent内の2 stageとして実装可能。
+- 一次記録は常に追記。A/Bの比較では入力frame、window、Qwen版、prompt、question、memory budget等をできる限り固定し、評価は根拠整合・重要情報保持・最終精度・速度/コストの区別とする。
+
+### 未決・spec handoff候補
+
+1. Memory Agentの重要イベント基準: 質問関連のみか、質問とは直接関係なく人物・物体・場所の状態変化も保存するか。
+2. working memoryの書式: 自由な物語文だけか、文章＋イベント参照＋未解決項目を持つ構造化stateか。
+3. Memory Agent内部はAをbaselineにBを比較追加する方向が有力だが、実装順はspec化時に承認する。
+4. Agentの設定選択UIとコードの定義範囲は、今回の可読性目標を満たす最小契約から決める。初回からグラフエディタ/非同期分散実行は不要。
+5. 動画ネイティブ入力と複数画像入力の比較はAgent責務分離と別実験軸にする。Codex/Workbenchの個人用前面起動・Ctrl+C終了はCompany README既存指示を維持する。
