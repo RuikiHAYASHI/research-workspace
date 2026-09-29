@@ -1,7 +1,7 @@
 ---
 date: 2026-09-29
 project: agentic-streaming-videoqa
-status: approved
+status: implemented
 topic: workbench-dataset-browser-ui-implementation
 source: 2026-09-25 MTG, 2026-09-29 brainstorm, current user instructions
 last_updated: 2026-09-29
@@ -281,3 +281,12 @@ readiness Gateで確定したArgos Translate 1.11.0、repo外SQLite、6秒・最
 最終GateはWorkbench `133 passed`、sequential_loader公開checkout `169 passed`、`python3 -m compileall -q src tests`、`longvideoqa --help`と各subcommand help、loopback fake API結合testが成功した。実装用phase worktreeはcleanで、mainは `d8863065adb04be08d99661b0acd1b672e9163b8` のまま保持した。
 
 未実施はArgos本体・英日modelのdownload/installと実runtime smoke、実LongVideoBenchでの継続的preview性能測定、browser実機での手動視覚確認、実Qwen/GPU推論、Video-MME取得・接続、Ego4D接続、push、PR、remote反映、phase→main最終統合である。Node.jsが環境にないため`node --check`は実施せず、JavaScriptは静的契約test、asset配信test、loopback API testで検証した。
+
+
+## 12. 実装結果（Step 8、2026-09-29）
+
+受入修正branch `fix/workbench-browser-acceptance-ui` をStep 1〜7統合済みのphase HEAD `f184dff5b0d64f18032e43e4df73364bf0aaebf5`から作成し、5 micro commitを検証後に記録した。`baf1699`でhiddenとgridの競合、初回の未接続placeholder誤選択、推論viewの履歴復元を修正した。`0681b74`で指定paletteを用いた黒基調テーマ、compact header、中央優先3列、4列動画、狭幅折畳み、hover/focus/disabled/error/loadingを整えた。`72787ab`でFakeだけの起動とLongVideoBench登録起動を分離し、Fakeをテスト用と明示した。`e4aa963`でルートREADMEと`docs/dataset-browser.md`へ正しいworktree、Python/import元、2経路の完全な起動、別port、SSH、終了、負荷回避、旧画面切り分けを記録した。`311aba1`でloopback受入testを追加し、全回帰で見つかったactive JSONL末尾の部分読取raceを、未完結末尾だけ次pollまで除外する契約で修正した。
+
+Step 8 branchはphaseへ`--no-ff`で統合し、merge commit兼更新後phase HEADは `06fa1e0681242cdded611f5e791e1c41b0146380` である。統合後のphaseでWorkbench `141 passed`、sequential_loader公開checkout `169 passed`、`python -m compileall -q src tests`、top-levelと`run`/`serve`/`qwen-preflight`のCLI help、Fake loopback APIを確認した。Firefox headless実表示では初回、tab、back、forward、reload、質問から推論への遷移で両画面が同時表示されず、1600pxで左右248/384pxに対して中央872px、動画4列、720pxで1列折畳み、指定dark paletteを確認した。実LongVideoBenchはdataset画面に留まり、動画753件、QA 1337件、`available`を表示し、run outputとpreview cacheが空であることを確認した。
+
+未実施はユーザー自身のブラウザによる最終受入、実Qwenのmodel loadとGPU推論、実LongVideoBenchの動画一覧・thumbnail・hover preview性能確認、Argos本体と英日modelのinstall/runtime smoke、Video-MME/Ego4D接続、push、PR、remote反映、phase→local main最終統合である。ユーザーの画面確認と明示承認までphaseをmainへ統合しない。
