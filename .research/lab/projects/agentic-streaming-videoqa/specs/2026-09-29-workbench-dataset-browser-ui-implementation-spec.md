@@ -290,3 +290,44 @@ readiness Gateで確定したArgos Translate 1.11.0、repo外SQLite、6秒・最
 Step 8 branchはphaseへ`--no-ff`で統合し、merge commit兼更新後phase HEADは `06fa1e0681242cdded611f5e791e1c41b0146380` である。統合後のphaseでWorkbench `141 passed`、sequential_loader公開checkout `169 passed`、`python -m compileall -q src tests`、top-levelと`run`/`serve`/`qwen-preflight`のCLI help、Fake loopback APIを確認した。Firefox headless実表示では初回、tab、back、forward、reload、質問から推論への遷移で両画面が同時表示されず、1600pxで左右248/384pxに対して中央872px、動画4列、720pxで1列折畳み、指定dark paletteを確認した。実LongVideoBenchはdataset画面に留まり、動画753件、QA 1337件、`available`を表示し、run outputとpreview cacheが空であることを確認した。
 
 未実施はユーザー自身のブラウザによる最終受入、実Qwenのmodel loadとGPU推論、実LongVideoBenchの動画一覧・thumbnail・hover preview性能確認、Argos本体と英日modelのinstall/runtime smoke、Video-MME/Ego4D接続、push、PR、remote反映、phase→local main最終統合である。ユーザーの画面確認と明示承認までphaseをmainへ統合しない。
+
+## 13. ユーザー実画面レビュー後の画面状態・QA操作修正（Step 9案、2026-09-29）
+
+### 13.1 根拠・状態・変更の境界
+
+ユーザーがStep 8後の実LongVideoBench画面を確認し、黒基調の見栄えは改善した一方、質問が多い場合の選択、動画からデータセット一覧への帰還、ボタンの操作感を修正するよう依頼した。提示画像では動画にカーソルを置いた時点で右に長いQAが表示され、ホームへ戻った後も中央に「データセットを読み込んでいます…」が残り、タイトルがLongVideoBenchのまま、右側の前動画QAも残っている。
+
+本節はStep 1～8の実装結果を取り消さない**追加受入修正のdraft**であり、既存frontmatterの`implemented`はStep 1～8の実装記録を指す。本節の未決Gateが解消して明示承認されるまでStep 9の実装可能な全契約とは扱わない。WorkbenchのCompany記録ではStep 8後のローカルphase HEADは`06fa1e0681242cdded611f5e791e1c41b0146380`。GitHubの研究コードremote phaseは確認時点では`f184dff5b0d64f18032e43e4df73364bf0aaebf5`で、Step 8後の現物は未push。古いremoteへ直接編集せず、Codexが最新ローカルworktreeのHEAD/dirty/適用指示/現コードを再監査してから変更する。画像からはUI症状を確認できるが、JSの具体的なrace原因は最新ローカルコードで検証する。
+
+### 13.2 閲覧状態を独立させる
+
+- 状態は`dataset一覧`、`動画一覧・hover preview`、`動画選択済み・QA一覧`、`推論設定・run`を分け、画面ごとのタイトル、中央内容、右詳細、操作欄、URL、hover/selectionをそれぞれ一貫して制御する。
+- 動画一覧でカードを**hover/focusしただけでは質問本文・選択肢を表示しない**。右側は動画のposter/previewを主役にし、表示中動画の基本情報のみ添える。既存カード内previewとの二重再生/二重decodeを避け、同時preview上限と失敗fallbackを維持する。動画カード本体を明示クリック/Enter等で選択した後、右側をその動画のQA一覧に切り替える。別のカードへのhoverだけで選択済みQAを不用意に上書きしない。
+- QA一覧は1問ごとに「質問文＋選択肢」を**1つの操作可能なブロック**とし、ブロック全体のhoverとキーボードfocus時にネオン寄りの緑の輪郭・穏当なglowを表示。クリック/Enter/Spaceで**そのブロックの正しいquestion ID**を選ぶ。選択中・hover中・disabledの区別、文字/焦点コントラスト、`prefers-reduced-motion`を考慮する。翻訳・原文切替などブロック内の別ボタンは選択/遷移を誤発火させない。答えの正解ラベルは露出しない。
+- **blocking未決:** QAブロック押下による「実行」は、(A)既存の`推論設定画面へ質問を引き継いで遷移するだけ、実際のrun/turnは別の明示操作、か、(B)直ちにrun/モデル呼出しを始める、かをユーザー確認する。明示決定がない間はBを実装/起動しない。BならGPU、run artifact、二重実行、キャンセル等の契約を別途確定する。
+- 現在の動画カードには`★`、`名前`、`＋`、`QA`、`→`の5操作がある。カード本体のクリックでQA一覧を開くため`QA`を除く、残る4操作を`★／名前／＋／→`とする案は**ユーザー確認待ち**。`→`を残すなら質問未選択時は無効で理由を示し、QAブロック操作の決定と役割を重複させない。無断で4操作の別構成を決めない。
+
+### 13.3 データセット画面へ帰還する際の状態・非同期修正
+
+- 「データセット」タブ、左「データセット」、ホームから戻る操作では、遷移**直後に同期的に**`activeDataset`・動画選択・質問選択・フォルダ/検索の動画固有状態を解除し、タイトルを「データセット」、中央をdatasetカード/ロード状態、右側を未選択またはdataset概要に初期化する。前動画の質問やLongVideoBench見出しを残さない。必要な状態は明示URLを正本として復元し、ホームURLへdataset/video/question等を持ち越さない。
+- 戻る直前に進行していた動画一覧/QA/翻訳/previewの応答が帰還後に到着しても、最新ページのDOM/stateを上書きさせない。画面遷移ごとのrequest revision/AbortController等で古い応答を破棄し、stop preview、remove source等の資源解放を行う。初期化/読み直しは`finally`や明示エラー状態を持ち、「読み込み中」のまま永続しない。失敗はエラー文と再試行導線を表示。
+- データセット一覧を表示するだけで既存動画の一覧検索やサムネイル生成を始めない。可能なら取得済みcatalog summaryを再利用し、不必要な全件再計算を避ける。fake/実LongVideoBench、reload/back/forward、急速な往復、遅延応答、重複クリックでそれぞれ回帰検証する。
+- UIフェーズ切替とブラウザ履歴操作ではrun/turn POSTしない。進行中runの画面離脱と明示cancelは従来どおり分ける。
+
+### 13.4 ボタンのクリック感・操作応答
+
+- すべての主要ボタンとQAブロックに`hover`、`focus-visible`、`active`（押下中の明確な背景/枠/影/わずかな沈み込み）、`selected`（持続する選択表示）、`pending`（処理中表示）、`disabled`の区別を与える。カーソル形状、テキスト、クリック可能範囲から操作対象を認識できるようにする。タブ、検索、星/フォルダ/名前、カード選択、QA選択で押下フィードバックの一貫性を検証する。
+- 一時的な`:active`だけに頼らず、検索実行中や非同期保存中は読み込み/完了/失敗を表示し、連打による二重POST・二重操作を抑止する。誤解を招く「実行中」の表示は実際のrun状態と区別する。可能なら全操作はキーボードでも利用可能。ネオンのglowは文字可読性を損なわない強さとする。
+
+### 13.5 実装計画と受入Gate
+
+作業branchは最新の検証済み`feat/workbench-dataset-browser-phase`から切るStep 9専用branch（案: `fix/workbench-browser-interaction-state`）。Step 8の`06fa1e0`を含むことを確認する。`1 micro = 関連検証後1 commit`、Step末尾にphaseへ`--no-ff`で戻し、mainへは統合しない。最新ローカルworktreeがGitHub未同期であるため、GitHub上の古いbranchを基点に実装しない。
+
+| micro | 変更・検証 |
+| --- | --- |
+| 9.1 | ホーム帰還時の同期的リセット、非同期応答破棄、URL/履歴の一致、loading終了/エラー/再試行。 |
+| 9.2 | hoverは動画previewのみ、カード選択後にQA一覧、質問ブロック全体の操作と緑glow、原文/翻訳のイベント分離。 |
+| 9.3 | 承認された4ボタン構成、QAクリック後の動作、タブ/カード/検索等の押下・選択・処理中フィードバック。 |
+| 9.4 | fake UI/回帰、既存LongVideoBench状態の安全な確認、READMEとdocs/dataset-browser.mdの最新操作説明、ブラウザ実表示チェック。 |
+
+受入は「hoverだけでは右QAが出ない」「カードclickで対応QAが出る」「QAブロックを狙って選択できる」「意図しないrun開始なし（A採用時）」「ホーム帰還で前動画と前QAが残らずロード完了/エラー表示へ遷移」「戻る・進む・連打時にも古い応答が侵入しない」「クリックした感覚が視覚的に明確」「ダークテーマ/中央広幅/4列維持」。LongVideoBench実動画の大量previewやGPU使用は引き続き別許可とし、ローカルphase→mainは**ユーザーが実画面を確認して明示承認するまで禁止**する。
