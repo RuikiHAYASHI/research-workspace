@@ -1,7 +1,7 @@
 ---
 date: 2026-09-30
 project: agentic-streaming-videoqa
-status: approved
+status: draft
 topic: workbench-agent-modes-and-readable-memory
 source: 2026-09-25 MTG; 2026-09-29 and 2026-09-30 agent brainstorm; 2026-09-30 user request
 last_updated: 2026-09-30
@@ -18,7 +18,7 @@ related_brainstorm:
 
 `status: draft`。ユーザーは2026-09-30に**Situation/Memory/Answerの3つのプロンプト方針および選択frame列＋区間相対video timing＋元動画実timestamp manifestの構造を採用し、改訂specの実装前Gateまで進める**ことを承認した。これはspec改訂の許可であり、`approved`への昇格、コード実装、モデルロード・GPU実験を一括承認したものではない。`research-spec`のGateを満たした範囲をユーザーが明示承認した後に`approved`へ変更し、`engineering-task`へ引き継ぐ。Companyの変更は146 serverのローカルcloneへ自動反映しない。
 
-同日、改訂前の初回scope（画像列での`none` / `previous_text`、重要イベント記録、機械用・人間用表示、固定4秒8枚）は別途明示承認済み。この承認は本改訂で追加した`video_clip`入力・窓単位schema・新promptまで及ばない。
+同日、改訂前の初回scope（画像列での`none` / `previous_text`、重要イベント記録、機械用・人間用表示、固定4秒8枚）は別途明示承認・実装済み（第12節）。この承認・実装は本改訂で追加した`video_clip`入力・窓単位schema・新promptまで及ばない。
 
 Authority: 現在のユーザー指示（動画入力・窓単位観測、3つのprompt、過去text ON/OFF、重要状態変化、再起動後保存など）→ 2026-09-25 MTG → approvedな現行spec → Evidence/現在コード → exploratory brainstorm。直近の`2026-09-30-workbench-inference-ui-prompt-library-and-qwen-video.md`にある未確定案は、本書で明示採用した部分だけ実装対象とする。
 
@@ -176,7 +176,18 @@ validated Situation JSON、`{{question}}`、`{{previous.evidence}}`、`{{current
 - 許可なし: 実Qwen/GPU/大規模評価、モデル自動download、sequential_loaderの無関係な変更、他者のprocess停止、無承認のpush/PR/main merge。
 - 個人用Workbench: 固定`8765`と同じ永続DB rootを使い、必要時のみ前面serve起動→同じ端末の`Ctrl+C`で終了。`nohup`/`&`/常駐化を導入しない。
 
-## 12. 参照
+## 12. 改訂前の初回scopeの実装・検証結果（2026-09-30）
+
+- 対象repoのlocal `main` `a491757cabb8ed897a2d752da73325fe15f48884`を基点に、独立worktree `/tmp/longvideoqa-workbench-agent-memory-20260930`、branch `feat/workbench-agent-modes-readable-memory`で実装した。実装HEADは`a50570c5e6d12b69691fe124c2960fc9affde311`。
+- `SituationAgent`、`MemoryAgent`、`AnswerAgent`と呼出し順をソース上で明示し、同一の`ModelAdapter`を共有する。`observation_context_mode`の`none` / `previous_text`を設定・CLI・server・UI・保存・旧run復元へ通した。
+- `previous_text`は直前の正常確定済み`memory.json` narrativeだけをSituationへ渡す。初回、失敗、旧run、`full_rgb`、CLI、serverをFakeで回帰確認した。`none`では過去textもplaceholderも挿入しない。
+- 重要イベントへversionedな`importance_reasons` / `importance_explanation`を追加し、旧6項目eventを読める互換性を維持した。同じ`memory.jsonl`と観測台帳からtimeline、根拠frameの実/目標時刻、memory版と差分をGET時に決定的生成する。独立した第二の正本は作成していない。
+- Fake API受入で`target_only`、4秒、8枚についてframe ID `0..7`、目標時刻`0.0..3.5`秒、実時刻、画像枚数を確認した。明示next/final、cancel、restart、保存run、GET非推論も回帰した。
+- 全回帰`168`件成功。Firefox UI回帰`9`件成功。`python -m compileall -q src tests`成功。top-level / `run` / `serve` / `qwen-preflight`のCLI help成功。差分検査`git diff --check main...HEAD`成功。
+- 未検証は実Qwen/GPU、LongVideoBench実データ、長時間・精度比較。Node.jsが環境にないため`node --check`は実行できなかったが、追加UIはheadless Firefoxで実行確認した。
+- 対象repoの元`main`と既存未追跡docs 3件は変更していない。push、PR、main統合、`sequential_loader`変更、常駐server起動は行っていない。
+
+## 13. 参照
 
 - MTG: `.research/lab/projects/agentic-streaming-videoqa/meetings/2026-09-25-mtg.md`
 - 概念整理: `.research/secretary/notes/brainstorm/2026-09-29-agent-orchestration.md`、`2026-09-30-evidence-adaptive-early-answer-videoqa.md`、`2026-09-30-workbench-inference-ui-prompt-library-and-qwen-video.md`
