@@ -354,3 +354,33 @@ blocking: ユーザーが3ボタン・hover previewのみ・動画clickでQA固�
 - 維持: 既存run/turn、ID、annotation、翻訳の閲覧専用、sequential_loader公開API、因果的Reader/Agent、run artifact、dark themeと中央広幅/4列。
 - 短時間検証: fake unit/integration、loopback、CSS/JS実ブラウザ、compile、CLI help、実LongVideoBenchは許可された軽い登録/表示確認のみ。
 - 対象外: GPU/実モデル、データ取得、無許可preview負荷測定、push/PR、phase→main。
+
+## 14. 次工程の候補: 初期導線とブラウザ応答性（2026-09-29、Step 10 draft）
+
+### 14.1 状態と発端
+
+本節はユーザーの実画面所感と次Stepへの追加依頼に基づく**次工程の計画候補**。Step 9の完了・phase統合・ユーザー受入は未確認であり、既存`status: implemented`（Step 1～8）と第13節のapproved契約を変更しない。実装前にStep 9の9.5・全検証・phaseへの`--no-ff`統合を確認する。Step 9の最新local実装はGitHub remoteへ未pushである可能性があるため、古いremote branchから作業しない。ここでの観察からGPU/ストレージの負荷を測定済みと主張しない。
+
+### 14.2 データセットへ戻る操作の意味
+
+「データセット」へ戻る操作は**ブラウザ選択状態のリセット**（現在のdataset/video/question、右QA、動画固有のtoolbar・hover/preview）とし、dataset一覧のタイトル/詳細/URLに戻す。runのcancel、既存run record・artifact削除、実行済み結果の破棄はしない。実行中runの画面離脱は従来通り明示cancelと別。戻る/進む/refresh時にURLと復元状態を整合させ、閲覧GETがrun/turnを勝手に開始しない。選択を残したい再訪は履歴に沿って復元するが、ホーム画面そのものに旧質問やLongVideoBench見出しを残さない。
+
+### 14.3 初期画面の「推論画面」タブを通常導線から削除
+
+初期の独立推論画面には質問ID手入力の入口があり、上部の`データセット`・`推論画面`タブはその時期から残っている。**通常UIではデータセット/動画/QA未選択状態の上部「推論画面」タブを削除し、推論設定への入口を「動画カード→QA選択→右フッター`推論設定へ`」に一本化する。** 推論設定画面そのもの、CLIでの質問ID指定、既存runの記録・再閲覧、明示的なrun URL/deep link等の実在する保守導線は調査して保持する。既存run閲覧のため入口が必要なら、独立した「実行履歴」等として設計・ユーザー判断を得る。無条件に`#inference-view`や質問ID入力、route、テストを削除して過去結果を見られなくしない。
+
+### 14.4 hover previewとfolder/すべての遅延原因を測る
+
+仮説とコード確認（remote`f184dff5`時点）: `interfaces/media.py`で初回previewに`ffprobe`と条件付き`ffmpeg`がある。ブラウザ互換と判定したmp4は元動画を配信する。`interfaces/browser.py`の`video_list`は毎回`_catalog`を通り、`dataset/longvideobench.py`の`catalog`再構築・`dataset/index.py`の全動画signature更新を伴う。旧`web/browser.js`ではfolder/すべての切替が`loadVideos`し、カード再生成とposter要求が発生する。これは調査対象であり、**最新local Step 9で現在どうなっているかを先に検証**する。
+
+時間を区別して記録: UIクリック/hover→request、`/api/browser/datasets/.../videos`応答、DB folder/お気に入り状態取得、catalog/index、thumbnail、`ffprobe`、cache hit/miss、preview動画配信または変換、初回可視frame、DOM再描画。FakeとLongVideoBench、初回と再訪、cache cold/warmを区別し、ボトルネック不明のまま全面書換えしない。特に共有ストレージが利用中の場合は、まずFake/既存ログ・軽いread-only計測だけ。実動画の大量hover・全件decode・一括thumbnail・cacheクリア・GPU runを無断実行しない。
+
+改善候補: catalog/索引の実体とannotation版を用いた再利用、folder switching時の不必要な再索引と全カードDOM再構築の回避、可視画像だけのlazy thumbnail、hover滞留後のpreview要求、preview/cache hitの再利用、古いhover/requestの破棄、明瞭なpending/失敗fallback。実測と既存コードに基づき必要な最小変更だけを選ぶ。性能調査のために研究用Reader/Agentの因果性・run/record APIを変更しない。
+
+### 14.5 次StepとしてのGate
+
+Step 10は現段階`draft`。作業開始条件はStep 9最終検証とphase統合、実作業木と現在codeのread-only照合、ユーザーの次工程承認。専用branchは最新phaseから作り、1 micro＝検証成功後1独立commit、末尾`--no-ff`でphaseへ戻す。phase→main、push/PR/remote反映は別承認。
+
+想定micro: 10.1 初期タブ整理とrun閲覧経路の非回帰、10.2 folder/すべて切替の処理時間計測と最小改善、10.3 hover初回/再訪の低負荷計測と必要な改善、10.4 dark UI/URL/選択/run非回帰・READMEとdocs更新・ブラウザ受入確認。具体的な性能目標や改善値は計測前に捏造しない。
+
+受入は、初期のQA未選択から直接推論画面へ迷入しないこと、選んだQAだけが明示的に推論設定へ渡ること、既存run/CLI/deep linkが壊れないこと、datasetへ戻れば選択UIだけが解除されること、folder/previewの遅延原因と実測改善が区別されて報告されること。ユーザーが実画面を確認して明示承認するまでphase→mainを行わない。
