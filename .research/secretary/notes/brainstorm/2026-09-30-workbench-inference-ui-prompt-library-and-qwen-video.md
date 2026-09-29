@@ -63,3 +63,19 @@ per-Agent `model_adapter/model_id/generation` をUIに出す。ただし同一Qw
 ## 次に判断したいこと
 
 (1) Aの永続prompt管理を最初にするか、Cのモデルvideo入力を優先するか。個人保存rootの実在/現DBのデータをまずread-only検査。(2) モデル別選択はUIのみ先行して同一Qwenの共有を標準にするか、異種checkpointを今から実動作まで含めるか。(3) video modeの新summary schemaとevent schemaの分担、元frameの証拠位置精度をどう評価するか。初回draftを誤ってapprovedにせず、新たなユーザー判断とspec Gateで具体化する。
+
+## 2026-09-30 04:38 JST 追記：FPS算出と固定URL運用（ユーザー補足）
+
+ユーザー補足: データセットには元動画FPSが公開されているため、区間長と採用枚数からサンプリング後のFPSを計算可能。お気に入りが消えたと思った原因は、ユーザーが違うポート番号のブラウザを開いていたこと。個人利用のWorkbenchを必要時に起動するたび**同じポート・同じURL**で開きたい（常駐化ではない）。
+
+### 動画入力の時刻とFPS
+
+等間隔に`N`枚を`T`秒幅で選んだ場合、目標サンプルFPSは`N/T`（4秒8枚なら2fps）。元動画FPSは元frame indexから実時刻を計算/照合する助けになる。ただし現`target_frame_stream`は「目標時刻以降の最初の実frame」を選ぶため、取得時刻のずれ、元のVFR、不整区間、重複画像があり得る。元fpsや一つの`sample_fps`だけを真の実timestampと混同しない。採用frameごとのtarget/actual timestampを保持。Qwen公式の`type:video`＋frame列＋`sample_fps`、`process_vision_info(... return_video_metadata=True)`に基づき、実環境のprocessorが時刻をどう使うかを低負荷テストで確認。オンラインinputには先読み/元動画パス丸渡しをしない。
+
+### 同じURLと永続DB
+
+現在コード`interfaces/cli.py`は`serve --port`の既定値が`8765`。以前のFake/LVB確認READMEは`18767`、`18768`と確認専用`/tmp/.../library.sqlite3`を利用するため、普段の保存先と混同しやすい。Webサーバーのportは受付先であってSQLite保存先ではない。別portでも`--library-db`が同じならlibraryは共有可能、同じportでも保存先/`XDG_DATA_HOME`が変われば別libraryが見える。今回のユーザー認識を尊重しつつ、技術的には複数instanceのroot/DB分離も考慮して原因を断定しない。過去favoriteデータがあるDBを移動・上書き・初期化せず、現在利用中の起動引数、`--library-db`、`XDG_DATA_HOME`、DBの既存実体をまずread-only照合する。
+
+本人用の標準起動は同一固定ポート（現行実画面の`8765`を候補）と同一永続library path、同じrun-output root、同じ最新版worktreeの`PYTHONPATH`を明示。`--port 8765`を毎回固定し、SSH tunnel/VS Code forwarded local portも同じ番号（`localhost:8765`）に固定、URLをbookmark化する。port使用中は**黙って別の空portへ変更しない**、利用中processを確認してユーザーへ伝える。他者のport/processは殺さない。SSH tunnelがremoteでなく手元に立つ場合は手元8765→server8765のマッピングを指定する。server側から手元ブラウザを勝手に開くのは別操作。閲覧によって実runを開始しない。
+
+既定通り**サーバーは前面起動、Ctrl+Cで終了、非常駐**。`nohup`、`&`、systemd、自動kill、ポート競合時の強制終了は採用しない。異なるworktree/開発branchからの起動や、試験用`/tmp`のDBを普段用へ流用しないこと。固定ポート/保存先に関するCodexへの引継ぎは明示し、別scopeの研究specを勝手に`approved`へ変更しない。
