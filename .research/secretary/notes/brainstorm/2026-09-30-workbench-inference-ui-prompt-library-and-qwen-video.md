@@ -144,3 +144,7 @@ Importance理由の例: `["state_change"]`、`["question_relevance","novelty"]`�
 6. Prompt libraryには各Agent初期builtinの表示名「最初のプロンプト」、説明「実装時に作成したプロンプトです」。原文英語・将来の日本語訳は閲覧用で分け、本文/ID/hash/versionをrun snapshotに保存。編集で旧runは変わらない。
 
 今回のユーザー発話は「文案を見直してから実装」であり、実装・実Qwen/GPU実験・draft specのapproveは未実施。
+
+## 2026-09-30 実装前Gateへの引き継ぎ
+
+ユーザーがSituation/Memory/Answerの3プロンプト方針と、選択済みframe列を1 video inputとし実timestamp manifestを別保持する設計を採用し、既存draft specの改訂と実装前Gateを依頼。改訂先: [2026-09-30-workbench-agent-modes-and-readable-memory-spec](../../../lab/projects/agentic-streaming-videoqa/specs/2026-09-30-workbench-agent-modes-and-readable-memory-spec.md)。statusはdraftのまま、§10 Ambiguity Gateのblockingを解決して明示承認されるまで実装不可。探索候補の動的sampling/早押しは未昇格。
