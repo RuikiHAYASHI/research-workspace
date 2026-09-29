@@ -215,3 +215,51 @@ non-blockingはカードの細かな間隔/文言、実際の画面幅に合わ�
 受入は、中央が左右より広いdataset/video画面、PC4列のcard内hover1本preview＋右QA、元ID非捏造、全索引search/sort後のpage、folder/星のrestart永続、翻訳原文切替、アイコン1クリックでrun設定へ、reload/back時の誤POSTなし、server restart後の別ID先頭再実行、既存LongVideoBench/reader/Agent/records/CLI/API/thumbnailの非回帰で判定する。
 
 実装対象は、前フェーズをlocal mainへ検証済みで統合したclean基点から切るフェーズ親branchと、その子となるStep 1～7。**前フェーズ→local mainとStep→phaseの--no-ff mergeは今回指定のGit手順**。今回のphase→mainは完了レビューと別の明示承認が必要。Video-MME/Ego4D接続、download、実GPU、push/PR/remote反映は非許可。短時間fake unit/integration、compile、CLI help、loopback smokeの範囲で検証し、長時間runは別途許可を要する。
+
+## 10. 実ブラウザ受入後のUI修正追補（2026-09-29）
+
+### 10.1 状態・根拠と実行境界
+
+本節は、ユーザーの実ブラウザ確認で見つかった問題と追加要求を受けた、完了済みStep 1～7の後続修正である。元の実装契約、micro commit、結果記録を消さず、追加工程をStep 8とする。スクリーンショットにはFake Browser DatasetとVideo-MMEだけが表示され、データセット画面の下に推論画面が続き、白・ベージュ基調になっていた。
+
+対象コードはWorkbenchの`feat/workbench-dataset-browser-phase`（調査時HEAD: `f184dff5b0d64f18032e43e4df73364bf0aaebf5`）。`web/browser.js`は`hidden`を切り替えているが、`web/style.css`の`.workspace { display: grid; }`などの指定により非表示が上書きされる。LongVideoBenchが見えなかった事象は、先のFake用安全起動手順で`--data-root`を省略したことと区別する。実データ接続の不具合と決めつけない。
+
+**Company同期注意:** GitHubの本specは現時点で`draft`だが、Codex報告ではローカルCompanyにStep 1～7の`implemented`更新と実装記録の未同期変更がある。ローカル変更を捨てたり、古いGitHub版で強制上書きしたりせず、本節を現地の実装記録と差分照合して両方保持する。元の承認/実装履歴の意味を変更しない。本追補の保存はコードやREADMEの変更完了を意味せず、実行は引き継ぎ先のengineering-taskのGateに従う。
+
+作業前に最新branch/HEAD/worktree/dirty/適用指示を再確認する。既存Step 1～7のcommit/merge履歴とユーザー由来の未追跡docsは保全。今回の作業はphase上の受入修正であり、mainへの最終merge、push、PR、実Qwen/GPU、実動画previewの高負荷確認、データダウンロードは許可しない。
+
+### 10.2 必須修正・受入条件
+
+1. **画面切り替え:** 初回は`#browser-view`のみ表示し`#inference-view`を完全に非表示とする。推論タブと「推論へ」では逆に切り替え、データセットへ戻したときは推論画面が下に残らない。共通CSSの`[hidden] { display: none !important; }`などでCSSのgrid/flexとの競合を修正する。初回、タブ、reload、back、forward、エラー時を実表示で確認する。画面移動だけでrun/turn POSTを行わない。CSS文字列だけのテストでは受入不可。
+2. **LongVideoBenchの表示:** `--data-root longvideobench=...`を指定して起動した場合はLongVideoBenchのdatasetカード・動画数・QA数・取得状態を表示し、Fakeだけの確認用起動と区別する。既存データルートの`lvb_val.json`と`videos/`の存在・権限・注釈形式をread-onlyで確認する。Fakeは「テスト用」と明示し、実登録データを見つけやすくする。登録失敗を成功表示にしない。Video-MMEは接続準備中のみ。全件decode、動画preview、GPU処理は登録確認で行わない。
+3. **黒を主役にしたデザイン:** 全体背景`#0B0E12`、panel`#151A21`、raised`#1D242D`、主要文字`#F4F6F8`、補助文字`#A9B3BD`、境界`#303944`、落ち着いた緑アクセントを基準とする（読みやすさ優先で調整可）。`color-scheme: dark`に対応し、背景だけでなくカード、右QA、推論設定、実行履歴、ボタン、input/select/textarea、status、hover/focus/disabled/error/loadingまで一貫させる。既存CSSの白背景直書きを残さない。巨大な見出し・上余白を縮め、中央優先の3列と十分な幅での動画4列、狭幅折畳みを維持する。
+4. **既存契約を守る:** 元ID、質問選択、YAML/英語prompt、sequential_loader公開API、reader/Agent、1 window/turn、run/artifactを変更しない。タブ/閲覧/検索/翻訳は推論を開始しない。
+
+### 10.3 README・利用手順の更新を必須成果物にする
+
+Workbenchコード側のルート`README.md`と`docs/dataset-browser.md`を実装と一緒に更新する。READMEの目立つ位置に、実装確認に使う正しい**phase worktree/HEAD、Python仮想環境、実際のimport元、旧サーバーと衝突しないポート**を示す。次の2経路を混同しないコマンドで明示する。
+
+- **Fakeだけの安全なUI確認:** `--data-root`なし。GPU不可視、既存環境のみ使用、独立した小さなDB/cache/output、既存サーバーと別ポート。レイアウト・タブ・右QA・テーマを確認する。
+- **LongVideoBench登録確認:** `--data-root longvideobench=/mnt/HDD18TB/hayashi/data/LongVideoBench`あり。`lvb_val.json`と`videos/`を確認し、データセットカード/件数/状態を確認する。軽い注釈読取・動画存在確認が生じるため共有サーバー利用状況を確認してから行う。動画一覧のposter取得やhoverはffmpeg/ディスク読取・cache書込を発生させ得るので、別途許可なく自動実行しない。
+
+README/docに`PYTHONPATH="$PWD/src..."`または同等の手段で旧editable installとの取り違えを防ぐimport元の確認、`python -m longvideoqa_workbench serve`による確実な起動、`CUDA_VISIBLE_DEVICES=""`、SSHポートフォワーディング、正しいブラウザURL、終了時のCtrl+C、トラブルシュートを含める。仮想環境が未確認なら存在を検証してから使う。新たなpip installやモデル重み取得を勝手に行わない。
+
+**サーバーを起動するだけではQwen3-VLの重みをロードしない**ことと、「最初のターンを実行」を押すとモデル使用に進むことを明示する。DB、media cache、run outputの保存先を分離し、共有ディスク負荷・既存起動サーバーへの影響を記載する。`docs/dataset-browser.md`の内容をREADMEから直接参照できるようにし、旧画面につながる曖昧な説明を残さない。
+
+### 10.4 追加Step 8のブランチ・micro commit計画
+
+Step 1～7は改番しない。親branch`feat/workbench-dataset-browser-phase`の最新clean HEADから専用branch`fix/workbench-browser-acceptance-ui`を作る（同名branchがあれば事前照合）。各microを実装→最小関連テスト→diff確認→独立commitとし、末尾検証成功後に`git merge --no-ff`でStep 8 branchをphaseへ戻す。mainへはmergeしない。
+
+| micro | commit表題案 | 変更と検証 |
+| --- | --- | --- |
+| 8.1 | 画面タブの非表示制御を修正する。 | hiddenとCSS gridの競合、初回/切替/reload/back/forward、誤POSTなし。実ブラウザで非選択画面の非表示を確認。 |
+| 8.2 | Workbenchの画面を黒基調のテーマに統一する。 | CSS変数と白背景直書き、全画面、入力、QA、状態表示、アクセシビリティ、3列/4列/狭幅の確認。 |
+| 8.3 | 実データとFakeを区別して表示する。 | 登録あり/なし/無効パスのcatalog、LongVideoBenchカードと件数、Fake表示、Video-MME準備中を検証。実動画の高負荷操作はしない。 |
+| 8.4 | READMEに新UIの安全な起動手順を記載する。 | ルートREADMEとdocs/dataset-browser.mdを更新し、2種類の起動、import元、別ポート、SSH、ディスク/モデル境界を現行CLIと照合。 |
+| 8.5 | 実ブラウザ受入と既存機能を回帰確認する。 | 全関連テスト、compileall、CLI help、fake API、diff/dirty、実表示を確認。不可ならユーザー確認用の手順と未実施理由を報告。 |
+
+### 10.5 main統合前のユーザー確認Gate
+
+**Step 8が完了し、検証済み修正をphase branchへ統合した段階で、ユーザーへ新UIの実行手順を必ず提示し、実ブラウザ確認を待つ。** 少なくとも正しいbranch/worktree/HEAD、Python import元、Fake用とLongVideoBench登録用の起動コマンド、SSHトンネルとブラウザURL、不要なモデルロード/previewを避ける操作、テスト結果、未検証事項を示す。画面スクリーンショットは実際に取得できた場合のみ提示する。
+
+ユーザーがLongVideoBenchカード、画面の相互非表示、黒基調、中央幅とQAを実際に確認し、問題があれば同じphaseで追加修正・再検証する。**ユーザーから明示的な最終承認を得るまでphase→local mainのmergeを行わない。** 過去の統合許可を今回の修正後へ自動流用しない。push/PR/remote反映、GPU、実動画preview負荷測定は別の許可とする。
