@@ -101,3 +101,9 @@ micro実装候補（全てユーザーがspec化を明示してGateを通過し�
 ### 次のユーザー判断とhandoff
 
 「今週の正式scopeを可読化・追跡基盤に絞るか」「4秒8枚の推論前previewも今週に含めるか」「shadow adaptive proposalの表示まで含めるか」を決める。仕様化を明示依頼された場合、研究specでbranch/read-only current code、互換性、Gate、micro testと成果物を確定する。今週案は仮であり、自動TODO化やコード変更はしない。
+
+## 2026-09-30 01:00 JST：研究specへの引き継ぎ
+
+ユーザーから2026-09-30に、観測Agentへ前のテキストを渡す／渡さない複数モードの実装を進める意向と、新規spec・Codex向けプロンプト作成の依頼があった。研究specに初回scopeの草案を作成した（status: draft、コード実装未承認）。本brainstormの早押し・動的sampling・未来の多モード比較は依然exploratoryであり、新specへ自動昇格しない。
+
+昇格先: [2026-09-30-workbench-agent-modes-and-readable-memory-spec](../../../lab/projects/agentic-streaming-videoqa/specs/2026-09-30-workbench-agent-modes-and-readable-memory-spec.md)
