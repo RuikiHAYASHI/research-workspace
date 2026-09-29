@@ -291,43 +291,66 @@ Step 8 branchはphaseへ`--no-ff`で統合し、merge commit兼更新後phase HE
 
 未実施はユーザー自身のブラウザによる最終受入、実Qwenのmodel loadとGPU推論、実LongVideoBenchの動画一覧・thumbnail・hover preview性能確認、Argos本体と英日modelのinstall/runtime smoke、Video-MME/Ego4D接続、push、PR、remote反映、phase→local main最終統合である。ユーザーの画面確認と明示承認までphaseをmainへ統合しない。
 
-## 13. ユーザー実画面レビュー後の画面状態・QA操作修正（Step 9案、2026-09-29）
+## 13. ユーザー実画面レビュー後の画面状態・QA操作修正（Step 9、2026-09-29）
 
-### 13.1 根拠・状態・変更の境界
+### 13.1 Authority・状態・基点
 
-ユーザーがStep 8後の実LongVideoBench画面を確認し、黒基調の見栄えは改善した一方、質問が多い場合の選択、動画からデータセット一覧への帰還、ボタンの操作感を修正するよう依頼した。提示画像では動画にカーソルを置いた時点で右に長いQAが表示され、ホームへ戻った後も中央に「データセットを読み込んでいます…」が残り、タイトルがLongVideoBenchのまま、右側の前動画QAも残っている。
+**Step 9 status: approved（2026-09-29、ユーザーが候補UXに明示同意しspec更新と実装を依頼）。** 既存frontmatterの`status: implemented`はStep 1～8までの完了を保持するため変更しない。Step 9は本節のapprovedな追加受入契約とし、必要な検証完了時に本節へ実装結果を追記する。既存Step 1～8の設計・commit・検証記録を消さない。
 
-本節はStep 1～8の実装結果を取り消さない**追加受入修正のdraft**であり、既存frontmatterの`implemented`はStep 1～8の実装記録を指す。本節の未決Gateが解消して明示承認されるまでStep 9の実装可能な全契約とは扱わない。WorkbenchのCompany記録ではStep 8後のローカルphase HEADは`06fa1e0681242cdded611f5e791e1c41b0146380`。GitHubの研究コードremote phaseは確認時点では`f184dff5b0d64f18032e43e4df73364bf0aaebf5`で、Step 8後の現物は未push。古いremoteへ直接編集せず、Codexが最新ローカルworktreeのHEAD/dirty/適用指示/現コードを再監査してから変更する。画像からはUI症状を確認できるが、JSの具体的なrace原因は最新ローカルコードで検証する。
+実ブラウザで確認された症状は、動画hover時に長いQAが右欄へ即表示されること、ホーム帰還後に中央の「データセットを読み込んでいます…」が残り、見出しがLongVideoBenchのまま、以前の質問が右欄に残ること、操作ボタンの押下感が弱いこと。ユーザーはその後、3つの独立ボタン、動画click後のQA固定、QA選択後の推論設定への移動、QA独立スクロールを確定した。以前の「4ボタン案」「QAブロックclickで即遷移案」「hoverでQAを出す案」は本節では採用しない。詳細な比較は同日のbrainstormを参照。
 
-### 13.2 閲覧状態を独立させる
+研究コード: `RuikiHAYASHI/2026_09_hayashi_longvideoqa_workbench`。CompanyのStep 8記録にあるlocal phase HEADは`06fa1e0681242cdded611f5e791e1c41b0146380`。GitHub remote phaseは本節更新直前の取得では`f184dff5b0d64f18032e43e4df73364bf0aaebf5`で、Step 8を含まない。**最新のlocal phase worktreeを監査し、Step 8を包含することを確認して作業する。古いremoteからbranchを作らない。** 現地のHEAD、dirty、他worktree、既存差分が予告と異なる場合は安全に照合し、ユーザー変更の上書きをしない。
 
-- 状態は`dataset一覧`、`動画一覧・hover preview`、`動画選択済み・QA一覧`、`推論設定・run`を分け、画面ごとのタイトル、中央内容、右詳細、操作欄、URL、hover/selectionをそれぞれ一貫して制御する。
-- 動画一覧でカードを**hover/focusしただけでは質問本文・選択肢を表示しない**。右側は動画のposter/previewを主役にし、表示中動画の基本情報のみ添える。既存カード内previewとの二重再生/二重decodeを避け、同時preview上限と失敗fallbackを維持する。動画カード本体を明示クリック/Enter等で選択した後、右側をその動画のQA一覧に切り替える。別のカードへのhoverだけで選択済みQAを不用意に上書きしない。
-- QA一覧は1問ごとに「質問文＋選択肢」を**1つの操作可能なブロック**とし、ブロック全体のhoverとキーボードfocus時にネオン寄りの緑の輪郭・穏当なglowを表示。クリック/Enter/Spaceで**そのブロックの正しいquestion ID**を選ぶ。選択中・hover中・disabledの区別、文字/焦点コントラスト、`prefers-reduced-motion`を考慮する。翻訳・原文切替などブロック内の別ボタンは選択/遷移を誤発火させない。答えの正解ラベルは露出しない。
-- **blocking未決:** QAブロック押下による「実行」は、(A)既存の`推論設定画面へ質問を引き継いで遷移するだけ、実際のrun/turnは別の明示操作、か、(B)直ちにrun/モデル呼出しを始める、かをユーザー確認する。明示決定がない間はBを実装/起動しない。BならGPU、run artifact、二重実行、キャンセル等の契約を別途確定する。
-- 現在の動画カードには`★`、`名前`、`＋`、`QA`、`→`の5操作がある。カード本体のクリックでQA一覧を開くため`QA`を除く、残る4操作を`★／名前／＋／→`とする案は**ユーザー確認待ち**。`→`を残すなら質問未選択時は無効で理由を示し、QAブロック操作の決定と役割を重複させない。無断で4操作の別構成を決めない。
+### 13.2 確定した画面遷移と動画・QA選択
 
-### 13.3 データセット画面へ帰還する際の状態・非同期修正
+1. **4つの明示状態**を区別する: (a) dataset一覧、(b) 動画一覧とhover preview、(c) 動画固定選択とQA一覧、(d) 推論設定/既存run。タイトル、中央内容、右欄、選択、URL、履歴、非同期応答は現在状態を正本として整合する。旧run保持・画面離脱とcancel分離を維持。
+2. **hover/focus（まだ未選択の動画）:** 質問本文・選択肢は出さず、動画poster/previewとID・時間・QA件数等の最小情報のみ。既存カード内previewと右欄previewで同じ動画を二重再生・二重decodeしない。既存のlazy、同時1本、停止・失敗時posterの契約を守る。hoverしただけではselected video/questionやURLを確定しない。
+3. **動画カード本体click/Enter:** その動画のQA一覧を右欄に固定表示する。別カードへのhoverだけで固定QAを上書きしない。別動画カードを明示選択すれば旧質問選択を解除して新動画のQAを表示する。0問ならその旨と推論不可を表示し、複数問を自動で先頭選択しない。
+4. **カード上の独立操作ボタンは3個だけ:** `☆ お気に入り`、`名前（別名編集）`、`＋（フォルダへ追加）`。従来の`QA`、`→ 推論へ`を除去する。3ボタン操作をカード本体の動画選択clickに伝播させない。アイコン単体でも操作意味が分かるtitle/aria-label/tooltip等を既存方式に合わせる。
+5. **QA選択は2段階:** 1問分の「質問本文＋選択肢」を丸ごとクリック/Enter/Space可能なブロックとし、hover/focus時にネオン寄りの緑輪郭と控えめなglow、selected時には継続した緑枠と明示した選択状態を表示。クリックはquestion IDの選択を確定するだけで推論画面へ遷移しない。翻訳/原文切替は内部独立操作でイベントがQA選択/遷移に誤伝播しない。翻訳表示は原文annotation・選択肢順・Agent入力・正解ラベル非表示を維持。
+6. **右パネル下部に固定した`推論設定へ →`を1つだけ配置:** 質問未選択ではdisabled、質問選択後だけ有効。押下して選択済み**原文question ID**とdataset/video IDを既存推論設定へ引継ぎ、画面を切り替える。これだけでrun/turn POSTやQwen load/GPU推論を開始しない。実行は従来の「最初のターンを実行」の明示操作のみ。labelを`実行`と誤認させない。
+7. URLはdataset/video/question/viewの現在状態と一致させる。reload/back/forwardで選択と表示を復元する場合も、動画を固定していない段階でQA一覧を勝手に開かない。スクロール位置の復元は選択中動画/質問との整合を優先する。
 
-- 「データセット」タブ、左「データセット」、ホームから戻る操作では、遷移**直後に同期的に**`activeDataset`・動画選択・質問選択・フォルダ/検索の動画固有状態を解除し、タイトルを「データセット」、中央をdatasetカード/ロード状態、右側を未選択またはdataset概要に初期化する。前動画の質問やLongVideoBench見出しを残さない。必要な状態は明示URLを正本として復元し、ホームURLへdataset/video/question等を持ち越さない。
-- 戻る直前に進行していた動画一覧/QA/翻訳/previewの応答が帰還後に到着しても、最新ページのDOM/stateを上書きさせない。画面遷移ごとのrequest revision/AbortController等で古い応答を破棄し、stop preview、remove source等の資源解放を行う。初期化/読み直しは`finally`や明示エラー状態を持ち、「読み込み中」のまま永続しない。失敗はエラー文と再試行導線を表示。
-- データセット一覧を表示するだけで既存動画の一覧検索やサムネイル生成を始めない。可能なら取得済みcatalog summaryを再利用し、不必要な全件再計算を避ける。fake/実LongVideoBench、reload/back/forward、急速な往復、遅延応答、重複クリックでそれぞれ回帰検証する。
-- UIフェーズ切替とブラウザ履歴操作ではrun/turn POSTしない。進行中runの画面離脱と明示cancelは従来どおり分ける。
+### 13.3 右欄の独立スクロール
 
-### 13.4 ボタンのクリック感・操作応答
+- デスクトップ右パネルはviewport内にsticky配置し、**上部の選択動画情報（必要ならposter/小preview）、中央のQA一覧、下部の`推論設定へ`固定フッター**の3領域に分ける。QA一覧に`min-height: 0; overflow-y: auto`等を適用し、header・footer高を差し引く最大高さを実測に合わせる。右パネルは中央動画一覧の最下端に到達しなくてもQA末尾まで読める。
+- QA3件以上・長文質問・複数選択肢・翻訳拡張時でもQA末尾がfooterに隠れない。選択ブロックへキーボードフォーカスしたとき可視領域へ入る。必要に応じ内部`overscroll-behavior`を調整し、QAスクロールで中央動画一覧を不用意に動かさない。
+- 右側をhoverで再描画して`scrollTop`を飛ばさない。固定中は別動画hoverでQAを置き換えない。動画の明示切替時のみQA選択とスクロール位置を意図的に初期化する。狭い画面では既存のresponsive設計に適合するdrawer/独立領域としてスクロール可能にし、footerを見失わせない。プレビュー/QAを同時表示する場合も二重動画再生を増やさない。
 
-- すべての主要ボタンとQAブロックに`hover`、`focus-visible`、`active`（押下中の明確な背景/枠/影/わずかな沈み込み）、`selected`（持続する選択表示）、`pending`（処理中表示）、`disabled`の区別を与える。カーソル形状、テキスト、クリック可能範囲から操作対象を認識できるようにする。タブ、検索、星/フォルダ/名前、カード選択、QA選択で押下フィードバックの一貫性を検証する。
-- 一時的な`:active`だけに頼らず、検索実行中や非同期保存中は読み込み/完了/失敗を表示し、連打による二重POST・二重操作を抑止する。誤解を招く「実行中」の表示は実際のrun状態と区別する。可能なら全操作はキーボードでも利用可能。ネオンのglowは文字可読性を損なわない強さとする。
+### 13.4 dataset一覧に戻る不具合の修正
 
-### 13.5 実装計画と受入Gate
+- 上部「データセット」、左ホーム、back等でdataset一覧へ移る際、**同期的に**`activeDataset`、`pinnedVideoKey`、`selectedQuestion`、動画固有の検索/フォルダ/QA表示を必要に応じ解除し、タイトルを「データセット」、右欄を未選択またはdataset概要へ切替え、前動画のQA/LongVideoBench見出しを残さない。run artifactとrun stateは画面stateとは別に保持する。
+- 進行中の動画一覧・翻訳・hover/preview・dataset取得の古い非同期応答が後から戻っても現在ページのDOM/stateを書き換えない。現在のrequest revision/AbortController等、既存構造に適した方式でraceを防止する。移動時にpreviewを停止して必要な資源を解放する。
+- dataset一覧の初回表示・再訪・連打・reload/back/forwardでloadingが必ず成功表示またはエラー表示＋再試行へ遷移する。失敗を黙殺して永続loadingにしない。必要なら既取得catalog summaryを再利用するが、古い値を現在の登録状態として偽装しない。ホーム表示だけで動画decode・thumbnail一括生成しない。
+- tabや履歴移動だけでrun/turn POSTをしない。進行中runの画面離脱と明示cancelを引き続き区別する。
 
-作業branchは最新の検証済み`feat/workbench-dataset-browser-phase`から切るStep 9専用branch（案: `fix/workbench-browser-interaction-state`）。Step 8の`06fa1e0`を含むことを確認する。`1 micro = 関連検証後1 commit`、Step末尾にphaseへ`--no-ff`で戻し、mainへは統合しない。最新ローカルworktreeがGitHub未同期であるため、GitHub上の古いbranchを基点に実装しない。
+### 13.5 押下・選択・非同期操作の視覚フィードバック
 
-| micro | 変更・検証 |
-| --- | --- |
-| 9.1 | ホーム帰還時の同期的リセット、非同期応答破棄、URL/履歴の一致、loading終了/エラー/再試行。 |
-| 9.2 | hoverは動画previewのみ、カード選択後にQA一覧、質問ブロック全体の操作と緑glow、原文/翻訳のイベント分離。 |
-| 9.3 | 承認された4ボタン構成、QAクリック後の動作、タブ/カード/検索等の押下・選択・処理中フィードバック。 |
-| 9.4 | fake UI/回帰、既存LongVideoBench状態の安全な確認、READMEとdocs/dataset-browser.mdの最新操作説明、ブラウザ実表示チェック。 |
+主要なタブ、動画カード、3独立ボタン、検索、folder、QAブロック、`推論設定へ`に`hover`、`focus-visible`、`active`（押下で小さく沈む/背景・影変化）、`selected`（維持される枠・背景・ラベル）、`pending`（処理中/二重操作抑止）、`disabled`を適用する。操作可能要素のマウスカーソルとキーボード操作を整える。ネオン緑は強調に限定し、本文の可読性、コントラスト、`prefers-reduced-motion`に配慮する。単に`:active`で一瞬色が変わるだけではなく、非同期保存・検索に結果/失敗の応答を表示する。`推論設定へ`の押下を「モデル実行中」と誤表示しない。
 
-受入は「hoverだけでは右QAが出ない」「カードclickで対応QAが出る」「QAブロックを狙って選択できる」「意図しないrun開始なし（A採用時）」「ホーム帰還で前動画と前QAが残らずロード完了/エラー表示へ遷移」「戻る・進む・連打時にも古い応答が侵入しない」「クリックした感覚が視覚的に明確」「ダークテーマ/中央広幅/4列維持」。LongVideoBench実動画の大量previewやGPU使用は引き続き別許可とし、ローカルphase→mainは**ユーザーが実画面を確認して明示承認するまで禁止**する。
+### 13.6 Step 9 micro plan・変更境界
+
+最新のcleanなphase `feat/workbench-dataset-browser-phase`から`fix/workbench-browser-interaction-state`を作る（既存同名なら監査）。**1 micro＝1関連検証後の独立commit**。Step末尾で関連回帰成功後に`git merge --no-ff`でphaseへ戻し、Step branchは保存する。新branchを古いremote`f184dff5`から切らない。既存の前フェーズ保全・Step 1～8 commitをsquash/rebase/reset/forceで変更しない。local/remote mainへのmerge、push、PRは別許可。
+
+| micro | commit表題案 | 作業と検証 |
+| --- | --- | --- |
+| 9.1 | `データセット画面への復帰と非同期表示状態を修正する。` | ホーム同期リセット、旧応答破棄、URL/back/forward/reload、永続loading防止、右欄クリア、誤POSTなし。 |
+| 9.2 | `動画選択前のプレビューと選択後のQA表示を分離する。` | hover/focusでQAなし、カードclickでQA固定、別hover非上書き、0問/多問、preview同時1本・停止・poster fallback。 |
+| 9.3 | `QAの選択と右欄の独立スクロールを整える。` | 1QA=1ブロック、緑hover/selected、原文切替分離、固定上部/下部＋中間スクロール、3問以上・長文・狭幅・keyboard。 |
+| 9.4 | `カード操作と推論設定への導線を整理する。` | 3ボタン、QA選択でフッター有効、押下feedback、question ID引継、遷移時run/turn/GPUなし、二重操作防止。 |
+| 9.5 | `新しいQA操作を文書化して受入回帰を確認する。` | `README.md`と`docs/dataset-browser.md`の操作説明更新、fake/実LVB軽負荷UI、browser実表示、全関連test・compileall・CLI help・fake API、diff/statusを記録。 |
+
+必須受入: (1) hoverではQA非表示・動画情報/previewだけ、(2) clickでQA固定、(3) 3独立ボタン、(4) QA選択緑枠/選択持続、(5) footerが未選択disabled・選択後有効・遷移だけでrunなし、(6) 右欄QA末尾まで独立スクロール、(7) ホーム帰還後に旧タイトル/QAがなくload終了または明示error、(8) hover/高速往復/reload/back/forwardでraceなし、(9) 全画面dark/中央広幅/動画4列・既存推論の非回帰。
+
+実ブラウザ結果は実施した範囲と未実施を区別し、ユーザーが**main統合前に自分で確認できる正確なworktree/HEAD/import元、Fakeと実LVBの起動コマンド、別port/SSH/URL、操作チェック項目**を最終報告で提示する。実LongVideoBench動画の大量previewや長時間性能評価、Argosモデル取得、実Qwen/GPU、Video-MME/Ego4D取得・接続は対象外。ユーザーが画面を確認して**明示承認するまでphase→local mainを行わない**。
+
+### 13.7 readiness と Implementation Handoff
+
+blocking: ユーザーが3ボタン・hover previewのみ・動画clickでQA固定・QAクリックで選択・別フッターで推論設定へ・QA独立スクロールを明示承認したため、UXの未決事項はない。実装前の現地worktree/dirty/Step 8包含は監査Gateであり、差分衝突があれば勝手に処理せず報告する。non-blocking: neonのglow強度、右欄の実viewport計算、狭幅でのdrawer具体手段は既存styleと実ブラウザ測定に沿い調整できる。
+
+- approved spec: 本書`13節`（Step 9）。
+- 実装目的: LongVideoBenchのQA導線とdataset帰還の安定化、右QAの独立スクロール、明瞭な操作feedback。
+- 対象: 最新ローカルWorkbench phase（Step 8包含）、既存web/UI・必要なテストと`README.md`/`docs/dataset-browser.md`。
+- 維持: 既存run/turn、ID、annotation、翻訳の閲覧専用、sequential_loader公開API、因果的Reader/Agent、run artifact、dark themeと中央広幅/4列。
+- 短時間検証: fake unit/integration、loopback、CSS/JS実ブラウザ、compile、CLI help、実LongVideoBenchは許可された軽い登録/表示確認のみ。
+- 対象外: GPU/実モデル、データ取得、無許可preview負荷測定、push/PR、phase→main。
