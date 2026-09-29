@@ -79,3 +79,19 @@ per-Agent `model_adapter/model_id/generation` をUIに出す。ただし同一Qw
 本人用の標準起動は同一固定ポート（現行実画面の`8765`を候補）と同一永続library path、同じrun-output root、同じ最新版worktreeの`PYTHONPATH`を明示。`--port 8765`を毎回固定し、SSH tunnel/VS Code forwarded local portも同じ番号（`localhost:8765`）に固定、URLをbookmark化する。port使用中は**黙って別の空portへ変更しない**、利用中processを確認してユーザーへ伝える。他者のport/processは殺さない。SSH tunnelがremoteでなく手元に立つ場合は手元8765→server8765のマッピングを指定する。server側から手元ブラウザを勝手に開くのは別操作。閲覧によって実runを開始しない。
 
 既定通り**サーバーは前面起動、Ctrl+Cで終了、非常駐**。`nohup`、`&`、systemd、自動kill、ポート競合時の強制終了は採用しない。異なるworktree/開発branchからの起動や、試験用`/tmp`のDBを普段用へ流用しないこと。固定ポート/保存先に関するCodexへの引継ぎは明示し、別scopeの研究specを勝手に`approved`へ変更しない。
+
+## 2026-09-30 04:47 JST 追記：Qwenに入れる元時刻とvideo_metadataの違い
+
+ユーザーは「Qwenへフレーム列を渡すのか、元動画の時刻情報を入力へどう含めるか」を具体的に確認した。Qwen公式と`qwen-vl-utils`およびtransformersの現在実装で次を区別した。
+
+- 単純なvideo入力: `{"type":"video","video":[選択フレーム画像URI...],"sample_fps":2.0}`。Qwen公式はframe URI列を許す。`process_vision_info(... image_patch_size=16, return_video_kwargs=True, return_video_metadata=True)`でvideoとmetadataを得てprocessorへ渡す。Workbenchに到着済み選択8枚のみを使い、元mp4 pathをQwenへ渡して再samplingさせない。
+- 重要な落とし穴: `qwen_vl_utils/vision_process.py`のlist pathは`frames_indices=range(len(video))`を持つ**fake metadata**を作り、`sample_fps`からその相対時刻を算出する。`raw_fps`だけを元FPSにしてもframe indexが0..7のままなので、20秒地点を正しく表現できない。
+- Qwen3-VLの`replace_video_token`は`metadata.frames_indices / metadata.fps`の時間を計算し、2フレームずつのtemporal patchで初終フレーム時刻を平均して`<x.x seconds>`の動画時刻token/textへ変換する。つまりvideoのfps情報は視覚入力の一部として時刻表示に反映されるが、フレームごとの高精度時刻がそのまま個別video tokenで表示されるわけではない。
+- 基本運用は、video dataは8枚＋`sample_fps=8/4=2`の**区間相対時間**、Agentへのtextは`Original video window: [20,24) seconds; frames: local 0->orig frame500@20.00s, ...`を渡す。時間が不均一でも実timestampは別のmachine-readable frame manifestを保持し、読める形でモデルのpromptにも渡す。回答はイベントの元frame IDを参照し、厳密な時刻は保存済みmanifestから引く。Qwenの秒表示とframe manifestが矛盾しないよう区間相対と絶対をラベルで区別。
+- さらに正確に元の時間を内部video timestampへ載せる**比較候補**: 採用frameを先に用意して`processor(..., videos=[frames], video_metadata=[VideoMetadata(total_num_frames=source_total_frames, fps=source_fps, frames_indices=original_frame_indices)], do_sample_frames=False, ...)`と明示する。CFRなら`orig_idx/source_fps`が元時刻に対応。VFR/PTSやフレームidx重複にはこれだけでは厳密でないため実timestampを正本にし、場合によりmillisecond timebase相当のvirtual indexで表す方法を検討するが未検証。native modeのvideo metadata書換は installed transformers版/Fake・短いsyntheticとrendered token timestampで必須検証し、安易に直接書き換えて本番runしない。
+- `do_sample_frames=False`が重要。Qwen側で追加サンプリングさせない。`VideoMetadata.frames_indices`はQwenのtimestamp placeholderを作るための座標値であり、選択済み8枚を元動画中のframe IDと1対1対応させるのはWorkbenchの責務。
+- model内部の2-frame temporal patch平均と表示丸め(約0.1秒)、奇数frameのpadding、時刻/フレーム対応、GPU用video tensorと画素budget等をテスト観点として残す。純粋なfps=2だけでは元20秒absolute offsetを表せないことを明記。現在の`Qwen3VLAdapter`は画像typeのみ、提案はまだ未実装。
+
+公式: https://github.com/QwenLM/Qwen3-VL/blob/main/README.md#process-videos ; https://github.com/QwenLM/Qwen3-VL/blob/main/qwen-vl-utils/src/qwen_vl_utils/vision_process.py ; https://github.com/huggingface/transformers/blob/main/src/transformers/models/qwen3_vl/processing_qwen3_vl.py ; https://github.com/huggingface/transformers/blob/main/src/transformers/video_utils.py ; https://github.com/huggingface/transformers/blob/main/src/transformers/video_processing_utils.py 。
+
+今は探索記録のみ。実装契約は現行draft specを再レビューし、image baselineとnative video modeは別run/別比較軸。GPU/Qwen runは別許可。
