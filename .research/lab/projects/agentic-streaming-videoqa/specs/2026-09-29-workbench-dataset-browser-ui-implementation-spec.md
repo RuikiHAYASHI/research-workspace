@@ -1,7 +1,7 @@
 ---
 date: 2026-09-29
 project: agentic-streaming-videoqa
-status: draft
+status: approved
 topic: workbench-dataset-browser-ui-implementation
 source: 2026-09-25 MTG, 2026-09-29 brainstorm, current user instructions
 last_updated: 2026-09-29
@@ -13,7 +13,7 @@ git_strategy: integrate previous phase to main, create phase branch, merge Step 
 
 ## 0. Authorityと状態
 
-本書は実装計画のdraftであり、文書更新そのものは研究コード変更・branch作成・commit・download・GPU runの実行ではない。後続のCodexに渡すユーザーの実装指示とresearch-spec/engineering-taskのGateに従い、blocking項目を解消してから作業する。現在のユーザー指示により、前フェーズのcommit整理とmainへの非破壊的統合を今回の新branch作成より先に行う手順を本書に追加する。過去の壁打ち中のEgo4Dカード例、右側動画preview案より、今回のユーザー指示を優先する。承認時にstatusをapproved、必須検証が完了したらimplementedとする。
+本書は2026-09-29のユーザー決定によりapprovedとなった実装契約である。前フェーズのcommit整理とmainへの非破壊的統合を今回の新branch作成より先に行い、その後にStep 1〜7を実装する。過去の壁打ち中のEgo4Dカード例、右側動画preview案より、今回のユーザー指示を優先する。必須検証が完了したらstatusをimplementedとする。文書承認とコード実装は、dependency・翻訳モデルのdownload/install、GPU run、dataset download、push、PR、今回phaseのmain統合を許可しない。
 
 参照: .research/secretary/notes/brainstorm/2026-09-29-dataset-browser-hover-preview.md、meetings/2026-09-25-mtg.md、specs/2026-09-25-sequential-loader-workbench-refactor-implementation-spec.md、specs/2026-09-25-workbench-target-stream-and-hierarchical-memory-spec.md。
 
@@ -73,15 +73,15 @@ https://huggingface.co/datasets/lmms-eval/Video-MME/tree/main
 
 dataset/にはデータセット固有annotation/locatorと共通catalogへの変換。reader/・sampling/・model/・agent/・records/は既存の推論契約を保護。interfaces/には一覧・検索・QA・media・library・翻訳・既存runのAPIを役割別に置く。web/は現行の静的asset構成を尊重する。新datasetを追加しても検索/preview/UI/runをコピーしない。server.py等の巨大化や全面的な再配置を避ける。
 
-サムネイルはlazy。原動画がブラウザ適合ならRangeで要求時配信し、合わなければ要求時だけ数秒の低解像度clipを生成・キャッシュ。原則1本だけ再生し、生成同時数と容量に上限。全尺変換や全件先行probe/thumbnailはしない。hover解除・画面移動で停止、古い非同期結果が新しい選択を上書きしない。失敗時はposter。
+サムネイルはlazy。原動画がブラウザ適合ならRangeで要求時配信し、合わなければ要求時だけ冒頭6秒・最大480p・無音のclipを生成・キャッシュする。同時再生・変換は原則1本、preview cache上限は512MiBとする。必要な動画だけをon-demandで処理し、全尺変換や全件先行probe/thumbnailはしない。hover解除・画面移動で停止、古い非同期結果が新しい選択を上書きしない。失敗時はposter。取得済みLongVideoBenchの代表2本はH.264/720pであり、実装後の短時間測定でこの設定を変更する必要が生じた場合は、測定値と理由を先に示す。
 
-星/最近使用/任意別名/ユーザー作成フォルダは、実動画を動かさない論理collectionとしてSQLite等のrepo外の永続領域に保持。複数フォルダ所属可、フォルダ削除は元動画/run非削除。datasetと正式ID/内部キーで他datasetへの誤紐付けを防ぐ。runのartifact、media cache、user DBを別管理する。
+星/最近使用/任意別名/ユーザー作成フォルダは、実動画を動かさない単一ユーザー向け論理collectionとしてSQLiteへ保持する。DB pathは設定可能とし、既定は`$XDG_DATA_HOME/longvideoqa-workbench/library.sqlite3`、`XDG_DATA_HOME`未設定時は`~/.local/share/longvideoqa-workbench/library.sqlite3`とする。一時directory、repository、run artifact配下には置かない。複数フォルダ所属可、フォルダ削除は元動画/run非削除。datasetと正式ID/内部キーで他datasetへの誤紐付けを防ぐ。run artifact、media cache、user DBを別管理し、DB fileのcopyによる停止中backup手順を文書化する。
 
-日本語訳は右パネルの質問文または翻訳アイコンクリック時のみ、質問と4選択肢をtext-onlyで翻訳する。原文切替、選択肢ラベル/順序保持、原文digestとtranslator versionによるcache。元annotation/答え/モデルに渡す原文を変更しない。翻訳provider/外部送信は第8節Gateで固定する。
+日本語訳はArgos Translate 1.11.0と英語→日本語モデルを用いるローカルCPU text-only処理とし、右パネルの翻訳アイコンクリック時だけ質問と選択肢を翻訳する。外部serviceへ本文を送信しない。原文切替、選択肢ラベル/順序保持、原文digestとtranslator versionによるcacheを実装し、元annotation、答え、Agentへ渡す原文を変更しない。Argos本体または英日モデルが未導入なら利用不可理由を画面へ表示する。dependencyとモデルのdownload/installは別の明示許可まで行わない。Argos 1.11.0はPyPI metadata上でPython 3対応の`py3-none-any` wheelと`Python >=3.5`を宣言しており現行Python 3.12の導入候補にできるが、実runtime互換性は別許可後のinstall smokeで確定する。
 
 ## 6. 保存・復元・中止
 
-browser reload/back/forwardは選択値/検索条件を復元し、既存runはGETで閲覧するだけ。表示操作でPOSTや次turnを二重実行しない。どの画面からもホームに戻れる。単なる画面離脱とrun cancelは別操作・明示確認。browser backはturnのundoではない。
+browser reload/back/forwardは選択値/検索条件を復元し、既存runはGETで閲覧するだけ。表示操作でPOSTや次turnを二重実行しない。どの画面からもホームに戻れる。単なる画面離脱とrun cancelは別操作・明示確認。browser backはturnのundoではない。中止要求後は新しいturnを開始せず、進行中のモデル呼出しを強制終了せずに現在のturnが安全に終了した時点でreader等を解放し、旧run artifactをcancelledとして保持する。
 
 server再起動でactive reader sessionが消えた場合、旧runのtext artifact・設定は閲覧用に保持し、旧runへの追記や厳密resumeはしない。「先頭から再実行」明示ボタンで別run_idを発行して最初から実行。server起動だけでGPU処理は始めない。旧thumbnailは現在のsession-only契約を維持。folder/星/最近使用/別名は同じ永続DBを再openして戻す。DB領域自体が削除された場合は復元不能と明示。欠損video/無効URL/多重クリック・競合を安全に表示・抑止する。
 
@@ -200,15 +200,13 @@ branch: test/workbench-browser-integration
 
 末尾: Workbench・sequential_loader全関連test、compileall、CLI help、fake API smoke、可能ならbrowser手動検証。未実施項目は未実施と記録。
 
-## 8. approved前のblocking事項
+## 8. readinessと解決済みGate
 
-1. 翻訳provider: ローカルtext-only翻訳器か、ユーザーが明示許可した外部APIか。無断の外部送信/GPU起動は禁止。依存、品質、翻訳キャッシュのversionと接続方法を固定する。
-2. 現行local Workbenchのmain/開発branch/HEAD/worktree/dirtyとAPI構成、前フェーズの未統合commit、今回の統合対象・順序を確認する。旧remoteを最新版とみなさない。mainの保護設定、競合、未追跡の扱いが未解決なら統合しない。
-3. 永続DBのrepo外配置、backup、単一ユーザーか複数利用者かの単位と権限。
-4. preview実動画のcodec/Range/NAS負荷を代表動画で確認し、clip秒数、cache容量・並列数を確定。未許可ならfake契約のみ。
-5. cancelがモデル呼出し中に即時かturn境界か。既存sessionとrun status契約に合わせる。
+2026-09-29のlocal監査とユーザー決定により、実装の意味を変えるblocking事項は解消した。翻訳はArgos Translate 1.11.0のローカルCPU英日モデル、永続DBは設定可能なrepo外XDG data領域の単一ユーザーSQLite、previewは冒頭6秒・最大480p・同時1本・512MiB、cancelは現在turnの安全な終了後に資源解放する契約とする。Argos dependency・英日モデルが未導入の状態は実装blockerではなく、利用不可状態を明示する受入ケースである。
 
-non-blockingはカードの細かな間隔/文言、実際の画面幅に合わせるbreakpointなどで、既存styleに従う。原本ID規則・中央優先幅・明示run・非回帰の要件は省略不可。
+現行local Workbenchはmain `41b5870`、前フェーズ先端`e0d1c70`、main上の未commitサムネイル修正2件、未追跡docs 3件を確認した。サムネイル修正2件は専用保全branchで該当fileだけをcommitし、未追跡docsは変更・stage・commitしない。保全branchと前フェーズ先端を順にlocal mainへ`--no-ff`統合し、競合時は既存サムネイル修正と`e0d1c70`のreader mode対応を両方保持する。Workbench 86件、sequential_loader 182件、compile、CLI helpは統合前のclean先端で成功している。
+
+non-blockingはカードの細かな間隔・文言、実画面幅に合わせるbreakpoint、SQLiteのbusy timeout等で、既存styleと標準libraryに従う。原本ID規則、中央優先幅、明示run、非回帰の要件は省略不可。Argosの実install後runtime smoke、実動画での継続的なpreview性能測定、実GPU推論は別許可事項として未実施に残す。
 
 ## 9. 受入・Implementation Handoff
 
@@ -263,3 +261,23 @@ Step 1～7は改番しない。親branch`feat/workbench-dataset-browser-phase`�
 **Step 8が完了し、検証済み修正をphase branchへ統合した段階で、ユーザーへ新UIの実行手順を必ず提示し、実ブラウザ確認を待つ。** 少なくとも正しいbranch/worktree/HEAD、Python import元、Fake用とLongVideoBench登録用の起動コマンド、SSHトンネルとブラウザURL、不要なモデルロード/previewを避ける操作、テスト結果、未検証事項を示す。画面スクリーンショットは実際に取得できた場合のみ提示する。
 
 ユーザーがLongVideoBenchカード、画面の相互非表示、黒基調、中央幅とQAを実際に確認し、問題があれば同じphaseで追加修正・再検証する。**ユーザーから明示的な最終承認を得るまでphase→local mainのmergeを行わない。** 過去の統合許可を今回の修正後へ自動流用しない。push/PR/remote反映、GPU、実動画preview負荷測定は別の許可とする。
+
+## 11. 実装結果（Step 1〜7、2026-09-29）
+
+readiness Gateで確定したArgos Translate 1.11.0、repo外SQLite、6秒・最大480p・同時1本・512 MiBのpreview、turn境界cancelを実装した。LongVideoBench browser、検索、4列card、右QA、星、recent、別名、folder、表示用翻訳、URL復元、既存推論への導線、旧run閲覧と別ID再実行までをphase branch `feat/workbench-dataset-browser-phase` に統合した。phase HEADは `f184dff5b0d64f18032e43e4df73364bf0aaebf5` で、local mainへの最終統合は未実施である。
+
+前フェーズの保全commitは `17b2bba`、保全branch→mainは `d73d423`、前フェーズ `e0d1c70`→mainの統合commitは `d8863065adb04be08d99661b0acd1b672e9163b8`。元main worktreeの未追跡 `docs/file-relationships.md`、`docs/file-responsibilities.md`、`docs/processing-flow.md` は変更・stage・commitしていない。
+
+| Step | branch | micro commits | phaseへのmerge commit |
+| --- | --- | --- | --- |
+| 1 | `feat/workbench-browser-catalog` | `2f30b48`, `af12ee2`, `f9c5f30` | `1756a60fc0d589b5a64840cf00c4103bdaa5fdc2` |
+| 2 | `feat/workbench-browser-index-search` | `4fd4bfc`, `7e4ddcd`, `2cd36f0` | `6583dbb13b1fe80e39d69c3b8615ee0e675cbae1` |
+| 3 | `feat/workbench-browser-media-preview` | `8bc4d2c`, `ad38058`, `4fffc9c` | `59696d8f3d1be797cc20390fae236183bb12f311` |
+| 4 | `feat/workbench-browser-library` | `a794056`, `3f2a9a1`, `5af663c` | `1f560f47f8ab5298e9cd079440cc021024a7d188` |
+| 5 | `feat/workbench-browser-ui` | `f95ed36`, `3e4ce47`, `7716b8c`, `2529fc3` | `357a094b711f46b1d0b428bd77cc4957e53bfd3d` |
+| 6 | `feat/workbench-browser-navigation` | `dedee56`, `39ee84e`, `277804e`, `fdf7bb5` | `44f525d450532a2a779ac909c05dd5198d8d8c72` |
+| 7 | `test/workbench-browser-integration` | `525bbf8`, `e013150`, `c43b64a`, `2e457ac`, `99cd9bf` | `f184dff5b0d64f18032e43e4df73364bf0aaebf5` |
+
+最終GateはWorkbench `133 passed`、sequential_loader公開checkout `169 passed`、`python3 -m compileall -q src tests`、`longvideoqa --help`と各subcommand help、loopback fake API結合testが成功した。実装用phase worktreeはcleanで、mainは `d8863065adb04be08d99661b0acd1b672e9163b8` のまま保持した。
+
+未実施はArgos本体・英日modelのdownload/installと実runtime smoke、実LongVideoBenchでの継続的preview性能測定、browser実機での手動視覚確認、実Qwen/GPU推論、Video-MME取得・接続、Ego4D接続、push、PR、remote反映、phase→main最終統合である。Node.jsが環境にないため`node --check`は実施せず、JavaScriptは静的契約test、asset配信test、loopback API testで検証した。
