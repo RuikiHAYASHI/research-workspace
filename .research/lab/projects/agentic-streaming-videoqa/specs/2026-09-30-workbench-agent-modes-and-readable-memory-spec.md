@@ -1,7 +1,7 @@
 ---
 date: 2026-09-30
 project: agentic-streaming-videoqa
-status: draft
+status: approved
 topic: workbench-agent-modes-and-readable-memory
 source: 2026-09-25 MTG; 2026-09-29 and 2026-09-30 agent brainstorm; 2026-09-30 user request
 last_updated: 2026-09-30
@@ -17,6 +17,8 @@ related_brainstorm:
 ## 0. 状態・Authority・Gate
 
 `status: draft`。ユーザーは2026-09-30に**Situation/Memory/Answerの3つのプロンプト方針および選択frame列＋区間相対video timing＋元動画実timestamp manifestの構造を採用し、改訂specの実装前Gateまで進める**ことを承認した。これはspec改訂の許可であり、`approved`への昇格、コード実装、モデルロード・GPU実験を一括承認したものではない。`research-spec`のGateを満たした範囲をユーザーが明示承認した後に`approved`へ変更し、`engineering-task`へ引き継ぐ。Companyの変更は146 serverのローカルcloneへ自動反映しない。
+
+同日、改訂前の初回scope（画像列での`none` / `previous_text`、重要イベント記録、機械用・人間用表示、固定4秒8枚）は別途明示承認済み。この承認は本改訂で追加した`video_clip`入力・窓単位schema・新promptまで及ばない。
 
 Authority: 現在のユーザー指示（動画入力・窓単位観測、3つのprompt、過去text ON/OFF、重要状態変化、再起動後保存など）→ 2026-09-25 MTG → approvedな現行spec → Evidence/現在コード → exploratory brainstorm。直近の`2026-09-30-workbench-inference-ui-prompt-library-and-qwen-video.md`にある未確定案は、本書で明示採用した部分だけ実装対象とする。
 
