@@ -59,3 +59,45 @@ Orchestrator（モデルを増やさないPython制御）はread→perception→
 ## 次の判断（今回まだspec化/コード変更しない）
 
 早押しをどこまで要求するか: (a) 最初はreadinessを記録するだけ、(b) ゲートが停止する、(c) 次windowの長さ/枚数まで動的制御する。質問タイプでEOF依存を見分けるgateを必須とするか。メモリはイベント台帳を残し、working stateに全体変化＋質問関連証拠を保持する方向で継続。画面の「指定区間8枚」は、実行設定変更と、推論前の静止画確認を別操作として分ける。直接seekはonline実験と別のoffline preview境界。現行Step 10 UI応答性draftを本テーマのspecとして上書きしない。個人利用の前面serve＋Ctrl+C終了規則を守る。
+
+## 2026-09-30 00:40 JST 追記：質問適応サンプリング、重要度基準、二つの閲覧形式と今週の実装候補
+
+### 今回のユーザー案
+
+質問文の意味からsampling interval（サンプル間隔）とwindow length（1回の観測秒数）を変え、観測中の重要度や不確実性から次のwindowの方針も更新する研究を検討する。Memoryに何を重要として残すかを説明できるようにする。Machine-readableなJSONLと、研究者が一目で読めるhuman-readableなテキスト/画面の双方がほしい。今週の実装スコープを現実的に選ぶ相談であり、この文書はexploratoryのまま、コード変更・spec昇格の許可ではない。
+
+### 重要の意味（単一数値を初手で固定しない）
+
+軸を分ける: (i) question_relevance（質問関連性）、(ii) state_change（人物・物体・場所/所持物の状態変化）、(iii) novelty（既存memoryとの差分）、(iv) uncertainty / unresolved（何が不明か）、(v) evidence_support（元frame/event/時刻への追跡可能性）。question relevanceが低くても大きな状態変化は捨てず、逆に関連が高くても画像から確認できないことを事実扱いしない。event_type、reason、source_frame_ids、time span、fact/inference/uncertain、updated entities等を別フィールドとして保存する。「保持対象か」はモデル候補→スキーマ検証→明示policyの結果と理由を分ける。正解ラベル/全動画後段は観測/選定に渡さない。後で基準を比較できるようにpolicy ID/hashとrunのresolved configを残す。
+
+### JSONLと人間表示の二重化をどう扱うか
+
+**正本はschema-version付きのappend-only JSONL**（既存memory.jsonl/stages.jsonl、関連するmemory.jsonの契約と互換検討）。machine-readableにrun_id、window_index、actual/target timestamps、frame/event IDs、stage/model/prompt/generation版、observed text、decision reasons、prev/next memory version、raw and validated output、error/elapsedを持つ。human-readableな「00:12 event-03 人物が冷蔵庫を開いた（観測事実）→ 00:34 event-04 飲み物を取った（変化）」の時系列timeline、現在の人物/物/場所state、質問関連の証拠、保留不確実性、prev→next memory差分は**同じJSONLから決定的に生成**する。別LLMで独立要約した第二正本を作らない。閲覧はWorkbenchの既存trace viewに統合/あるいはread-only markdown export。人間用画面で提示する文言もsource event IDsへ逆引き可能にする。
+
+機械用モデルレコードの候補（現行schemaではない）:
+~~~json
+{"schema_version":"proposed-v1","kind":"event","event_id":"w0-e1","window_index":0,"start_seconds":1.2,"end_seconds":1.9,"text":"person opens refrigerator","evidence_frame_indices":[12,19],"question_relevance":"medium","state_change":{"entity":"refrigerator","before":"closed","after":"open"},"novelty":"new","uncertainty":"object contents not visible","retention_reason":["state_change","question_context"],"certainty":"fact"}
+~~~
+
+### 質問に適応したサンプリングの二段階
+
+- 初期計画はquestion type（対象状態/順序/個数/最後/全体依存/時間幅不明）から推奨window_seconds、frames_per_window、目標時刻を出す。これは**仮説**であり、実装前に質問型とground-truth leakage境界を検討。
+- 動画を読んだ後はvalidated observation＋working memory（変化、question evidence、未解決事項）から**次の未読windowのみ**のproposal（duration, frame count, reason, constraints）を生成する。現在/過去のframeの追加再取得はonline causal実験と分ける。preserve min/max/budget bounds、実際に採用したtarget/actual timestamps、sampling policy revision、CPU decode/RGB/model costを記録。
+- 現行 `sequential_loader.TimeGridSamplingPolicy` は開始時に `target_windows()` で全動画分の固定区間・targetを構築し、`target_frame_stream`がその計画を消費する。WorkBench `configured_window_stream` はstatic `window_seconds` / `frames_per_window` を渡す。動的に変えるなら次window計画を受け取るreader APIと整合する新specが必要。今週は**shadow proposal**（提案を表示/保存、実readerに反映しない）で因果性/設定監査を先に検証し、正式なadaptive readerは次フェーズ。
+- 通常区間でも状態変化を取り逃し得る。観測されなかった重要eventの検出はモデルだけでは保証不能。均一baseline / 適応版 / 異なる固定予算を分け、question type×evidence timing/spanでaccuracyとRGB/model call/token/wall timeを比較する。
+
+### 今週（9/30〜10/2）に関する候補・ゲート
+
+最小の通る成果物候補は**Agentと証跡の可読化＋4秒8frameの指定/表示＋shadow policy**（実行変更はせず設計・記録）。UI Step 10（初期タブ整理とブラウザ応答性）と研究用Agent基盤は別scopeとして優先度を調整し、実装する場合は現行WorkBench main/phase/ローダーの正本branchと作業木を再照合する。既存read-only history、run/turn POST境界、前面serve/Ctrl+C個人利用を維持する。
+
+micro実装候補（全てユーザーがspec化を明示してGateを通過した後）:
+1. **Agent definition / orchestration manifest**: Situation・Memory・Decision候補のname、role、model、prompt、input-output schema、generation、呼出し回数を一目で読み取る。ただしDecisionの早押しは未実装・旧EOF Answerをbaseline維持。既存pipeline/registryを破壊しない。
+2. **Event schema & machine/human view**: machine正本のversioned JSONLにimportance軸とretention reason/source referencesを加える互換計画、決定的read-only human timeline/working-memory差分。fake test: source ID、時刻一致、古いrecordの読取、invalid reference停止/未確認表示。
+3. **4秒8枚のread/preview**: `target_only` の採用frameとactual/target timestampを表示、4秒8枚の短いFake/合成実動画と既存turn viewerの回帰。推論前任意範囲previewを加える場合は明示的offline/inspect専用endpointと分離し、future情報をオンラインAgentへ混ぜない。
+4. **Shadow sampling decision (optional/stretch)**: question+current validated stateに基づく次windowの提案・理由・制約・policy IDをtrace化。実readerのwindow幅/枚数は変更せず、性能や精度向上を主張しない。
+
+今週の完了判定: Agentの処理順とQwen共有がソース上で明瞭、同じ根拠をJSONLと人間表示で辿れる、時刻と画像が一致、static 4秒8枚を確認、既存EOF/固定sampling挙動の回帰が通る。単発のFake/synthetic smokeまでは可否をspecで承認。GPU/Qwen full run、任意seekをonlineに混入、実adaptive scheduling、実stop gate、無断push/main統合、共有サーバーの高負荷は対象外。
+
+### 次のユーザー判断とhandoff
+
+「今週の正式scopeを可読化・追跡基盤に絞るか」「4秒8枚の推論前previewも今週に含めるか」「shadow adaptive proposalの表示まで含めるか」を決める。仕様化を明示依頼された場合、研究specでbranch/read-only current code、互換性、Gate、micro testと成果物を確定する。今週案は仮であり、自動TODO化やコード変更はしない。
