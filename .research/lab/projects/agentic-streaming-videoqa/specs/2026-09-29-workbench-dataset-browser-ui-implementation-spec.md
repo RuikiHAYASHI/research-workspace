@@ -295,7 +295,7 @@ Step 8 branchはphaseへ`--no-ff`で統合し、merge commit兼更新後phase HE
 
 ### 13.1 Authority・状態・基点
 
-**Step 9 status: approved（2026-09-29、ユーザーが候補UXに明示同意しspec更新と実装を依頼）。** 既存frontmatterの`status: implemented`はStep 1～8までの完了を保持するため変更しない。Step 9は本節のapprovedな追加受入契約とし、必要な検証完了時に本節へ実装結果を追記する。既存Step 1～8の設計・commit・検証記録を消さない。
+**Step 9 status: approved → implemented（2026-09-29、ユーザーが候補UXに明示同意し、短時間の必須実装検証を完了。ユーザー自身の実画面レビューとmain統合は未実施）。** 既存frontmatterの`status: implemented`はStep 1～8までの完了を保持するため変更しない。Step 9は本節のapprovedな追加受入契約として実装し、結果を13.8節へ追記した。既存Step 1～8の設計・commit・検証記録を消さない。
 
 実ブラウザで確認された症状は、動画hover時に長いQAが右欄へ即表示されること、ホーム帰還後に中央の「データセットを読み込んでいます…」が残り、見出しがLongVideoBenchのまま、以前の質問が右欄に残ること、操作ボタンの押下感が弱いこと。ユーザーはその後、3つの独立ボタン、動画click後のQA固定、QA選択後の推論設定への移動、QA独立スクロールを確定した。以前の「4ボタン案」「QAブロックclickで即遷移案」「hoverでQAを出す案」は本節では採用しない。詳細な比較は同日のbrainstormを参照。
 
@@ -355,11 +355,21 @@ blocking: ユーザーが3ボタン・hover previewのみ・動画clickでQA固�
 - 短時間検証: fake unit/integration、loopback、CSS/JS実ブラウザ、compile、CLI help、実LongVideoBenchは許可された軽い登録/表示確認のみ。
 - 対象外: GPU/実モデル、データ取得、無許可preview負荷測定、push/PR、phase→main。
 
+### 13.8 Step 9実装・短時間受入結果（2026-09-29）
+
+最新のcleanなlocal phase `06fa1e0681242cdded611f5e791e1c41b0146380`から`fix/workbench-browser-interaction-state`を作成し、9.1 `fc9f036`、9.2 `de4fcb3`、9.3 `e130054`、9.4 `d265a91`、9.5 `ca2f144`を各関連検証後に独立commitした。Step branchをphaseへ`--no-ff`で統合したmerge commit兼更新後phase HEADは`552e7677d924eeab9221b66f3efd7b74aa69a91c`。Step 1～8のcommit/merge履歴を保持し、local main `d8863065adb04be08d99661b0acd1b672e9163b8`とremote、push、PRは変更していない。
+
+ホーム帰還時の同期リセット、古い応答の破棄と読込失敗時の再試行、hoverでの動画基本情報だけの表示、カード本体でのQA固定、3つの独立操作ボタン、1問単位の緑枠選択、右欄の独立スクロール、選択後だけ有効な固定フッター「推論設定へ →」を実装した。原文question IDは既存推論設定へ引き継ぎ、遷移だけでrun/turn POSTは発生しない。READMEと`docs/dataset-browser.md`へ操作と別ポート`18767`（Fake）/`18768`（実LongVideoBench登録表示）の確認手順を記載した。
+
+Workbench全149テスト、sequential_loader公開checkout全169テスト、`compileall`、top-level/`run`/`serve`/`qwen-preflight`のCLI help、Fake loopback APIが成功した。Firefox headlessでは、hoverと固定QA、3問と0問、長文QA末尾までの独立スクロール、翻訳/原文切替の非伝播、キーボード操作、質問ID引継ぎと誤POSTなし、ホーム・高速往復・back/forward/reload、1600pxの中央広幅3カラム/動画4列、720pxの1列と固定フッターを確認した。実LongVideoBenchはAPIとFirefoxのデータセット画面だけを軽く確認し、動画753件、QA1337件、`available`を表示した。run outputとpreview cacheは空であり、実動画のpreview負荷測定は行っていない。統合後phaseでもFirefox受入8テストが成功し、worktreeはcleanである。
+
+ユーザー自身の実画面レビューは未了。フィードバックがあれば同じphase上で追加修正し、ユーザーが明示承認するまでphase→mainは統合しない。実Qwen/GPU推論、Argosモデル取得、Video-MME/Ego4D接続、push/PRは実施していない。
+
 ## 14. 次工程の候補: 初期導線とブラウザ応答性（2026-09-29、Step 10 draft）
 
 ### 14.1 状態と発端
 
-本節はユーザーの実画面所感と次Stepへの追加依頼に基づく**次工程の計画候補**。Step 9の完了・phase統合・ユーザー受入は未確認であり、既存`status: implemented`（Step 1～8）と第13節のapproved契約を変更しない。実装前にStep 9の9.5・全検証・phaseへの`--no-ff`統合を確認する。Step 9の最新local実装はGitHub remoteへ未pushである可能性があるため、古いremote branchから作業しない。ここでの観察からGPU/ストレージの負荷を測定済みと主張しない。
+本節はユーザーの実画面所感と次Stepへの追加依頼に基づく**次工程の計画候補**。Step 9の実装・短時間検証・phase統合は第13.8節の通り完了し、ユーザー自身の実画面レビューは未了。既存`status: implemented`（Step 1～8）と第13節のapproved契約を変更しない。Step 9の最新local実装はGitHub remoteへ未pushのため、古いremote branchから作業しない。ここでの観察からGPU/ストレージの負荷を測定済みと主張しない。
 
 ### 14.2 データセットへ戻る操作の意味
 
@@ -379,7 +389,7 @@ blocking: ユーザーが3ボタン・hover previewのみ・動画clickでQA固�
 
 ### 14.5 次StepとしてのGate
 
-Step 10は現段階`draft`。作業開始条件はStep 9最終検証とphase統合、実作業木と現在codeのread-only照合、ユーザーの次工程承認。専用branchは最新phaseから作り、1 micro＝検証成功後1独立commit、末尾`--no-ff`でphaseへ戻す。phase→main、push/PR/remote反映は別承認。
+Step 10は現段階`draft`。Step 9最終検証とphase統合は第13.8節の通り完了済み。作業開始条件は実作業木と現在codeのread-only照合、ユーザーの次工程承認。専用branchは最新phaseから作り、1 micro＝検証成功後1独立commit、末尾`--no-ff`でphaseへ戻す。phase→main、push/PR/remote反映は別承認。
 
 想定micro: 10.1 初期タブ整理とrun閲覧経路の非回帰、10.2 folder/すべて切替の処理時間計測と最小改善、10.3 hover初回/再訪の低負荷計測と必要な改善、10.4 dark UI/URL/選択/run非回帰・READMEとdocs更新・ブラウザ受入確認。具体的な性能目標や改善値は計測前に捏造しない。
 
