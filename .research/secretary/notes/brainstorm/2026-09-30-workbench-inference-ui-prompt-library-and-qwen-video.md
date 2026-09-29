@@ -95,3 +95,52 @@ per-Agent `model_adapter/model_id/generation` をUIに出す。ただし同一Qw
 公式: https://github.com/QwenLM/Qwen3-VL/blob/main/README.md#process-videos ; https://github.com/QwenLM/Qwen3-VL/blob/main/qwen-vl-utils/src/qwen_vl_utils/vision_process.py ; https://github.com/huggingface/transformers/blob/main/src/transformers/models/qwen3_vl/processing_qwen3_vl.py ; https://github.com/huggingface/transformers/blob/main/src/transformers/video_utils.py ; https://github.com/huggingface/transformers/blob/main/src/transformers/video_processing_utils.py 。
 
 今は探索記録のみ。実装契約は現行draft specを再レビューし、image baselineとnative video modeは別run/別比較軸。GPU/Qwen runは別許可。
+
+## 2026-09-30 04:52 JST 追記：実装前レビュー用の3 Agentプロンプト案
+
+ユーザーは前節の選択frame列＋動画入力と元時刻manifest分離の構成を方向性として了承し、**実装前に現在のプロンプトを見直したい**と希望。現行コードに保存済みの実promptと、まだ提案段階の文案は別物として示す。今回もexploratoryであり、9/30 agent modes specはdraftのまま。実装前のresearch-spec改訂・承認が必要。
+
+### 現行promptと仕様のギャップ
+
+- `prompts/en/chunk_understanding.txt`: `Question` / `Window` / `Frames` / `Frame manifest`。全入力画像からちょうど同数の`observations`各6フィールド必須。現行modelは`type:image`連列である。
+- `prompts/en/evidence_aggregation.txt`: 前narrative/current観測から`events`6キー＋`narrative`を返す。質問関連＋人物/物体/場所の状態変化を保持する明示基準/importance reasonsは未実装。
+- `prompts/en/final_answer.txt`: EOF後に選択肢を入力、`answer,evidence_event_ids,evidence_frame_indices,evidence_timestamps_seconds,narrative_version`の厳密JSONを返す。Decisionの早押し判断はまだ無い。
+- `configs/common/longvideobench-qwen3vl.yaml` は全stage共通`max_new_tokens:256`。`frame`ごとの長文JSONだと切断リスクがあるが、特定runの終了理由未確認。
+- 先行のdraft specは旧全frame観測を前提。ユーザーの新video入力/窓単位説明/agent別model/prompt libraryと一致しないため、承認前の改訂が必要。
+
+### 候補A：Situation（動画区間全体、image baselineと区別）
+
+共通入力: 現windowの選択フレームを`type:video`（Qwen動画経路）として渡し、`{{question}}`, `{{chunk.start}}`, `{{chunk.end}}`, `{{chunk.frame_manifest}}`（video ordinal→元frame ID・実timestamp・目標timestamp）をテキストで渡す。`none`と`previous_text`の2版を作り、後者のみ正常commit済み`{{previous.evidence}}`を加える。
+
+候補の英語指示（まだprompt assetではない）:
+
+> Interpret the provided sampled frames as one chronological video window. Describe directly observable actions, objects, people, places and meaningful state changes across the window, especially question-relevant evidence, without ignoring important question-independent changes. The video timeline may be relative to this window; the frame manifest gives absolute source-video times. Never infer unobserved frames, future events, causality or answer choices. Treat previous memory, if supplied, only as fallible context; current visual evidence takes priority. Do not answer the question. Return a single JSON object with window_summary, observations, unresolved. Each observation describes an event or meaningful state (not each input frame) and contains start_seconds, end_seconds, description, evidence_frame_indices, question_relevance, certainty. Reference only source-frame IDs in the manifest; use the corresponding actual times and avoid unwarranted subframe precision. observations may be empty when nothing relevant is visible. unresolved is a list of concise uncertainties. Output JSON only.
+
+`previous_text`版には`Previous validated text memory: {{previous.evidence}}`と、先行メモリを現在の映像で確認できた事実扱いしない命令を追加。二版のその他の指示とgenerationを同じにする。「全入力frameに1件ずつ必須」は削除するが、manifestは全採用frameをWorkbenchの正本として保持する。frame-level旧modeはbaseline専用として不変保存。
+
+### 候補B：Memory（重要イベントと記憶更新）
+
+入力: question、validated current Situation JSON、前のbounded narrative、現在window manifest。画像再入力なし。新指示案:
+
+> Integrate current visual observations with the previous validated text memory in chronological order. Extract all supported events; never discard a record just because it is not retained in working memory. For every event, explain its importance using zero or more of question_relevance, state_change, novelty and unresolved_uncertainty. Preserve important changes to people, objects and places even when the question relevance is low. Separate direct facts from inferences and uncertainties, cite only frame IDs/times present in the current manifest, and do not fabricate causality, future outcomes or resolved unknowns. Update a concise working narrative that retains question evidence, important entity states, temporal order, contradictions and unresolved points. If evidence contradicts previous memory, state what changed and the supporting source; do not silently overwrite. Return only one JSON object with events, narrative, unresolved. Every event retains the existing six fields plus versioned optional importance_reasons and importance_explanation.
+
+Importance理由の例: `["state_change"]`、`["question_relevance","novelty"]`。全eventはappend-only ledger、最新のbounded narrativeのみ次windowへ。旧event reader互換とversioningが前提。Memoryの1回呼出しbaselineと、event extraction/更新の2段階呼出しは後続比較軸。
+
+### 候補C：Answer（今はEOFのみ）
+
+入力: question+choices、最新working narrativeとevent ledger/frame manifestから検証済み根拠、現在のmemory version。新指示案:
+
+> Answer only after end-of-video has been reached. Use the supplied validated evidence, not imagined video content. Select the supported choice and cite only existing event IDs, frame IDs and timestamps. Distinguish direct support from uncertainty and contradiction; do not fabricate references. Return only one JSON object with answer, evidence_event_ids, evidence_frame_indices, evidence_timestamps_seconds, narrative_version, preserving the current validator contract.
+
+現行`answer`は番号＋選択肢文、選択肢を受け取るのはこのstageのみ。将来`DecisionAgent`で`CONTINUE/ANSWER`を扱う場合は回答権限と停止基準を別prompt/schemaとして研究する。今回のSituation/Memoryへ選択肢/GTを渡さない。
+
+### 先に決めるprompt reviewの論点
+
+1. Situationは「質問を知った観測」でよいか、それとも質問を隠す`question_blind`比較も将来用に確保するか。今回は質問を渡すbaselineで、次windowの適応は別実験。
+2. Situationで`observations`をイベント単位にし、0件許す。各eventのframe/time参照を必須にする場合、Qwenの2-frame temporal patchでは正確な1枚特定が常に可能ではない。明確な根拠がない時刻は捏造せずuncertainにし、検証済み参照のみ使う。
+3. Memoryのテキスト形式（時系列物語＋状態/未解決、単一`narrative`か複数fieldか）・token budget。schemaとpromptを同期。
+4. `max_new_tokens=256`のstage共通上限は見直し。Agent別の生成上限と出力切断の検出・失敗時のrecord保存を設計し、実Qwen値は未測定。
+5. これらは比較可能性のため`image_list` vs `video_clip`、`none` vs `previous_text`、Agent別modelを別run設定とし、複数の差を一度に評価しない。
+6. Prompt libraryには各Agent初期builtinの表示名「最初のプロンプト」、説明「実装時に作成したプロンプトです」。原文英語・将来の日本語訳は閲覧用で分け、本文/ID/hash/versionをrun snapshotに保存。編集で旧runは変わらない。
+
+今回のユーザー発話は「文案を見直してから実装」であり、実装・実Qwen/GPU実験・draft specのapproveは未実施。
