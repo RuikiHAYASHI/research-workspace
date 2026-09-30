@@ -204,3 +204,140 @@ Server ─┘
 - 同一Qwenを3役割で共有する現在の挙動
 
 Agent別モデル選択やprompt CRUDはこの内部整理の後に追加した方がよい。今回の案はexploratoryで、コード変更/spec化はまだ行わない。
+
+## 2026-09-30 18:29 JST 追記：CrewAI風のAgent/Task/Workflow分離とBrowser・View再編
+
+ユーザー追加意向:
+- `dataset/`にはdataset固有adapterだけを残し、search/index/catalog等の外部閲覧機能は別ディレクトリへ。
+- `records/`の人間用viewは詳細すぎる可能性。人間向け一次表示は「Situationの区間 [start,end) + window_summary」を時系列に並べ、最後に最終回答だけを示す。観測詳細/event/memory diff/frame根拠/raw prompt等は詳細表示へ。
+- `interfaces/`はserver/SQLite/media/translation/browserまで抱え過ぎ。外部I/O境界とBrowser機能・run sessionを分けたい。
+- CrewAIの`Agent / Task / Crew / Process`的な運用を参考にし、実依存を導入する必要はない。監督ファイルを一つ、できるだけ短くしたい。
+
+### CrewAIから借りる概念（依存は不要）
+
+CrewAI公式の抽象は、Agent=役割を持つ実行者、Task=具体的な仕事+expected output+担当Agent、Crew=agents/tasksを束ねるチーム、Process=sequential/hierarchicalな実行順。今回のStreaming VideoQAは未来アクセス禁止・再現可能な順序・artifact検証が重要なので、CrewAIそのものを入れて自律delegationさせるより**概念だけ借りた決定的sequential workflow**が適する。
+
+本研究での対応:
+- Agent = `model + prompt + generation + role metadata`
+- Task = Situation / Memory / Answerの「入力を組み立て、Agentを1回呼び、出力schemaを検証する仕事」
+- Crew相当 = VideoQATeam（3 Agent + 3 Task）
+- Process相当 = deterministic sequential
+- manager LLMは置かず、短いPython `VideoQAOrchestrator` が監督。早押し等を研究するときも、managerの自由判断で未来/追加callを発生させず、明示schemaにする。
+
+ユーザー提示のCrewAI例では`Process.sequential`と`manager_llm`が併記されているが、CrewAI公式ではmanager LLM/manager agentはhierarchical processの調整役。今回の一本道処理には不要。
+
+### 更新した候補tree
+
+```text
+src/longvideoqa_workbench/
+├── agents/                     # 「何のAIを使うか」
+│   ├── base.py                 # Agent / ModelBackend共通契約
+│   ├── qwen3_vl.py             # Qwenロード、video/image入力、generate
+│   └── fake.py
+│
+├── workflow/                   # 「Agentに何をさせるか」
+│   ├── video_qa.py             # 短いVideoQAOrchestrator（監督）
+│   ├── team.py                 # 3 Agent + Taskの組み立て
+│   ├── situation.py            # SituationTask + output validation
+│   ├── memory.py               # MemoryTask + budget/event validation
+│   └── answer.py               # AnswerTask + evidence validation
+│
+├── datasets/                   # dataset固有の接続だけ
+│   ├── longvideobench.py
+│   └── fake.py
+│
+├── browser/                    # datasetを「探す・見る・個人管理する」
+│   ├── catalog.py
+│   ├── index.py
+│   ├── search.py
+│   ├── library.py              # favorite/folder/alias SQLite
+│   ├── media.py                # thumbnail/preview
+│   └── translation.py
+│
+├── runtime/                    # 実行中sessionとアプリケーション操作
+│   ├── session.py              # next/cancel/EOF/reader資源
+│   └── run_service.py          # start/restart/get/list
+│
+├── records/                    # 機械用artifactの保存/読取
+│   └── run.py                  # 初回refactorでは形式不変
+│
+├── views/                      # recordsから決定的に人間用表示を作る
+│   └── run_view.py
+│
+├── interfaces/                 # 最小の外部入口だけ
+│   ├── cli.py
+│   └── server.py               # HTTP routingのみ。business logicは持たない
+│
+├── config/
+├── reader/
+├── sampling/
+└── web/
+```
+
+名称`interfaces/`自体が分かりづらければ、後続で`entrypoints/`へ改名する候補。初回はimport移動量を抑えるためinterfacesにCLI/HTTPだけ残す案も有力。
+
+### 短い監督ファイル
+
+目標は`workflow/video_qa.py`を「研究の流れが一目で読める」程度にする。例えば概念上:
+
+```python
+class VideoQAOrchestrator:
+    def process_window(self, context, window):
+        observation = self.team.situation_task.run(context, window)
+        memory = self.team.memory_task.run(context, observation)
+        return context.with_memory(memory)
+
+    def finish(self, context):
+        if not context.events:
+            return InsufficientEvidence()
+        return self.team.answer_task.run(context)
+```
+
+実際のstream ownership/cancel/thread/status/thumbnail/HTTPはこのファイルへ入れず`runtime/session.py`へ、JSONLのwriteは`records/`へ委譲する。こうすれば監督は50--100行程度を狙える。短さ自体より「一つの関数で研究フローが読める」ことを優先。
+
+### Agent/Taskの候補API
+
+```python
+situation = Agent(
+    role="situation",
+    model="qwen3_vl",
+    model_id="Qwen/Qwen3-VL-4B-Instruct",
+    prompt="chunk_understanding_video_v1_en",
+    generation={"max_new_tokens": 1024, "temperature": 0.0},
+)
+
+situation_task = SituationTask(
+    agent=situation,
+    expected_output="window_observation_v1",
+)
+```
+
+Agentはmodel固有backendを選びprompt/generationを保持。Taskは質問/window/memoryをどの変数にするか、画像かvideoか、validationとstructured outputを知る。これで将来Memoryだけ別model、prompt差替えがAgent定義変更だけで済みやすい。
+
+### 人間用view
+
+現状`RunRecord.readable_memory()`がwindows/observations/timeline/versions/diffを一つに構成するため、storageとpresentationが混在。提案:
+- `records/`: raw/validated JSON/JSONLと最新snapshotだけ。SSOT。
+- `views/run_view.py`: read-only projection。
+- 基本view:
+  ```text
+  00:00–00:04  女性がカメラに向かって話している。
+  00:04–00:08  女性が電話を手に取り画面を見る。
+  00:08–00:12  電話を机に置く。
+
+  最終回答
+  2. She places the phone on the table.
+  ```
+- 詳細を開くとobservations/unresolved/event importance/evidence frame/actual-target timestamp/memory versions/raw stage/promptへ辿れる。
+- 新しいLLM summaryを作らず、既存`window_summary`とfinal answerから決定的に生成。詳細artifact形式は変更しない。
+
+### Browserとdataset/interface
+
+現`dataset/catalog.py,index.py,search.py`はLongVideoBench接続そのものではなくWorkbench browserの閲覧機能。現`interfaces/library.py,media.py,translation.py,browser.py`と一緒に`browser/`へまとめると、`datasets/`は「QuestionSample/catalog sourceを提供するdataset adapter」に集中できる。
+`interfaces/server.py`約937行はHTTP、ServerContext、TurnSessionが混在するため、`runtime/session.py`と`runtime/run_service.py`を抽出し、serverはURL→service呼出しの薄いadapterにする。
+
+### 初回リファクタで変えない契約
+
+prompt本文、output JSON schema、video_clip、sample_fps、none/previous_text、EOF Answer、insufficient_evidence、artifactファイル形式、HTTP URL/response、旧run read compatibilityは不変。Agent別model選択やprompt CRUDは構造整理後の機能追加として分離。
+
+現在の方向性は有力だがまだbrainstorm。spec化/コード変更はユーザーの明示依頼後。
