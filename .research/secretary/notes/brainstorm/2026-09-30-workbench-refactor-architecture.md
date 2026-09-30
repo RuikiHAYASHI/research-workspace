@@ -104,3 +104,103 @@ Answer output:
 - 差分サイズ: 一回のrefactorで機能変更を混ぜないか。
 
 現時点の第一候補は、**pipeline.pyをAgent実装とorchestratorへ分割 → server.pyをsession/service/HTTPへ分割**の順。prompt CRUD/Agent別modelなどの機能追加は、その後に別specで進める方が安全。
+
+## 2026-09-30 18:11 JST 追記：Agentを「モデル設定」、Workflowを「使い方」に分離する案
+
+ユーザーはオーケストレーションを参考に、研究コードを初見でも説明できる構造へ整理したい。特に現在の`agent/`と`model/`の意味が直感とずれており、**Agent側は「どのモデルをどう使えるか」というモデル/Agent設定に寄せ、Situation/Memory/Answerの呼出し順・入力整形・validation・memory更新などは別の分かりやすい領域へ移す**方向を希望。
+
+### 提案する概念分離
+
+- `agents/` = **誰が考えるか**。model family/backend、model ID、capability、generation、共通Agent wrapperを置く。ファイル名は`qwen3_vl.py`, `fake.py`のようにモデル名中心。
+- `workflow/` = **どう仕事をさせるか**。Situation/Memory/Answerの入力作成、出力検証、window→EOFの順序、memory/record連携を置く。
+- `VideoQAOrchestrator` = **監督**。1 windowではSituation→Memory、EOFではAnswer、event 0件ではinsufficient_evidence、cancel/record/statusを一つの場所で管理。CLIとserverの双方が同じOrchestratorを呼ぶ。
+- `records/` = **何を残すか**、`reader/` = **何を読むか**、`dataset/` = **何を解くか**、という既存境界は基本維持。
+
+候補tree:
+
+```text
+src/longvideoqa_workbench/
+├── agents/
+│   ├── __init__.py
+│   ├── base.py
+│   ├── qwen3_vl.py
+│   └── fake.py
+│
+├── workflow/
+│   ├── __init__.py
+│   ├── video_qa.py          # VideoQAOrchestrator: 全体監督
+│   ├── situation.py         # Situationの入力構築・出力schema/validation
+│   ├── memory.py            # Memoryの入力構築・event/narrative・budget
+│   └── answer.py            # EOF Answer・最終根拠validation
+│
+├── config/
+├── dataset/
+├── reader/
+├── sampling/
+├── records/
+├── interfaces/
+└── web/
+```
+
+prompt assetは当面repository rootの`prompts/en/`を維持。Agentがprompt本文を内包するのでなく、Agent/Workflowの設定が`prompt_id`を参照し、run開始時にresolved prompt/hashを固定する。将来prompt libraryを追加してもAgent/Workflow本体を書き換えずに差し替えられるようにする。
+
+### Agentクラスの役割候補
+
+`Agent`は研究上の役割名そのものではなく、**「model + prompt + generationを用いて1回の推論を行う共通実行単位」**とする。
+
+概念例:
+
+```python
+Agent(
+    name="situation",
+    model=qwen3vl,
+    prompt_id="chunk_understanding_video_v1_en",
+    generation=GenerationConfig(max_new_tokens=1024),
+)
+```
+
+入力はWorkflow側で構築した`AgentInput`、出力は生の`AgentResponse`。Situation/Memory/Answer固有のJSON validationはWorkflow側が担当する。こうすると`agents/qwen3_vl.py`はQwenのロード・capability・image/video入力・generateだけに集中し、研究上の役割変更でモデル実装を触らない。
+
+### 現行コードからの主な移動
+
+- `model/qwen3vl.py` → `agents/qwen3_vl.py`
+- `model/fake.py` → `agents/fake.py`
+- `core/protocols.py`のModelAdapter相当 → `agents/base.py`へ寄せる候補
+- `agent/pipeline.py`のSituation/Memory/Answer wrapper + run_window_turn/run_pipeline → `workflow/`
+- `agent/observations.py` → `workflow/situation.py`または`workflow/schemas/observation.py`
+- `agent/events.py` + 現`agent/memory.py` → `workflow/memory.py`
+- `agent/final_output.py` → `workflow/answer.py`
+- 旧`agent/`と`model/`は移行後削除候補。ただしimport互換が必要なら一時re-export。
+
+### 「監督」の一本化が重要
+
+現在はCLI側`run_pipeline()`とserver側`TurnSession.advance()`の双方にwindow/EOF進行ロジックがある。リファクタ後は`VideoQAOrchestrator`へ寄せ、外側は次だけを行う:
+
+```text
+CLI    ─┐
+        ├─> VideoQAOrchestrator.advance()
+Server ─┘
+             ├─ Situation Agent
+             ├─ validate
+             ├─ Memory Agent
+             ├─ memory/record
+             └─ EOFなら Answer Agent
+```
+
+この結果、ユーザーが大きな働きを説明するときは以下の4点だけでよい:
+1. `agents/`: 利用可能なモデルと1回の生成方法。
+2. `workflow/video_qa.py`: 動画QA全体の監督。
+3. `workflow/situation.py|memory.py|answer.py`: 各役割の入力と出力契約。
+4. `records/`: 実行結果とmemoryの保存。
+
+### リファクタで変えないもの
+
+- Qwenへのvideo_clip方式・sample_fps・`do_sample_frames=False`
+- Situation/Memory/Answerのprompt本文・JSON schema
+- old image_list runの読取互換
+- run artifactのファイル名/JSONL形式
+- HTTP API/UIの外部挙動
+- `none/previous_text`, insufficient_evidence, EOF Answer
+- 同一Qwenを3役割で共有する現在の挙動
+
+Agent別モデル選択やprompt CRUDはこの内部整理の後に追加した方がよい。今回の案はexploratoryで、コード変更/spec化はまだ行わない。
