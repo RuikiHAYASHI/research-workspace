@@ -197,10 +197,11 @@ validated Situation JSON、`{{question}}`、`{{previous.evidence}}`、`{{current
 
 ## 14. 承認後実装結果（2026-09-30）
 
-- 対象: Workbenchの独立worktree `.worktrees/longvideoqa-workbench-video-clip`、branch `feat/workbench-video-clip-memory`。基点は先行実装済み `a50570c5e6d12b69691fe124c2960fc9affde311`。変更は未commitで、元`main`・既存未追跡docs・過去run・個人SQLiteは変更していない。
+- 対象: Workbenchの独立worktree `.worktrees/longvideoqa-workbench-video-clip`、branch `feat/workbench-video-clip-memory`。基点は先行実装済み `a50570c5e6d12b69691fe124c2960fc9affde311`。実装時は未commitで、元`main`・既存未追跡docs・過去run・個人SQLiteには触れずに検証した。
 - micro 1（設定・prompt）: `visual_input_mode=image_list|video_clip`を設定、復元、API、UIへ追加。新規UIは`video_clip`を既定とし、未指定の旧runは`image_list`へ復元。新Situation 2種・Memory・Answerのversioned prompt ID/hashとstage別生成上限（Situation 1024、Memory 768、Answer 384）を保存。旧prompt assetは維持。
 - micro 2（動画入力・時刻）: 選択済みRGB frame列だけをQwen processorへ1本の`type:video`として渡し、`do_sample_frames=False`、目標fps `frames/window_seconds`、相対ordinalを使用。元frame ID・target/actual秒をprompt manifestと`chunks.jsonl`へ保持し、絶対時刻の正本はactual秒とする。Qwen processorの空間resizeは直接メモリ入力の既定処理に委ね、元動画パスはモデルへ渡さない。
 - micro 3（3 Agentと記録）: Situationは窓単位`window_observation_v1`で0件も許容、Memoryは根拠frame・重要理由付き`memory_aggregation_v1`、AnswerはEOF後の既存5キーを検証。validated観測・全event・全記憶版を`memory.jsonl`に追記、最新narrativeを`memory.json`に保存。raw/validated・生成上限到達・検証失敗を`stages.jsonl`/run statusに残す。全区間でevent 0件なら`insufficient_evidence`で回答を選ばず終了。
 - micro 4（閲覧）: `chunks.jsonl`と`memory.jsonl`から区間summary、観測、採用frame/時刻、event理由、記憶版差分をread-onlyで表示。mode切替で対応するprompt ID/hashを表示し、履歴GETは推論を開始しない。
 - micro 5（検証）: Workbench全181件成功（Firefox UI 10件を含む）、Python compile、`git diff --check`成功。短い合成動画の4秒8枚、FakeのON/OFF・0件・invalid JSON・旧baselineを確認。Workbench仮想環境の旧editable loaderには新APIがなかったため、既存の`docs/target-frame-stream` commit `76badb1c407a34de6f2dfa7e5d4040ef7c4b2ccc`から依存取得なしでローカルwheelを入れ直し、公開`target_frame_stream`と通常環境の合成動画テストを確認した。loaderソースは変更していない。
-- 未検証: 実Qwen/GPU、LongVideoBench実データ、長尺動画、正答率・時刻グラウンディング・速度、stage別生成上限の実機適正。モデル自動download、push、PR、main統合、常駐server起動はしていない。
+- 未検証: 実Qwen/GPU、LongVideoBench実データ、長尺動画、正答率・時刻グラウンディング・速度、stage別生成上限の実機適正。モデル自動download、PR、常駐server起動はしていない。
+- 2026-09-30にユーザーの追加指示で、実装を`2b5f8309ed380951d812c3f2191f57ce30fb7ccd`としてcommitし、先行5commitとともにWorkbenchの`main`へfast-forward統合して`origin/main`へpushした。統合前に全181件、Python compile、差分検査を再確認。GitHubの`main`が同commitを指すことを照合した。元worktreeの未追跡docs 3件は維持した。
