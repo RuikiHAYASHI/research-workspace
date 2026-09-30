@@ -213,13 +213,54 @@ non-blocking:
 - import cycle回避のため公開DTOを`core/`へ残すか各packageへ置くかは、依存方向を壊さない最小配置を選ぶ。
 - legacy import re-exportは実際に既存test/public APIが必要とする場合のみ。
 
-## 13. Gate
+## 13. Git Branch / Commit Strategy
+
+Stage 1は、**Stage用のintegration branchを1本作り、その配下の各実装stepを別branchで進める**。micro-stepは独立commitとして残す。
+
+### 13.1 Branch hierarchy
+
+- Stage branch: `stage-1-package-service-workflow`
+- Step branchは、その時点のStage branch HEADから作る。
+- Step完了時に対象testを通し、micro-step commitをsquashせずStage branchへlocal merge/fast-forwardする。
+- 次Stepは更新済みStage branchから新しく切る。
+- Stage branchから`main`へのmerge、push、PR作成は別の明示許可があるまで行わない。
+
+Stage 1のstep branch:
+
+1. `stage1-step01-service-contracts`
+   - Service/public DTOとpackage boundaryの固定。
+2. `stage1-step02-agents-workflow`
+   - `agents/`と`workflow/`、`VideoQAWorkflow`、3 Taskの整理。
+3. `stage1-step03-dataset-browser-runtime`
+   - dataset/browser、runtime/entrypointsの責務分離。
+4. `stage1-step04-records-presentation`
+   - RecordService/PresentationService、Web projection/text traceの分離。
+5. `stage1-step05-import-cleanup`
+   - import整理、必要最小限のlegacy re-export、依存方向確認。
+6. `stage1-step06-regression`
+   - 全短時間回帰、compile/import、CLI/API smoke、diff check。検証で必要になったscope内修正だけcommitする。
+
+実装前preflightは変更を伴わないためbranchを切る前に行う。preflight後にStage branchを作成し、上記Step 1から開始する。
+
+### 13.2 Micro-step commit
+
+各Step branchでは、**1つの独立して説明・検証できる変更を1 commit**とする。例えば「Qwen backendをagentsへ移す」「SituationTaskを切り出す」「serverからRunServiceを抽出する」のように、review時に目的が一つに読める単位へ分ける。
+
+- unrelated changeを同じcommitへ混ぜない。
+- Stepの最後に巨大な一括commitを作らない。
+- micro-step commit後に可能な範囲で最小testを実行する。
+- Step branchをStage branchへ統合するときにsquashしない。
+- commit messageにはStage/Stepと変更目的が分かる語を含める。
+- このユーザー指示により、**Stage/Step branch作成とmicro-step commit作成は明示許可済み**。
+- remote push、PR、Stage branchから`main`へのmergeは未許可。
+
+## 14. Gate
 
 2026-09-30 20:06 JST、ユーザーが**Stage 1を明示承認**した。blockingな未決事項はないため、本書を`approved`とする。
 
 実装許可は**Stage 1のみ**。Stage 2（Config再設計）、Stage 3（PromptService/CRUD）、Stage 4（Dataset別user data/cache migration）はdraftのままであり、この実装へ混ぜない。実Qwen/GPU/LongVideoBench full run、model download、push/PR/main mergeも別許可。
 
-## 14. Implementation Handoff
+## 15. Implementation Handoff
 
 - approved spec: 本書
 - 実装目的: 外部挙動を変えず、WorkbenchをPackage / Service / Workflow構造へ整理し、研究の一本道を短い`VideoQAWorkflow`から読めるようにする。
@@ -229,5 +270,5 @@ non-blocking:
 - success criteria: Section 11。
 - 許可されている短時間検証: unit/Fake/browser既存回帰、compile/import、CLI/API smoke、diff check。GPUを必要としない範囲。
 - 長時間runの許可状態: 未許可。
-- Git操作: branch/worktree作成はengineering-taskのpreflightと現在運用に従う。commit/push/PR/main mergeは現在の承認から推定しない。
+- Git操作: Section 13のStage/Step branch作成、micro-step commit、Step→Stageのlocal統合は明示許可済み。push/PR/Stage→main mergeは未許可。
 - 未検証予定: 実Qwen/GPU、LongVideoBench実データ、長尺/科学的性能。
