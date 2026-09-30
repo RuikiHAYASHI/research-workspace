@@ -1,5 +1,6 @@
 ---
 date: 2026-09-30
+last_updated: 2026-10-01
 project: agentic-streaming-videoqa
 type: implementation
 status: draft
@@ -7,7 +8,7 @@ sequence: 2
 sequence_total: 4
 baseline_repository: RuikiHAYASHI/2026_09_hayashi_longvideoqa_workbench
 baseline_ref: main
-baseline_commit: 2b5f8309ed380951d812c3f2191f57ce30fb7ccd
+baseline_commit: 0bd883a3ea45d88f2a219ea582d6e989ed2813bb
 depends_on:
   - 2026-09-30-workbench-package-service-workflow-refactor-spec.md
 source_brainstorm:
@@ -218,6 +219,14 @@ Stage 2も、Stage 1と同じく**Stage branch → Step branch → micro-step co
 必要なら`影響:`を加える。タイトルだけの短いcommit messageは避ける。
 - Step merge commitも日本語でタイトル＋本文を残す。
 - branchを作っただけでremote pushはしない。GitHubで進捗共有が必要な場合のpushは、その時点の明示指示に従う。
+
+## 12.1 Pre-implementation status（2026-10-01）
+
+Stage 1はWorkbench `main@0bd883a3`で完了し、旧compatibility package削除まで確認済み。Stage 2の実装基準commitを同commitへ更新した。
+
+Git運用規約（Stage branch → Step branch → micro-step commit、日本語タイトル＋本文、Step→Stage `--no-ff`）は確定済み。
+
+残るblockingはSection 11の1点だけ: **repository外で個人的に作成した旧recipe YAMLまで互換維持するか**。本specの推奨は「互換保証しない」。repository同梱Configは移行し、既存Runは保存snapshotで読める状態を維持する。
 
 ## 13. Gate
 
