@@ -499,3 +499,100 @@ src/longvideoqa_workbench/
 ```
 
 初回リファクタは挙動不変: 現在のEOF-only Answer、prompt/schema/artifact/API、video_clip等を維持。上記future `MemoryResult.action=answer`は後続研究spec。
+
+## 2026-09-30 18:51 JST 追記2：木構造の依存とPresentation層
+
+ユーザーは現在の研究タスクを「datasetから動画を先頭から読み、指定長でsamplingし、Situationが理解、Memoryが整理、Answerが回答、Records/人間向け表示へ残す」という単純な一本道としてコード上にも反映し、将来的な絡まりを避けたい。またviewsがWeb実行へ影響するかを確認。
+
+### 現行Webとの関係
+
+現行main `2b5f830`では`ServerContext.run_payload()`が`record.readable_memory()`を`memory_readable`として返し、`web/app.js`がそれを描画する。したがって現在も「人間用projection」はWebの**表示内容**には影響する。ただしAgent推論/reader/memory更新の実行ロジックには影響しない。リファクタ後もこの一方向性を明示する。
+
+名称は`views/`だとWeb MVCのviewと誤解しやすいため、候補として`presentation/`を推奨。「機械記録から人間向けの見せ方を作る」層。Web用JSONとtext traceを同じrecordから作る。
+- `records/`: SSOTのmachine artifactを書き、読む。
+- `presentation/`: recordsをread-onlyに読み、Web payload / text traceを決定生成。推論状態を変更しない。
+- presentation生成失敗でrun結果をfailedへしない。再生成可能な派生物。
+
+### 研究の一本道をそのまま依存木へ
+
+完全なtreeにはshared contracts/configがあるのでならないが、**main research pathを一方向DAG/木状**にする:
+
+```text
+entrypoints/
+    |
+runtime/ RunService
+    |
+workflow/ VideoQAWorkflow                  <- 大監督
+    |
+    +-- DatasetService         何を解くか
+    +-- VideoStreamService     先頭から読み、window化
+    +-- AgentService           Agent定義を提供
+    |     +-- SituationTask
+    |     +-- MemoryTask
+    |     +-- AnswerTask
+    +-- RecordService          機械記録
+             |
+             v
+      PresentationService      人間向け表示（read-only）
+             |
+       +-----+-----+
+       |           |
+      Web       text trace
+```
+
+重要: DatasetService→VideoStreamService→AgentServiceのようにservice同士が内部で次々呼ぶのではなく、`VideoQAWorkflow`が各窓口を順に呼ぶ。これにより横依存が生えず、「別directoryのprivate関数を知る」必要がない。directory外はpackage rootで公開したService/DTOのみimportする。
+
+### directory監督の形
+
+各directoryには1つの**Service class**を外部窓口として置く。ファイル名は全部`service.py`でもよく、import側ではclass名が意味を説明する:
+- `datasets/service.py -> DatasetService`
+- `streaming/service.py -> VideoStreamService`
+- `agents/service.py -> AgentService`
+- `records/service.py -> RecordService`
+- `presentation/service.py -> PresentationService`
+- `browser/service.py -> BrowserService`
+- `runtime/service.py -> RunService`
+
+各package `__init__.py`はServiceと公開DTOだけre-export。例: `from longvideoqa_workbench.datasets import DatasetService`。別packageから`datasets/longvideobench.py::_private`を直接importしない。
+
+大監督だけはServiceではなく、研究フローを表す名前`VideoQAWorkflow`にする。`workflow/video_qa.py`は50-100行程度を目標に、以下だけを読むと処理が説明できる状態:
+```python
+question = datasets.get_question(...)
+with video_stream.open(question, settings) as windows:
+    for window in windows:
+        situation = situation_task.run(window, question, memory)
+        memory = memory_task.run(question, memory, situation)
+        records.record_turn(window, situation, memory)
+
+answer = answer_task.run(question, memory)
+records.record_answer(answer)
+```
+実際のcancel/HTTP/thread/cacheはRunService、JSONL serializationはRecordService内部、model具体処理はAgentService内部。
+
+### 人間向けPresentation
+
+基本traceは「ブラウザで確認できるAgentの主要動作」をテキストでも残す:
+```text
+[00:00-00:04] Situation Agent
+<主要出力text>
+
+[00:00-00:04] Memory Agent
+<判断text>
+Memory: <更新後のmemory text>
+
+...
+[END] Answer Agent
+<answer>
+```
+
+詳細recordには従来のstructured JSON/event/frame/timestamp/prompt/model/latency/validationを保持。基本traceとWebは同じPresentationService projectionを共有し、片方だけ意味が変わらないようにする。
+
+### 将来のAgent flow
+
+現在のMemoryはすでに previous narrative + current validated observations + question を受けるが、AnswerはEOFのみ。将来は:
+`Situation video -> situation text`
+`Memory(question + previous memory text + situation text) -> updated memory text + continue/answer`
+`Answer(question + choices + selected memory text) -> answer`
+とする候補。これはearly answerという研究挙動変更なので、今回の構造refactorとは分離したspecにする。
+
+この依存木を守るため、最初のrefactorでは挙動/API/artifact/prompt/schemaを変えず、package移動・Facade抽出・重複orchestration一本化のみを対象にするのが安全。
