@@ -1,8 +1,9 @@
 ---
 date: 2026-09-30
+last_updated: 2026-10-01
 project: agentic-streaming-videoqa
 type: implementation
-status: approved
+status: implemented
 sequence: 1
 sequence_total: 4
 baseline_repository: RuikiHAYASHI/2026_09_hayashi_longvideoqa_workbench
@@ -285,3 +286,18 @@ Stage 1のstep branch:
 - 長時間runの許可状態: 未許可。
 - Git操作: Section 13のStage/Step branch作成、micro-step commit、Step→Stageのlocal統合は明示許可済み。push/PR/Stage→main mergeは未許可。
 - 未検証予定: 実Qwen/GPU、LongVideoBench実データ、長尺/科学的性能。
+
+
+## 16. Implementation Evidence（2026-10-01）
+
+GitHub上のWorkbench `main` でStage 1完了を確認した。
+
+- merge commit: `0bd883a3ea45d88f2a219ea582d6e989ed2813bb`
+- Step 7 commit: `4344f81e`
+- Step 7 merge: `175416ad`
+- 旧compatibility package `agent/`, `model/`, `dataset/`, `interfaces/`, `reader/`, `sampling/` は削除済み。
+- 現行package: `agents/`, `workflow/`, `datasets/`, `streaming/`, `browser/`, `runtime/`, `records/`, `presentation/`, `entrypoints/`。
+- Step 7 commit message記録では184 tests passed、compileall、公開package import、CLI help、editable console script smoke、`git diff --check`を実施済み。
+- 実Qwen/GPU/LongVideoBench実データはStage 1の検証対象外のまま。
+
+以上により本specの必須実装・短時間検証は完了し、`implemented`とする。
