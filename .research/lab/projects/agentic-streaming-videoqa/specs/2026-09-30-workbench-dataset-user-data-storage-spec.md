@@ -159,7 +159,7 @@ Stage 4は**Stage branch → Step branch → micro-step commit**で進める。
 
 - Stage branch: `stage-4-dataset-user-data-storage`
 - Step branchは現在のStage branch HEADから作成する。
-- Step完了後、対象testを通してmicro commitsをsquashせずStage branchへlocal統合する。
+- Step完了後、対象testを通してmicro commitsをsquashせずStage branchへ**`--no-ff`でlocal merge**する。fast-forwardでStep branchのlaneを潰さない。
 - push/PR/Stage→main mergeは別許可。
 
 実装step:
@@ -178,6 +178,28 @@ Stage 4は**Stage branch → Step branch → micro-step commit**で進める。
 各Step branch内では、path resolver、DB routing、cache routing、migration各table、UI/CLI等を独立micro-step commitへ分ける。migrationとunrelated browser変更を同commitへ混ぜない。Step→Stage統合時にsquashしない。
 
 **Stage/Step branch作成とmicro-step commit作成は明示許可済み**。remote push、PR、Stage→main mergeは未許可。
+
+### Git history / commit message convention
+
+- Git Graphで`main / Stage / Step`の関係が分かるよう、Step→Stageは`--no-ff` mergeを使う。
+- 将来Stage→mainのmergeが別途承認された場合も`--no-ff`を基本とし、Stage laneを履歴に残す。
+- micro-step commitは日本語で、1行目を`Stage N Step M: <変更タイトル>`とする。
+- commit本文は空行を挟み、原則として次を記載する。
+
+```text
+変更内容:
+- ...
+
+理由:
+- ...
+
+検証:
+- ...
+```
+
+必要なら`影響:`を加える。タイトルだけの短いcommit messageは避ける。
+- Step merge commitも日本語でタイトル＋本文を残す。
+- branchを作っただけでremote pushはしない。GitHubで進捗共有が必要な場合のpushは、その時点の明示指示に従う。
 
 ## 12. Gate
 
