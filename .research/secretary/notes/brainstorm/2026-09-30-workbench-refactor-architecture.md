@@ -782,3 +782,14 @@ Prompt CRUDやdataset別DBへのmigrationはユーザーデータを動かすた
 ユーザーがStage 1「Package / Service / Workflow 構造refactor」を明示承認。対応specを`approved`へ昇格した。Stage 2--4は引き続き`draft`で、Stage 1実装へ混ぜない。
 
 承認spec: [2026-09-30-workbench-package-service-workflow-refactor-spec](../../../lab/projects/agentic-streaming-videoqa/specs/2026-09-30-workbench-package-service-workflow-refactor-spec.md)
+
+## 2026-09-30 23:28 JST 追記：Stage 1レビューで残存legacy packageを確認
+
+GitHub remote main `0de361ac709680a8fb64edf93ec9388ecf055c43` を静的レビュー。Stage 1新構造は入っている一方、旧 `agent/`, `model/`, `dataset/`, `interfaces/`, `reader/`, `sampling/` が残っている。確認した旧moduleの大半は新 `workflow/`, `agents/`, `datasets/`, `entrypoints/`, `browser/`, `streaming/` へのcompatibility import/aliasで、本体の二重実装ではない。ただしrepository内testが旧import pathを多数使っているため、test互換のために旧directoryが残っている状態。
+
+ユーザーはこの重複した見た目を解消したい。Stage 1 approved specへStep 7 `stage1-step07-remove-legacy-compat`を追加し、repo-wide import監査→testを新public packageへ移行→確認済み外部契約がなければlegacy directory削除、の順で整理する。外部consumerが実在する旧importを見つけた場合は削除せず報告する。
+
+また、直前にGitHubへ追加された `docs/file-relationships.md`, `docs/file-responsibilities.md`, `docs/processing-flow.md` は現行Stage 1構造ではなく、旧 `adapters/`, `configuration.py`, `chunking.py`, 旧top-level `pipeline.py` などを説明しておりstale。Step 7で現行構造へ更新する。
+
+Git運用は過去履歴を書き換えず、Stage 1 Step 7以降とStage 2以降で、Step→Stageを`--no-ff` mergeし、Git Graph上でmain/Stage/Step laneが見える履歴を残す。micro commit/merge commitは日本語タイトル＋本文（変更内容/理由/検証、必要なら影響）とする。remote push/PR/Stage→main mergeは引き続き別許可。
+
