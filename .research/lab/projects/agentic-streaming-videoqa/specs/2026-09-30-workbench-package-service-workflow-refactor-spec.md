@@ -2,7 +2,7 @@
 date: 2026-09-30
 project: agentic-streaming-videoqa
 type: implementation
-status: draft
+status: approved
 sequence: 1
 sequence_total: 4
 baseline_repository: RuikiHAYASHI/2026_09_hayashi_longvideoqa_workbench
@@ -215,4 +215,19 @@ non-blocking:
 
 ## 13. Gate
 
-本書は`draft`。ユーザーが本spec内容を承認するまでコード変更不可。承認後はStage 1だけをengineering-taskへ渡し、Stage 2以降を同時実装しない。
+2026-09-30 20:06 JST、ユーザーが**Stage 1を明示承認**した。blockingな未決事項はないため、本書を`approved`とする。
+
+実装許可は**Stage 1のみ**。Stage 2（Config再設計）、Stage 3（PromptService/CRUD）、Stage 4（Dataset別user data/cache migration）はdraftのままであり、この実装へ混ぜない。実Qwen/GPU/LongVideoBench full run、model download、push/PR/main mergeも別許可。
+
+## 14. Implementation Handoff
+
+- approved spec: 本書
+- 実装目的: 外部挙動を変えず、WorkbenchをPackage / Service / Workflow構造へ整理し、研究の一本道を短い`VideoQAWorkflow`から読めるようにする。
+- 基準repository/commit: `RuikiHAYASHI/2026_09_hayashi_longvideoqa_workbench@main` / `2b5f8309ed380951d812c3f2191f57ce30fb7ccd`（GitHub remote main、実装着手時にlocal/remoteを再確認）
+- 変更scope: Section 2--10のStage 1構造refactorのみ。
+- 対象外・維持条件: Section 8--9。特にConfig schema、Prompt CRUD、Dataset別storage migration、scientific behaviorは変更しない。
+- success criteria: Section 11。
+- 許可されている短時間検証: unit/Fake/browser既存回帰、compile/import、CLI/API smoke、diff check。GPUを必要としない範囲。
+- 長時間runの許可状態: 未許可。
+- Git操作: branch/worktree作成はengineering-taskのpreflightと現在運用に従う。commit/push/PR/main mergeは現在の承認から推定しない。
+- 未検証予定: 実Qwen/GPU、LongVideoBench実データ、長尺/科学的性能。
