@@ -3,7 +3,7 @@ date: 2026-09-30
 last_updated: 2026-10-01
 project: agentic-streaming-videoqa
 type: implementation
-status: draft
+status: approved
 sequence: 2
 sequence_total: 4
 baseline_repository: RuikiHAYASHI/2026_09_hayashi_longvideoqa_workbench
@@ -230,4 +230,5 @@ Git運用規約（Stage branch → Step branch → micro-step commit、日本語
 
 ## 13. Gate
 
-本書は`draft`。Stage 1 implemented後、blocking 1を承認してからapprovedへ上げる。
+2026-10-01、ユーザーが「repository外で個人的に作成した旧recipe YAMLは互換保証対象外」と承認した。
+repository同梱Configのみを移行対象とし、既存Runは保存済みsnapshotから復元する。本書を`approved`とする。
