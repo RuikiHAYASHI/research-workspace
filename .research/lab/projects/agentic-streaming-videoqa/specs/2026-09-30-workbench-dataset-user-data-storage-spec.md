@@ -1,5 +1,6 @@
 ---
 date: 2026-09-30
+last_updated: 2026-10-01
 project: agentic-streaming-videoqa
 type: implementation
 status: draft
@@ -7,7 +8,7 @@ sequence: 4
 sequence_total: 4
 baseline_repository: RuikiHAYASHI/2026_09_hayashi_longvideoqa_workbench
 baseline_ref: main
-baseline_commit: 2b5f8309ed380951d812c3f2191f57ce30fb7ccd
+baseline_commit: 4f2546ef4a1dafd2ae2ba157c079d766ed023cb2
 depends_on:
   - 2026-09-30-workbench-prompt-service-crud-spec.md
 source_brainstorm:
@@ -141,6 +142,8 @@ directory名はdataset adapterの安定IDから作り、video titleや外部自�
 - 旧global DBを破壊せず明示migrationでき、件数一致を確認できる。
 - test用WORKBENCH_HOMEで実ユーザーデータを触らない。
 - code repository/worktreeへmutable cache/user stateを作らない。
+- Stage 4完了時にWorkbench repositoryの`README.md`を現行実装へ更新し、少なくとも`WORKBENCH_HOME`、Dataset別persistent state/cache配置、PromptService/Prompt Libraryの現在契約、通常起動・migration導線、旧`--library-db`/旧Prompt直接textarea説明の扱いが実装と一致する。
+- README更新では未検証の実Qwen/GPU性能を成功済みとして記載しない。
 
 ## 10. Ambiguity Gate
 
@@ -174,8 +177,13 @@ Stage 4は**Stage branch → Step branch → micro-step commit**で進める。
    - 旧global DBからcopy-only migration、件数検証、rollback/marker。
 5. `stage4-step05-cli-browser-regression`
    - migration操作、restart、Dataset間分離、cache削除非回帰、Fake tests。
+6. `stage4-step06-readme-finalize`
+   - Stage 1--4後の現行構成に合わせてWorkbench `README.md`を更新する。
+   - `WORKBENCH_HOME`、Dataset別DB/cache、Prompt Library、canonical Config/runtime override、migration方法、foreground server運用を実装と一致させる。
+   - 旧worktree固定手順、旧`prompts/en/*.txt`前提、通常UIでのPrompt本文直接textarea上書き、通常利用でのglobal `--library-db`等、現行実装と食い違う説明は削除または現行契約へ修正する。
+   - READMEだけで通常利用の保存先とmigrationの安全境界を理解できることを確認する。
 
-各Step branch内では、path resolver、DB routing、cache routing、migration各table、UI/CLI等を独立micro-step commitへ分ける。migrationとunrelated browser変更を同commitへ混ぜない。Step→Stage統合時にsquashしない。
+各Step branch内では、path resolver、DB routing、cache routing、migration各table、UI/CLI等を独立micro-step commitへ分ける。migrationとunrelated browser変更を同commitへ混ぜない。README更新も実装完了後の独立Stepとして扱い、実装前の予定を完成済みとして書かない。Step→Stage統合時にsquashしない。
 
 **Stage/Step branch作成とmicro-step commit作成は明示許可済み**。remote push、PR、Stage→main mergeは未許可。
 
@@ -203,4 +211,13 @@ Stage 4は**Stage branch → Step branch → micro-step commit**で進める。
 
 ## 12. Gate
 
-本書は`draft`。Stage 3 implemented後、blocking 1--2を承認してからapprovedへ上げる。
+2026-10-01、Stage 3がWorkbench `main@4f2546ef4a1dafd2ae2ba157c079d766ed023cb2`で実装済みであることを確認した。
+
+同日、ユーザーがStage 4へ移行する意向と、**Stage 4終了時点でWorkbench `README.md`も現行実装へ更新すること**を明示した。このREADME更新をSection 9のsuccess criteriaおよびSection 11の最終Stepへ追加した。
+
+残るblockingはSection 10の2点のみ。
+
+1. cacheをGit repository/worktree内へ置かず、`WORKBENCH_HOME`配下へ集約するか。
+2. 旧global DB migrationを自動初回migrationではなく、CLI/Browserから明示実行するcopy-only migrationとするか。
+
+この2点のユーザー承認後に本書を`approved`へ上げる。
