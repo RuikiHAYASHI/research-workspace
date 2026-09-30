@@ -3,7 +3,7 @@ date: 2026-09-30
 last_updated: 2026-10-01
 project: agentic-streaming-videoqa
 type: implementation
-status: approved
+status: implemented
 sequence: 3
 sequence_total: 4
 baseline_repository: RuikiHAYASHI/2026_09_hayashi_longvideoqa_workbench
@@ -245,3 +245,21 @@ blockingな未決事項は解消したため、本書を`approved`とする。
 - 長時間runの許可状態: 未許可。実Qwen/GPU/長尺実データrunを開始しない。
 - Git操作: Section 11に従いStage/Step branch作成、micro-step commit、Step→Stageのlocal `--no-ff` mergeは許可済み。remote push、PR、Stage→main mergeは未許可。
 - 未検証予定: Prompt品質、実Qwen/GPU、長尺実データ上の性能。
+
+
+## 14. Implementation Evidence（2026-10-01）
+
+GitHub上のWorkbench `main` でStage 3の実装完了を確認した。
+
+- repository: `RuikiHAYASHI/2026_09_hayashi_longvideoqa_workbench`
+- Stage 3完了時の`main`: `4f2546ef4a1dafd2ae2ba157c079d766ed023cb2`
+- Step 1: built-in Prompt layoutとPromptService read pathを追加。
+- Step 2: User Promptの永続storageとversion管理を追加。
+- Step 3: Prompt version / hash / bodyをRun snapshotへ保存。
+- Step 4: Prompt APIとLibrary UIを追加。
+- Step 5: Prompt CRUD回帰とschema互換性検証を追加。
+- 追加compatibility fixとして、`resolved_prompts.json`へ`prompt_version`と`body` aliasを補完。
+- commit記録ではPromptService / ConfigService / API / Record関連test、compileall、`git diff --check`を実施済み。
+- 実Qwen / GPU / Prompt品質評価はStage 3のsuccess criteria外であり未実施。
+
+以上によりapproved scopeと必須短時間検証は完了しているため、本specを`implemented`とする。
