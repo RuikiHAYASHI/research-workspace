@@ -153,6 +153,32 @@ non-blocking:
 - migration markerのJSON key名。
 - dataset folder ID sanitizerの内部helper。
 
-## 11. Gate
+## 11. Implementation Steps / Git Strategy
+
+Stage 4は**Stage branch → Step branch → micro-step commit**で進める。
+
+- Stage branch: `stage-4-dataset-user-data-storage`
+- Step branchは現在のStage branch HEADから作成する。
+- Step完了後、対象testを通してmicro commitsをsquashせずStage branchへlocal統合する。
+- push/PR/Stage→main mergeは別許可。
+
+実装step:
+
+1. `stage4-step01-storage-paths`
+   - `WORKBENCH_HOME`、StoragePaths/UserDataService、dataset root解決。
+2. `stage4-step02-dataset-library-routing`
+   - Dataset別`library.sqlite3`とBrowserService routing。
+3. `stage4-step03-dataset-cache-routing`
+   - thumbnail/preview/translation cacheのDataset別配置。
+4. `stage4-step04-copy-migration`
+   - 旧global DBからcopy-only migration、件数検証、rollback/marker。
+5. `stage4-step05-cli-browser-regression`
+   - migration操作、restart、Dataset間分離、cache削除非回帰、Fake tests。
+
+各Step branch内では、path resolver、DB routing、cache routing、migration各table、UI/CLI等を独立micro-step commitへ分ける。migrationとunrelated browser変更を同commitへ混ぜない。Step→Stage統合時にsquashしない。
+
+**Stage/Step branch作成とmicro-step commit作成は明示許可済み**。remote push、PR、Stage→main mergeは未許可。
+
+## 12. Gate
 
 本書は`draft`。Stage 3 implemented後、blocking 1--2を承認してからapprovedへ上げる。
