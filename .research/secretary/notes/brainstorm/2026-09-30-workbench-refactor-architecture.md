@@ -776,3 +776,9 @@ Prompt CRUDやdataset別DBへのmigrationはユーザーデータを動かすた
 4. [Dataset別 User Data / Cache Storage](../../../lab/projects/agentic-streaming-videoqa/specs/2026-09-30-workbench-dataset-user-data-storage-spec.md)
 
 いずれも現時点は`draft`。Stage 1を先に承認・実装し、Stage 2→3→4の順で進める。後段specは先行段階の実装結果を再確認してからapprovedへ上げる。
+
+## 2026-09-30 20:06 JST Stage 1承認
+
+ユーザーがStage 1「Package / Service / Workflow 構造refactor」を明示承認。対応specを`approved`へ昇格した。Stage 2--4は引き続き`draft`で、Stage 1実装へ混ぜない。
+
+承認spec: [2026-09-30-workbench-package-service-workflow-refactor-spec](../../../lab/projects/agentic-streaming-videoqa/specs/2026-09-30-workbench-package-service-workflow-refactor-spec.md)
