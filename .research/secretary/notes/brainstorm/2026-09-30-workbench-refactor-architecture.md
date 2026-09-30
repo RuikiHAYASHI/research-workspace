@@ -765,3 +765,14 @@ dataset別DBにするとfavorite/alias/recent/folderを完全分離できる反�
 - `UserDataService`またはStoragePaths: XDG persistent root/cache rootのpathのみ統一管理
 
 Prompt CRUDやdataset別DBへのmigrationはユーザーデータを動かすため、単なるpackage refactorとは分け、backup/旧DB import/read-only migration Gateを持つべき。
+
+## 2026-09-30 spec昇格先
+
+ユーザーが段階的に実装へ進むため、以下4本のimplementation spec draftへ昇格した。
+
+1. [Package / Service / Workflow 構造refactor](../../../lab/projects/agentic-streaming-videoqa/specs/2026-09-30-workbench-package-service-workflow-refactor-spec.md)
+2. [Agent / Workflow Config 再設計](../../../lab/projects/agentic-streaming-videoqa/specs/2026-09-30-workbench-agent-workflow-config-spec.md)
+3. [PromptService / CRUD / Version履歴](../../../lab/projects/agentic-streaming-videoqa/specs/2026-09-30-workbench-prompt-service-crud-spec.md)
+4. [Dataset別 User Data / Cache Storage](../../../lab/projects/agentic-streaming-videoqa/specs/2026-09-30-workbench-dataset-user-data-storage-spec.md)
+
+いずれも現時点は`draft`。Stage 1を先に承認・実装し、Stage 2→3→4の順で進める。後段specは先行段階の実装結果を再確認してからapprovedへ上げる。
