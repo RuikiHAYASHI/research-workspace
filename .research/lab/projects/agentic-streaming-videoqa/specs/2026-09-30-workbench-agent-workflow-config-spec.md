@@ -3,7 +3,7 @@ date: 2026-09-30
 last_updated: 2026-10-01
 project: agentic-streaming-videoqa
 type: implementation
-status: approved
+status: implemented
 sequence: 2
 sequence_total: 4
 baseline_repository: RuikiHAYASHI/2026_09_hayashi_longvideoqa_workbench
@@ -232,3 +232,20 @@ Git運用規約（Stage branch → Step branch → micro-step commit、日本語
 
 2026-10-01、ユーザーが「repository外で個人的に作成した旧recipe YAMLは互換保証対象外」と承認した。
 repository同梱Configのみを移行対象とし、既存Runは保存済みsnapshotから復元する。本書を`approved`とする。
+
+
+## 14. Implementation Evidence（2026-10-01）
+
+GitHub上のWorkbench `main` でStage 2のStep 1--5完了を確認した。
+
+- repository: `RuikiHAYASHI/2026_09_hayashi_longvideoqa_workbench`
+- Stage 2完了時の`main`: `f575cf5a7a2093cbf22e57493a5e9b245a00e4ba`
+- Step 1: canonical `configs/default.yaml`、Config schema、`ConfigService`
+- Step 2: Agentごとのmodel / prompt / generation解決とlogical prompt ID接続
+- Step 3: Web / CLI runtime overrideのConfigService接続
+- Step 4: repository同梱Config移行と既存Run snapshot互換
+- Step 5: Config / Fake / API / CLI / browser回帰、compile、hard-code監査
+- `main@f575cf5a` のmerge commit本文では、`av`依存の `tests/test_sequential_windows.py` を除くpytest、compileall、diff checkが通過したことを確認した。
+- 実Qwen / GPU / 長尺実データ評価はStage 2の成功条件外であり未実施のまま。
+
+以上により、approved scopeと短時間検証は完了しているため、本specを`implemented`とする。
