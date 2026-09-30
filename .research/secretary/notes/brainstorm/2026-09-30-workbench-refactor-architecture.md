@@ -596,3 +596,172 @@ Memory: <更新後のmemory text>
 とする候補。これはearly answerという研究挙動変更なので、今回の構造refactorとは分離したspecにする。
 
 この依存木を守るため、最初のrefactorでは挙動/API/artifact/prompt/schemaを変えず、package移動・Facade抽出・重複orchestration一本化のみを対象にするのが安全。
+
+## 2026-09-30 19:25 JST 追記：Config・Prompt管理・Dataset別ユーザー状態
+
+ユーザーはリファクタspec前の最後の確認として、現configで制御できる範囲、YAMLからprompt選択できるか、prompt CRUD/履歴の実装進捗、prompt directory再編、favorite等のユーザー状態をsrc外・dataset単位で保存する構成を確認したい。
+
+### 現行main `2b5f830` のConfig実態
+
+`config/loader.py`はprofile/recipe/promptをallowlistで解決。
+
+**profile YAML** (`configs/common/longvideobench-qwen3vl.yaml`):
+- `dataset_adapter`
+- `data_root_name`
+- `model_adapter`
+- `model_id`
+- `generation.max_new_tokens`, `generation.temperature`
+- `subtitles_enabled`
+- `decoder_frames_per_sample`
+- `stages[].name/prompt_id/enabled`
+
+**recipe YAML**:
+必須 `profile, question_id, window_seconds, frames_per_window`
+任意 `reader_mode, observation_context_mode, visual_input_mode, memory_budget_tokens`
+
+**runtime API**:
+recipe項目に加え`prompt_overrides: {stage_name: prompt_text}`を受ける。一回のrunだけの本文上書き。
+
+**video_clip特例**:
+profile YAMLの`stages[].prompt_id`は自由選択としては機能せず、`_resolved_stage()`が
+- Situation: `chunk_understanding_video_v1_en` / `...with_memory...`
+- Memory: `evidence_aggregation_video_v1_en`
+- Answer: `final_answer_video_v1_en`
+へ強制差替え。image_listでもSituation+previous_textは`chunk_understanding_with_memory_en`へ強制。
+従って「どのpromptを使うかをrecipe YAMLから任意に選ぶ」は現状不可。profileにprompt_idはあるがmode resolverが優先する。
+
+video_clipのstage別生成上限もYAMLではなくPython定数`VIDEO_GENERATION_LIMITS`でSituation=1024, Memory=768, Answer=384へ設定。共通temperatureはprofile generationから継承。
+
+Webの新run defaultはserver capabilitiesで`visual_input_mode=video_clip`を明示している一方、CLIのnamed recipeをそのままresolveすると未指定時`image_list`。このdefault差もリファクタ時に明示したい。
+
+### Prompt管理の現行進捗
+
+実装済み:
+- repositoryの`prompts/en/*.txt` 8ファイルをallowlist登録。
+- mode/contextに応じたbuilt-in presetをserver capabilitiesで返す。
+- Webの各stageにprompt本文textareaを表示し、実行前に編集可能。
+- 編集本文は`prompt_overrides`としてそのrunへ送る。
+- 実runは`resolved_prompts.json`/`execution_settings.json`/`stages.jsonl`へprompt ID/hash/本文をsnapshot保存するため、過去run再現性はある。
+
+未実装:
+- 名前・説明付きprompt library
+- 保存済みprompt一覧から選択
+- 新規作成
+- 永続編集/version履歴
+- 削除/archive
+- Agentごとの「prompt確認」専用画面
+- 日本語表示/翻訳cacheと英語sourceの紐付け
+- 「最初のプロンプト」/「実装時に作成したプロンプトです」という表示metadata
+つまり「textareaでrun単位に一時編集」はあるが、以前合意したCRUD管理はまだ実装されていない。
+
+### Prompt directory再編候補
+
+code repo内のbuilt-in promptと、ユーザー作成promptを分離する。
+
+Repository (read-only built-ins):
+```text
+prompts/
+├── situation/
+│   ├── image/
+│   │   ├── default_en.txt
+│   │   └── with_memory_en.txt
+│   └── video/
+│       ├── v1_en.txt
+│       └── v1_with_memory_en.txt
+├── memory/
+│   ├── image/default_en.txt
+│   └── video/v1_en.txt
+└── answer/
+    ├── image/default_en.txt
+    └── video/v1_en.txt
+```
+
+あるいは各promptをfolderにし`prompt.txt + metadata.yaml`とする案:
+```text
+prompts/situation/video/v1/
+├── prompt.en.txt
+└── metadata.yaml
+```
+metadataに`id, role, title, description, language, input_schema, output_schema`を持てるため将来のprompt browserと相性が良い。初期built-inのtitle/descriptionはユーザー指定の「最初のプロンプト」「実装時に作成したプロンプトです」。
+
+User-created promptはrepositoryへ書かず、外部persistent root:
+```text
+~/.local/share/longvideoqa-workbench/
+└── prompts/
+    ├── situation/<prompt-id>/
+    │   ├── metadata.json
+    │   └── versions/0001.txt, 0002.txt, ...
+    ├── memory/...
+    └── answer/...
+```
+削除はarchiveを基本とし、run snapshotは不変。PromptServiceがbuilt-in + user libraryを統合してlogical `prompt_id`を解決し、configはpathではなくIDだけ参照する。
+
+### Config再編候補
+
+将来のCrewAI風Agent定義と合わせるなら、prompt selection/model/generationをAgent単位で明示するYAMLが分かりやすい:
+
+```yaml
+agents:
+  situation:
+    model: qwen3_vl
+    model_id: Qwen/Qwen3-VL-4B-Instruct
+    prompt_id: situation.video.initial
+    max_new_tokens: 1024
+  memory:
+    model: qwen3_vl
+    model_id: Qwen/Qwen3-VL-4B-Instruct
+    prompt_id: memory.video.initial
+    max_new_tokens: 768
+  answer:
+    model: qwen3_vl
+    model_id: Qwen/Qwen3-VL-4B-Instruct
+    prompt_id: answer.video.initial
+    max_new_tokens: 384
+
+workflow:
+  window_seconds: 4
+  frames_per_window: 8
+  reader_mode: target_only
+  visual_input_mode: video_clip
+  observation_context_mode: none
+  memory_budget_tokens: 6000
+```
+ただし初回構造refactorでconfig schemaまで変えると挙動変更リスクが上がるため、package移動とは分離して次micro/specで扱う候補。
+
+### Favorite/Folder等の現状と外部保存
+
+現状もsrc/repository内保存ではない。既定は:
+`$XDG_DATA_HOME/longvideoqa-workbench/library.sqlite3`
+未設定なら
+`~/.local/share/longvideoqa-workbench/library.sqlite3`
+CLIの`--library-db`で上書き可。
+
+単一SQLiteに`videos(dataset_id, internal_key, alias, favorite, last_used_ns)`、global `folders`、`folder_videos(dataset_id,...)`、translation cacheが共存。データはdataset_idで論理分離されるが、物理ファイルは共通。folder名はglobal。
+
+ユーザー希望のdataset単位物理分離候補:
+```text
+~/.local/share/longvideoqa-workbench/
+├── datasets/
+│   ├── longvideobench/
+│   │   └── library.sqlite3
+│   ├── ego4d/
+│   │   └── library.sqlite3
+│   └── ...
+├── prompts/
+│   └── ...
+└── app/
+    └── settings.json
+```
+thumbnail/previewはpersistent stateではなく`$XDG_CACHE_HOME/longvideoqa-workbench/...`へ分離維持。
+
+dataset別DBにするとfavorite/alias/recent/folderを完全分離できる反面、「複数datasetをまたぐ1つのfolder」は自然には作れなくなる。現時点のユーザー意向はdataset分離を優先するため、folderもdataset内とする案が有力。translation cacheはdataset状態ではないためglobal cacheへ分離する方が自然。
+
+### Service境界との対応
+
+- `ConfigService`: YAML/Agent設定の解決（将来PromptServiceをlogical IDで利用）
+- `PromptService`: built-in + user prompt library、CRUD/version/archive、run用snapshot
+- `DatasetService`: dataset adapter
+- `BrowserService`: dataset別LibraryStoreを解決
+- `UserDataService`またはStoragePaths: XDG persistent root/cache rootのpathのみ統一管理
+
+Prompt CRUDやdataset別DBへのmigrationはユーザーデータを動かすため、単なるpackage refactorとは分け、backup/旧DB import/read-only migration Gateを持つべき。
