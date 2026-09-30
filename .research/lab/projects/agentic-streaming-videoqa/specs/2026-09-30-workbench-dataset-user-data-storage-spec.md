@@ -3,7 +3,7 @@ date: 2026-09-30
 last_updated: 2026-10-01
 project: agentic-streaming-videoqa
 type: implementation
-status: draft
+status: approved
 sequence: 4
 sequence_total: 4
 baseline_repository: RuikiHAYASHI/2026_09_hayashi_longvideoqa_workbench
@@ -144,12 +144,15 @@ directory名はdataset adapterの安定IDから作り、video titleや外部自�
 - code repository/worktreeへmutable cache/user stateを作らない。
 - Stage 4完了時にWorkbench repositoryの`README.md`を現行実装へ更新し、少なくとも`WORKBENCH_HOME`、Dataset別persistent state/cache配置、PromptService/Prompt Libraryの現在契約、通常起動・migration導線、旧`--library-db`/旧Prompt直接textarea説明の扱いが実装と一致する。
 - README更新では未検証の実Qwen/GPU性能を成功済みとして記載しない。
+- Git履歴はmain / Stage / Stepの3層が視覚的に追えるtopologyを維持する。各Step→Stage統合は必ず`--no-ff`とし、merge後に`git log --graph --oneline --decorate --all`等でStep branch由来のmerge commitが残っていることを確認する。
+- 将来Stage 4→main mergeが別途承認された場合も必ず`--no-ff`を使い、fast-forwardさせない。Stage 4実装中はmain merge・push・PRを行わない。
 
 ## 10. Ambiguity Gate
 
 blocking:
-1. **cacheをGit repository内へ置くか**: 本specは置かず、同一Workbench user-data rootへ集約する。もしユーザーの「同じリポジトリ」がGit repositoryそのものを意味する場合は承認前に変更が必要。推奨は本spec案。
-2. **migration実行方式**: 明示CLI/Browser操作でcopy migrationするか、自動初回migrationするか。本specは安全性から明示操作を推奨。
+- なし。2026-10-01、ユーザーがStage 4を承認し、以下の推奨案を採用した。
+  1. cache / mutable user dataはGit repository/worktree内へ置かず、`WORKBENCH_HOME`配下へ集約する。
+  2. 旧global DB migrationは自動初回migrationにせず、CLIまたはBrowserから明示実行するcopy-only migrationとする。旧DBは削除・上書きしない。
 
 non-blocking:
 - cache DB/file命名。
@@ -190,7 +193,8 @@ Stage 4は**Stage branch → Step branch → micro-step commit**で進める。
 ### Git history / commit message convention
 
 - Git Graphで`main / Stage / Step`の関係が分かるよう、Step→Stageは`--no-ff` mergeを使う。
-- 将来Stage→mainのmergeが別途承認された場合も`--no-ff`を基本とし、Stage laneを履歴に残す。
+- 将来Stage→mainのmergeが別途承認された場合も**必ず**`--no-ff`を使い、Stage laneを履歴に残す。fast-forward可能でも省略しない。
+- 各Step merge後に`git log --graph --oneline --decorate --all`等でmain / Stage / Stepの分岐・merge topologyを確認する。Step branch上のcommitをStage branchへ直接linear commitした状態で完了扱いにしない。
 - micro-step commitは日本語で、1行目を`Stage N Step M: <変更タイトル>`とする。
 - commit本文は空行を挟み、原則として次を記載する。
 
@@ -213,11 +217,25 @@ Stage 4は**Stage branch → Step branch → micro-step commit**で進める。
 
 2026-10-01、Stage 3がWorkbench `main@4f2546ef4a1dafd2ae2ba157c079d766ed023cb2`で実装済みであることを確認した。
 
-同日、ユーザーがStage 4へ移行する意向と、**Stage 4終了時点でWorkbench `README.md`も現行実装へ更新すること**を明示した。このREADME更新をSection 9のsuccess criteriaおよびSection 11の最終Stepへ追加した。
+同日、ユーザーがStage 4を明示承認し、以下を確定した。
 
-残るblockingはSection 10の2点のみ。
+- cache / mutable user dataはGit repository/worktree内へ置かず、`WORKBENCH_HOME`配下へ集約する。
+- 旧global DB migrationは自動初回migrationにせず、CLIまたはBrowserから明示実行するcopy-only migrationとする。旧DBを削除・上書きしない。
+- Stage 4終了時点でWorkbench `README.md`をStage 1--4後の現行実装へ更新する。
+- Git Graphはmain / Stage / Stepの3層が追える履歴を維持し、Step→Stageは必ず`--no-ff`、将来Stage→mainが別途承認された場合も必ず`--no-ff`とする。merge後にGraph topologyを検証する。
 
-1. cacheをGit repository/worktree内へ置かず、`WORKBENCH_HOME`配下へ集約するか。
-2. 旧global DB migrationを自動初回migrationではなく、CLI/Browserから明示実行するcopy-only migrationとするか。
+blockingな未決事項は解消したため、本書を`approved`とする。
 
-この2点のユーザー承認後に本書を`approved`へ上げる。
+## 13. Implementation Handoff
+
+- approved spec: 本書
+- 実装目的: Datasetごとのpersistent state/cacheを`WORKBENCH_HOME`配下へ物理分離し、旧global DBから安全に明示copy migrationできるようにする。Stage 4完了時にREADMEを現行構成へ同期する。
+- 基準repository/commit: `RuikiHAYASHI/2026_09_hayashi_longvideoqa_workbench@main` / `4f2546ef4a1dafd2ae2ba157c079d766ed023cb2`
+- 変更scope: Section 2--7、Section 11のStage 4 Step 1--6、Git topology検証。
+- 対象外・維持条件: Section 8。Dataset本体の実データpath、Run artifact/output root、Agent/Workflow、Prompt内容、Qwen/GPU挙動は変更しない。
+- success criteria: Section 9。
+- 許可されている短時間検証: StoragePaths/UserDataService unit、Dataset別DB/cache routing、migration preflight/copy/rollback/marker、restart、Fake/API/browser、compile/import、diff check、Git graph topology確認。
+- 長時間runの許可状態: 未許可。実Qwen/GPU/長尺実データrun、model downloadを開始しない。
+- Git操作: Stage/Step branch作成、micro-step commit、Step→Stageのlocal `--no-ff` mergeは許可済み。remote push、PR、Stage→main mergeは未許可。Stage→main mergeは将来別途承認された場合のみ`--no-ff`で行う。
+- 未検証予定: 実Qwen/GPU、長尺実データ上の性能、科学的精度。
+
