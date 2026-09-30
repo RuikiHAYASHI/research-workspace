@@ -171,6 +171,32 @@ non-blocking:
 - Prompt IDをUUIDにするかslug+UUIDにするか。人間向けtitleとは分離する。
 - archive一覧のUI位置。
 
-## 11. Gate
+## 11. Implementation Steps / Git Strategy
+
+Stage 3は**Stage branch → Step branch → micro-step commit**で進める。
+
+- Stage branch: `stage-3-prompt-service-crud`
+- Step branchは現在のStage branch HEADから作成する。
+- Step完了後、対象testを通してmicro commitsをsquashせずStage branchへlocal統合する。
+- push/PR/Stage→main mergeは別許可。
+
+実装step:
+
+1. `stage3-step01-builtin-prompt-layout`
+   - built-in prompt directory/metadata再編とPromptService read path。
+2. `stage3-step02-user-prompt-storage`
+   - user Promptの永続保存、create/edit/version/archive/restore。
+3. `stage3-step03-config-run-snapshot`
+   - Configとのlogical prompt ID接続、Run snapshot ID/version/hash/body。
+4. `stage3-step04-prompt-api-ui`
+   - Prompt専用APIと選択/確認/作成/編集/archive/history UI。
+5. `stage3-step05-regression`
+   - restart永続性、old Run、built-in保護、Fake/API/browser回帰。
+
+各Step branch内では、Prompt metadata、storage、versioning、API、UI等を独立micro-step commitへ分ける。巨大なCRUD一括commitにしない。Step→Stage統合時にsquashしない。
+
+**Stage/Step branch作成とmicro-step commit作成は明示許可済み**。remote push、PR、Stage→main mergeは未許可。
+
+## 12. Gate
 
 本書は`draft`。Stage 2 implemented後、blocking 1を承認してからapprovedへ上げる。
