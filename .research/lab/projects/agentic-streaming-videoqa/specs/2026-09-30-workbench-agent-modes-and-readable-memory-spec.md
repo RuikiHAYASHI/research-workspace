@@ -1,7 +1,7 @@
 ---
 date: 2026-09-30
 project: agentic-streaming-videoqa
-status: draft
+status: implemented
 topic: workbench-agent-modes-and-readable-memory
 source: 2026-09-25 MTG; 2026-09-29 and 2026-09-30 agent brainstorm; 2026-09-30 user request
 last_updated: 2026-09-30
@@ -12,11 +12,11 @@ related_brainstorm:
   - 2026-09-30-workbench-inference-ui-prompt-library-and-qwen-video.md
 ---
 
-# Workbench: 動画区間理解・Agent記憶モード・可読な根拠記録（改訂draft実装spec）
+# Workbench: 動画区間理解・Agent記憶モード・可読な根拠記録（実装済みspec）
 
 ## 0. 状態・Authority・Gate
 
-`status: draft`。ユーザーは2026-09-30に**Situation/Memory/Answerの3つのプロンプト方針および選択frame列＋区間相対video timing＋元動画実timestamp manifestの構造を採用し、改訂specの実装前Gateまで進める**ことを承認した。これはspec改訂の許可であり、`approved`への昇格、コード実装、モデルロード・GPU実験を一括承認したものではない。`research-spec`のGateを満たした範囲をユーザーが明示承認した後に`approved`へ変更し、`engineering-task`へ引き継ぐ。Companyの変更は146 serverのローカルcloneへ自動反映しない。
+`status: implemented`。ユーザーは2026-09-30に**Situation/Memory/Answerの3つのプロンプト方針および選択frame列＋区間相対video timing＋元動画実timestamp manifestの構造を採用**し、同日、第10節の3件を `1A・2A・3 video_clip` と明示承認した。この承認は第8節の先行実装と短時間検証に適用し、実Qwen/GPU実験、push、PR、main統合には及ばない。Companyの変更は146 serverのローカルcloneへ自動反映しない。
 
 同日、改訂前の初回scope（画像列での`none` / `previous_text`、重要イベント記録、機械用・人間用表示、固定4秒8枚）は別途明示承認・実装済み（第12節）。この承認・実装は本改訂で追加した`video_clip`入力・窓単位schema・新promptまで及ばない。
 
@@ -99,13 +99,13 @@ validated Situation JSON、`{{question}}`、`{{previous.evidence}}`、`{{current
 
 > Answer only after end-of-video has been reached. Compare the choices using validated evidence, not imagined content. Select the supported choice and cite only existing event IDs, frame IDs and timestamps. Report uncertainty without inventing a reference. Return only JSON containing answer, evidence_event_ids, evidence_frame_indices, evidence_timestamps_seconds, narrative_version.
 
-新video modeでも現行の**5キー出力・根拠ID/時刻/version検証を維持**。既存`answer`は選択番号と選択肢文。将来のDecision Agent/`CONTINUE/ANSWER`は別契約とする。証拠が実際に0件の場合の最終回答/失敗表示の扱いは`10`のblocking項目として承認前に決める。
+新video modeでも現行の**5キー出力・根拠ID/時刻/version検証を維持**。既存`answer`は選択番号と選択肢文。将来のDecision Agent/`CONTINUE/ANSWER`は別契約とする。動画全体で参照eventが0件の場合は`insufficient_evidence`をrunに記録し、回答選択とAnswer Agent呼出しを行わず終了する。
 
 ### 3.5 Prompt asset・履歴と対応関係
 
 既存`prompts/en/chunk_understanding.txt`、`evidence_aggregation.txt`、`final_answer.txt`は旧baseline/旧runのため無断で上書きしない。新`video_clip`にはmode別Situation 2種（例`chunk_understanding_video_en`、`chunk_understanding_video_with_memory_en`）と共通Memory/Answerのversioned prompt IDを導入し、入力変数allowlist・output schema・validator・model requestを一対一対応させる。旧未指定runは旧prompt/旧schemaで復元。
 
-保存prompt library UIはユーザー要求として有効だが、本件の実装単位に同梱するか`10`で確認する。実装時にはbuiltinの表示タイトル「最初のプロンプト」/説明「実装時に作成したプロンプトです」、source ID/hash/immutable version、作成/編集/削除(archive)/選択/再起動後復元/日本語表示用の将来拡張を守る。過去runの`resolved_prompt`本文/hashは変更しない。
+保存prompt library UIはユーザー要求として有効だが、本件の先行実装には同梱せず、別spec/後続microで扱う。新promptのsource ID/hash/immutable versionとrun snapshotは今回保持し、過去runの`resolved_prompt`本文/hashは変更しない。将来のlibraryではbuiltinの表示タイトル「最初のプロンプト」/説明「実装時に作成したプロンプトです」、作成/編集/削除(archive)/選択/再起動後復元/日本語表示用の拡張を検討する。
 
 ## 4. 重要イベントをテキストとして残す（B方針）
 
@@ -127,9 +127,9 @@ validated Situation JSON、`{{question}}`、`{{previous.evidence}}`、`{{current
 
 初回の研究軸に含めない: 動的な次window秒数/枚数、実早押し停止/EOF前回答、Qwen native絶対時間metadata方法B、途中で戻って未読未来をseekするonline混入、独立Event Agentの追加モデル呼出し、重要度の精度向上を実証済みとする主張、全件/長尺実Qwen評価、モデル自動取得、sequential_loaderの無承認内部変更、他者GPU・既存runの削除。
 
-**ユーザーから要求済みだが同一実装単位への同梱が未決**: Agent別モデル選択、persistent prompt libraryのCRUD/日本語閲覧、初期推論画面再設計、個人DB/固定ポート標準化。新promptのID/hash・run snapshotとAgent別設定へ接続できる契約は本specで維持し、`10`で初回実装へ同梱するか先行・後続micro/別specに分ける。勝手に要求自体を破棄しない。既存browser Step10 draftの初期タブ/応答性は別管理。
+**別spec/後続micro**: Agent別モデル選択、persistent prompt libraryのCRUD/日本語閲覧、初期推論画面再設計。新promptのID/hash・run snapshotとAgent別設定へ接続できる契約は本specで維持する。既存の個人DBと固定ポート8765の非回帰は今回の検証対象であり、標準化・移行は対象外。既存browser Step10 draftの初期タブ/応答性は別管理。
 
-## 8. 実装対象と順序（approved後にのみ有効）
+## 8. 実装対象と順序
 
 0. 調査: Company main/spec、target Workbench main/現在local HEAD/status/worktrees/dirty、依存`sequential_loader`の公開API、インストール済みTransformers/Qwen utils対応、旧runとFake fixturesをread-only照合。デフォルトブランチの旧`feat/step-10-qwen-preflight`を起点にしない。
 1. 契約とprompt: 二つの比較軸をresolved YAML/runtime/restore/UIで明示し、新Situation 2 prompt・共通Memory/Answer promptを別IDで登録。stageによるモデル/生成設定の実装範囲はGate確定分のみ。旧prompt/adapter/validatorをそのまま残す。
@@ -159,10 +159,12 @@ validated Situation JSON、`{{question}}`、`{{previous.evidence}}`、`{{current
 
 **確定済み（新たな確認不要）:** 3 promptの方針、Situationの窓単位の観測で全frame個別JSONを強制しないこと、Memoryの質問関連＋状態変化の蓄積、EOF Answer、新Qwen video inputには選択済みフレーム列＋区間相対fps＋元実timestamp manifestを使用、旧image/frame schemaの保持、前memory入力`none/previous_text`の比較。方法Bの直接absolute動画metadataは後続。
 
-**blocking：このspecを`approved`へ上げる前に確認する事項**
+**解決済みblocking（2026-09-30、ユーザー承認）**
 1. **今回の実装単位**: (A) 新video入力・3 prompt・2 context mode・根拠台帳/人間表示をひとまとまりとして先行し、個人prompt library/Agent別モデル/UI大改修は別spec/次microにするか、(B) ユーザーが既に希望したprompt CRUD/Agent別model/UIを同じ承認scopeに含めるか。後者は永続データ/モデルinstance/GPU境界を追加specで先に定義する必要がある。
 2. **不足証拠の最終扱い**: 新`observations=[]`/`events=[]`を許すと、動画全体で参照イベントが0のrunがあり得る。既存final validatorは非空の引用を要求するため、(A) `insufficient_evidence`をrun上に記録し回答選択せず終了、(B) 参照なしを許す新final schemaを設けて回答未確定と表示、のいずれにするか。証拠を捏造した選択は認めない。
 3. **新規runの初期表示**: 新UIの`video_clip`を既定で選択するか、旧`image_list`を既定に保って明示的に切り替えるか。**既存runの未指定設定は常に旧`image_list`**で復元する。
+
+採用: **1A**（先行実装のみ）、**2A**（参照event 0件なら`insufficient_evidence`で回答せず終了）、**3 `video_clip`**（新規runのUI既定）。既存runの未指定設定は`image_list`で復元する。blockingな未決事項はない。
 
 **non-blocking:** UI内の配置/文言・class配置・内部helper名は既存styleに合わせる。Qwen packageの現在版が動画を正しく処理できない場合はsilent fallbackでなく明示ブロック、依存変更を報告。stage別生成上限の初期値はテストで調整し、runtime/configとsnapshotへ明示して最終報告。元の動画より高精度の時間情報を創作しない。
 
@@ -170,9 +172,9 @@ validated Situation JSON、`{{question}}`、`{{previous.evidence}}`、`{{current
 
 ## 11. Engineering Handoff（approved後のみ）
 
-- SSOT: 本specの最新`approved`内容。現時点は`draft`のためCodexは変更前で停止。
+- SSOT: 本specの承認済み契約と第14節の実装結果。
 - 基準: `RuikiHAYASHI/2026_09_hayashi_longvideoqa_workbench@main`（調査HEAD `a491757cabb8ed897a2d752da73325fe15f48884`。着手時にremote/local双方を再確認）。別作業treeのdirty/未追跡・旧run・個人SQLite/promptを壊さない。
-- 対象: video path/manifest、new prompt IDsとwindow schema、`none`/`previous_text`、Memory event importance、human/machine trace、旧baseline互換。`10`のscope確定後に実装手順を固定。
+- 対象: video path/manifest、new prompt IDsとwindow schema、`none`/`previous_text`、Memory event importance、human/machine trace、旧baseline互換。新規runのUI既定は`video_clip`、参照event 0件は`insufficient_evidence`。prompt CRUD/Agent別model/UI大改修は別scope。
 - 許可なし: 実Qwen/GPU/大規模評価、モデル自動download、sequential_loaderの無関係な変更、他者のprocess停止、無承認のpush/PR/main merge。
 - 個人用Workbench: 固定`8765`と同じ永続DB rootを使い、必要時のみ前面serve起動→同じ端末の`Ctrl+C`で終了。`nohup`/`&`/常駐化を導入しない。
 
@@ -192,3 +194,13 @@ validated Situation JSON、`{{question}}`、`{{previous.evidence}}`、`{{current
 - MTG: `.research/lab/projects/agentic-streaming-videoqa/meetings/2026-09-25-mtg.md`
 - 概念整理: `.research/secretary/notes/brainstorm/2026-09-29-agent-orchestration.md`、`2026-09-30-evidence-adaptive-early-answer-videoqa.md`、`2026-09-30-workbench-inference-ui-prompt-library-and-qwen-video.md`
 - baseline: `2026-09-25-workbench-target-stream-and-hierarchical-memory-spec.md`（frontmatterのimplementedと本文旧draft記述の不一致があるため、現在コードを優先して現物確認）、`2026-09-29-workbench-dataset-browser-ui-implementation-spec.md`
+
+## 14. 承認後実装結果（2026-09-30）
+
+- 対象: Workbenchの独立worktree `.worktrees/longvideoqa-workbench-video-clip`、branch `feat/workbench-video-clip-memory`。基点は先行実装済み `a50570c5e6d12b69691fe124c2960fc9affde311`。変更は未commitで、元`main`・既存未追跡docs・過去run・個人SQLiteは変更していない。
+- micro 1（設定・prompt）: `visual_input_mode=image_list|video_clip`を設定、復元、API、UIへ追加。新規UIは`video_clip`を既定とし、未指定の旧runは`image_list`へ復元。新Situation 2種・Memory・Answerのversioned prompt ID/hashとstage別生成上限（Situation 1024、Memory 768、Answer 384）を保存。旧prompt assetは維持。
+- micro 2（動画入力・時刻）: 選択済みRGB frame列だけをQwen processorへ1本の`type:video`として渡し、`do_sample_frames=False`、目標fps `frames/window_seconds`、相対ordinalを使用。元frame ID・target/actual秒をprompt manifestと`chunks.jsonl`へ保持し、絶対時刻の正本はactual秒とする。Qwen processorの空間resizeは直接メモリ入力の既定処理に委ね、元動画パスはモデルへ渡さない。
+- micro 3（3 Agentと記録）: Situationは窓単位`window_observation_v1`で0件も許容、Memoryは根拠frame・重要理由付き`memory_aggregation_v1`、AnswerはEOF後の既存5キーを検証。validated観測・全event・全記憶版を`memory.jsonl`に追記、最新narrativeを`memory.json`に保存。raw/validated・生成上限到達・検証失敗を`stages.jsonl`/run statusに残す。全区間でevent 0件なら`insufficient_evidence`で回答を選ばず終了。
+- micro 4（閲覧）: `chunks.jsonl`と`memory.jsonl`から区間summary、観測、採用frame/時刻、event理由、記憶版差分をread-onlyで表示。mode切替で対応するprompt ID/hashを表示し、履歴GETは推論を開始しない。
+- micro 5（検証）: Workbench全181件成功（Firefox UI 10件を含む）、Python compile、`git diff --check`成功。短い合成動画の4秒8枚、FakeのON/OFF・0件・invalid JSON・旧baselineを確認。Workbench仮想環境の旧editable loaderには新APIがなかったため、既存の`docs/target-frame-stream` commit `76badb1c407a34de6f2dfa7e5d4040ef7c4b2ccc`から依存取得なしでローカルwheelを入れ直し、公開`target_frame_stream`と通常環境の合成動画テストを確認した。loaderソースは変更していない。
+- 未検証: 実Qwen/GPU、LongVideoBench実データ、長尺動画、正答率・時刻グラウンディング・速度、stage別生成上限の実機適正。モデル自動download、push、PR、main統合、常駐server起動はしていない。
