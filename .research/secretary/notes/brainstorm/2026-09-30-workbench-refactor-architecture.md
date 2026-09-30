@@ -341,3 +341,161 @@ Agentはmodel固有backendを選びprompt/generationを保持。Taskは質問/wi
 prompt本文、output JSON schema、video_clip、sample_fps、none/previous_text、EOF Answer、insufficient_evidence、artifactファイル形式、HTTP URL/response、旧run read compatibilityは不変。Agent別model選択やprompt CRUDは構造整理後の機能追加として分離。
 
 現在の方向性は有力だがまだbrainstorm。spec化/コード変更はユーザーの明示依頼後。
+
+## 2026-09-30 18:51 JST 追記：Agent間テキスト状態とPackage Service境界
+
+ユーザーの軌道修正:
+- 人間向けテキストはSituation summaryだけではなく、**各windowで実際に動いた全Agentの主要出力**を順番に残したい。現状は各windowでSituation+Memory、EOFでAnswer。
+- Agent間で受け渡す主情報も単純なtextに寄せたい。Situationは今見える情報をtext化、Memoryは「前までのmemory text + current situation text + question」を見て、まだ回答に直結しなければmemory textを更新、十分ならAnswerへ渡す構想。
+- 詳細なframe/event/timestamp/validation等はmachine artifactとして別保持。
+- 各directoryに外部向けの「監督/窓口」を置き、他directoryの内部関数を直接importしない。directory間通信は最小化し、その上に全体監督を置く。
+
+### 現行と将来像の差
+
+現行main `2b5f830`では、Situation/Memoryは各windowで実行、AnswerはEOFのみ。Memory promptはすでに`Previous validated text memory + Current validated observations + Question + frame manifest`を入力し、`events + narrative + unresolved`を返す。ただし「今回答できるか」を判定してAnswerを途中起動する機能はない。これは将来のearly-answer/Decision研究に相当し、リファクタと機能変更を分ける。
+
+### 人間向けAgent trace候補
+
+machine SSOTはJSON/JSONLのまま。そこから決定的に`run_trace.md`（またはAPI view）を生成し、各turnを以下のように表示:
+
+```text
+[00:00 - 00:04] Situation Agent
+女性がカメラに向かって話している。机上にスマートフォンがある。
+
+[00:00 - 00:04] Memory Agent
+まだ質問への決定的な証拠はない。
+記憶: 女性はカメラに向かって話しており、机上にスマートフォンがある。
+
+[00:04 - 00:08] Situation Agent
+女性がスマートフォンを手に取り画面を見る。
+
+[00:04 - 00:08] Memory Agent
+質問に関係する可能性が高い。現在の記憶へ追加する。
+記憶: 女性は机上のスマートフォンを手に取り画面を見た。
+
+[END] Answer Agent
+2. ...
+```
+
+基本traceはrole/区間/主要textだけ。詳細画面/機械recordにprompt ID/hash、raw JSON、observations、events、importance、frame ID、actual/target timestamp、latency、validation errorを残す。別LLMでhuman summaryを再生成しない。
+
+### 将来の単純なAgent間state
+
+研究上のAgent間メッセージはrich JSON全体を毎回渡すのでなく、主に`text`を使い、制御/証跡をsidecar metadataへ分離する案:
+
+```python
+SituationResult(
+    text="今見えている状況...",
+    evidence=...,       # machine-only
+)
+
+MemoryResult(
+    action="continue",  # 将来: continue | answer
+    text="ここまでの記憶...",
+    evidence=...,       # machine-only
+)
+```
+
+Situation Agent: current video window -> situation text。
+Memory Agent: question + previous memory text + current situation text -> updated memory text + 将来action。
+Answer Agent: question + choices + answer時点のmemory text -> answer。
+現在のevent ledger/evidence refsは研究traceabilityのためrecordsへ保持し、Agent間の主contextを複雑にしない。
+
+### directoryごとの「監督」はFacade/Serviceとして設計
+
+ユーザーの直感はpackage boundaryとして有効。ただし全Serviceが横方向に互いを呼ぶと、単に依存がSupervisorへ移って再び複雑になる。そこでルール:
+1. 各package内部moduleは原則そのpackageのServiceからだけ外部公開。
+2. 他packageは内部file/functionを直接importせず、Serviceまたは明示public contractを呼ぶ。
+3. package間で渡す値は`core/contracts.py`等の小さなshared typeだけ。
+4. **横方向のService→Service連鎖は最小限**。基本の組み合わせは最上位`VideoQAWorkflow`が行う。
+5. browserのような独立機能はVideoQA workflowを知らない。
+
+「監督」という名前を全てSupervisorにせず、人間に役割が伝わる統一語を使用:
+- 大監督: `VideoQAWorkflow`（ファイル`workflow/video_qa.py`）
+- Agent窓口: `AgentService`
+- Dataset窓口: `DatasetService`
+- Record窓口: `RecordService`
+- Browser窓口: `BrowserService`
+- 実行session窓口: `RunService`
+- 人間表示窓口: `ViewService`
+- 個々の仕事: `SituationTask`, `MemoryTask`, `AnswerTask`
+
+`Manager`や`Supervisor`は役割が曖昧になりやすいため避け、Workflow/Task/Serviceという3語で説明可能にする。
+
+### 依存方向
+
+```text
+entrypoints/ (HTTP, CLI)
+        |
+        v
+runtime/ RunService
+        |
+        v
+workflow/ VideoQAWorkflow  <--- 大監督
+   |        |        |
+   v        v        v
+Situation  Memory   Answer Task
+        \    |    /
+          AgentService
+               |
+            qwen3_vl
+
+VideoQAWorkflow ---> RecordService
+VideoQAWorkflow ---> ViewService (必要時はrecordからprojection)
+
+DatasetService ---> reader/samplingへQuestion/動画情報
+BrowserService ---> DatasetService + library/media/translation
+
+禁止例:
+workflow/memory.py -> records/run.pyのprivate helper直import
+server.py -> agents/qwen3_vl.pyのgenerate直呼び
+browser/search.py -> dataset/longvideobench.pyのprivate関数直呼び
+```
+
+### 候補treeの更新
+
+```text
+src/longvideoqa_workbench/
+├── agents/
+│   ├── agent.py
+│   ├── agent_service.py       # Agent定義/取得の外部窓口
+│   ├── qwen3_vl.py
+│   └── fake.py
+├── workflow/
+│   ├── video_qa.py            # VideoQAWorkflow: 短い大監督
+│   ├── team.py
+│   ├── situation.py           # SituationTask
+│   ├── memory.py              # MemoryTask
+│   └── answer.py              # AnswerTask
+├── datasets/
+│   ├── dataset_service.py
+│   ├── longvideobench.py
+│   └── fake.py
+├── browser/
+│   ├── browser_service.py
+│   ├── catalog.py
+│   ├── index.py
+│   ├── search.py
+│   ├── library.py
+│   ├── media.py
+│   └── translation.py
+├── runtime/
+│   ├── run_service.py
+│   └── session.py
+├── records/
+│   ├── record_service.py
+│   └── run.py
+├── views/
+│   ├── view_service.py
+│   └── run_trace.py
+├── entrypoints/               # 旧interfacesの分かりやすい改名候補
+│   ├── cli.py
+│   └── server.py
+├── core/
+├── config/
+├── reader/
+├── sampling/
+└── web/
+```
+
+初回リファクタは挙動不変: 現在のEOF-only Answer、prompt/schema/artifact/API、video_clip等を維持。上記future `MemoryResult.action=answer`は後続研究spec。
