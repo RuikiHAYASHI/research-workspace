@@ -1,13 +1,14 @@
 ---
 date: 2026-09-30
+last_updated: 2026-10-01
 project: agentic-streaming-videoqa
 type: implementation
-status: draft
+status: approved
 sequence: 3
 sequence_total: 4
 baseline_repository: RuikiHAYASHI/2026_09_hayashi_longvideoqa_workbench
 baseline_ref: main
-baseline_commit: 2b5f8309ed380951d812c3f2191f57ce30fb7ccd
+baseline_commit: f575cf5a7a2093cbf22e57493a5e9b245a00e4ba
 depends_on:
   - 2026-09-30-workbench-agent-workflow-config-spec.md
 source_brainstorm:
@@ -139,7 +140,7 @@ PythonコードはPrompt filenameやdefault Prompt本文をrole/modeでhard-code
 
 - 現行8 txtの内容は意味を変えず新built-in directoryへ移行。
 - 既存Runの`resolved_prompts.json`/prompt hashは読取可能。
-- 旧runtime textarea overrideを維持する必要はない。Prompt CRUDへ置き換える場合、直接本文overrideのAPIは明示deprecateして同一UIから利用しない。
+- 旧runtime textarea overrideは通常UIでは廃止する。Prompt本文の変更は必ず名前付きUser Promptとして保存し、編集ごとにimmutable versionを追加する。直接本文overrideのAPIは同一UIから利用せず、必要ならlegacy互換の読取境界だけを残す。
 - old Run閲覧はPromptServiceに元Promptが存在しなくてもsnapshotだけで成立する。
 
 ## 8. 対象外
@@ -165,7 +166,7 @@ PythonコードはPrompt filenameやdefault Prompt本文をrole/modeでhard-code
 ## 10. Ambiguity Gate
 
 blocking:
-1. 旧「本文をその場で直接textarea上書きしてRun」の機能を残すか。推奨: 通常UIからは廃止し、編集は必ずversion付きPromptとして保存する。再現性とUI単純化のため。
+- なし。2026-10-01、ユーザーが旧「本文をその場で直接textarea上書きしてRun」機能を通常UIから廃止し、Prompt変更はversion付きで保存する方針を承認した。
 
 non-blocking:
 - Prompt IDをUUIDにするかslug+UUIDにするか。人間向けtitleとは分離する。
@@ -221,4 +222,26 @@ Stage 3は**Stage branch → Step branch → micro-step commit**で進める。
 
 ## 12. Gate
 
-本書は`draft`。Stage 2 implemented後、blocking 1を承認してからapprovedへ上げる。
+2026-10-01、Stage 2がWorkbench `main@f575cf5a7a2093cbf22e57493a5e9b245a00e4ba`で実装済みであることを確認した。
+
+同日、ユーザーが以下を明示承認した。
+
+- 旧「本文をその場で直接textarea上書きしてRun」機能は通常UIから廃止する。
+- Prompt本文を変更するときは、名前付きUser Promptとして保存し、編集ごとに新しいimmutable versionを追加する。
+- built-in Promptは通常UIから直接上書きせず、編集したい場合はUser Promptへcopyして扱う。
+- 過去Runは保存済みPrompt snapshotから再現し、後続のPrompt編集で意味を変えない。
+
+blockingな未決事項は解消したため、本書を`approved`とする。
+
+## 13. Implementation Handoff
+
+- approved spec: 本書
+- 実装目的: built-in / User Promptをlogical IDで統合管理するPromptServiceを導入し、3 AgentそれぞれでPromptの選択・作成・version付き編集・archive・履歴確認を可能にする。
+- 基準repository/commit: `RuikiHAYASHI/2026_09_hayashi_longvideoqa_workbench@main` / `f575cf5a7a2093cbf22e57493a5e9b245a00e4ba`
+- 変更scope: Section 2--7およびSection 11のStage 3 Step 1--5。
+- 対象外・維持条件: Section 8。特にPrompt品質評価、自動生成、自動翻訳、Dataset別Prompt分離、early answer、実Qwen/GPU挙動は変更しない。
+- success criteria: Section 9。
+- 許可されている短時間検証: PromptService unit、Fake/API/browser、restart永続性、old Run snapshot互換、compile/import、diff check。
+- 長時間runの許可状態: 未許可。実Qwen/GPU/長尺実データrunを開始しない。
+- Git操作: Section 11に従いStage/Step branch作成、micro-step commit、Step→Stageのlocal `--no-ff` mergeは許可済み。remote push、PR、Stage→main mergeは未許可。
+- 未検証予定: Prompt品質、実Qwen/GPU、長尺実データ上の性能。
