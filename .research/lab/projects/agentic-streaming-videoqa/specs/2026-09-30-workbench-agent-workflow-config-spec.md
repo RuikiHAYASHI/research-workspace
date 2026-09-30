@@ -171,6 +171,32 @@ non-blocking:
 - Config filenameを`default.yaml`か`workbench.yaml`にするか。
 - YAML内部の`memory`を`workflow.memory`へネストするか。読みやすさを優先し過度に深くしない。
 
-## 12. Gate
+## 12. Implementation Steps / Git Strategy
+
+Stage 2も、Stage 1と同じく**Stage branch → Step branch → micro-step commit**で進める。
+
+- Stage branch: `stage-2-agent-workflow-config`
+- Step branchは現在のStage branch HEADから作成する。
+- Step完了後、対象testを通してmicro commitsをsquashせずStage branchへlocal統合する。
+- push/PR/Stage→main mergeは別許可。
+
+実装step:
+
+1. `stage2-step01-config-schema-service`
+   - canonical default YAMLとConfigService、schema validation。
+2. `stage2-step02-agent-config-resolution`
+   - Agentごとのmodel/prompt/generation解決とPython hard-code除去。
+3. `stage2-step03-runtime-entrypoint-mapping`
+   - Web/CLI runtime overrideを新ConfigServiceへ接続。
+4. `stage2-step04-legacy-run-compat`
+   - 既存Run snapshot復元とrepository同梱旧profile/recipe移行。
+5. `stage2-step05-regression`
+   - Config/Fake/API/CLI/compile回帰とhard-code監査。
+
+各Step branch内では、独立して説明・検証できる最小変更ごとにcommitする。例: default YAML追加、ConfigService reader追加、prompt silent差替え除去、stage generation定数除去、API mapping更新をそれぞれ別commitにする。squashしない。
+
+**Stage/Step branch作成とmicro-step commit作成は明示許可済み**。remote push、PR、Stage→main mergeは未許可。
+
+## 13. Gate
 
 本書は`draft`。Stage 1 implemented後、blocking 1を承認してからapprovedへ上げる。
