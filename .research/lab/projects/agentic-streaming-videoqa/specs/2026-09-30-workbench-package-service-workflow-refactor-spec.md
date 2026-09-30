@@ -200,6 +200,9 @@ Presentation生成失敗を推論runの失敗として扱わず、Recordが残�
 - CLI/API endpoint、既存artifact、prompt/output schemaが変わらない。
 - CLIとWebが同じ`VideoQAWorkflow`を利用し、独立した推論進行実装を持たない。
 - package外からprivate implementationを直接importする新規依存がない。
+- Stage 1移行前の旧compatibility directoryが、確認済みの外部契約なしに重複して残っていない。
+- repository内testが旧compatibility importを理由に旧directoryを存続させていない。
+- Stage 1説明文書が現行package構造を指し、存在しない旧architectureを説明していない。
 - `workflow/video_qa.py`だけでSituation→Memory→EOF Answerの流れを説明できる。
 - Web human viewとtext traceが同じrecord projectionから作られる。
 - GPU/実Qwenを使わず検証可能。
@@ -221,7 +224,7 @@ Stage 1は、**Stage用のintegration branchを1本作り、その配下の各�
 
 - Stage branch: `stage-1-package-service-workflow`
 - Step branchは、その時点のStage branch HEADから作る。
-- Step完了時に対象testを通し、micro-step commitをsquashせずStage branchへlocal merge/fast-forwardする。
+- Step完了時に対象testを通し、micro-step commitをsquashせずStage branchへ**`--no-ff`でmerge**する。fast-forwardでbranch laneを潰さない。
 - 次Stepは更新済みStage branchから新しく切る。
 - Stage branchから`main`へのmerge、push、PR作成は別の明示許可があるまで行わない。
 
@@ -239,6 +242,13 @@ Stage 1のstep branch:
    - import整理、必要最小限のlegacy re-export、依存方向確認。
 6. `stage1-step06-regression`
    - 全短時間回帰、compile/import、CLI/API smoke、diff check。検証で必要になったscope内修正だけcommitする。
+7. `stage1-step07-remove-legacy-compat`
+   - Stage 1後も残った旧compatibility packageをrepo-wide import監査後に整理・削除する。
+   - 対象候補: `agent/`, `model/`, `dataset/`, `interfaces/`, `reader/`, `sampling/`。
+   - 既存testを新しい公開package (`workflow/`, `agents/`, `datasets/`, `entrypoints/`, `streaming/`, `browser/`) へ移行する。
+   - console script/README/現行public APIで旧pathが必要でないことを確認し、単なるtest互換のためだけに旧directoryを残さない。
+   - 外部利用が実際に確認された旧importがあれば、その場で削除せず報告する。
+   - `docs/file-relationships.md`, `docs/file-responsibilities.md`, `docs/processing-flow.md` を現行Stage 1構造へ更新する。存在しない旧`adapters/`, `configuration.py`, `chunking.py`, 旧top-level `pipeline.py`等を説明し続けない。
 
 実装前preflightは変更を伴わないためbranchを切る前に行う。preflight後にStage branchを作成し、上記Step 1から開始する。
 
@@ -250,9 +260,12 @@ Stage 1のstep branch:
 - Stepの最後に巨大な一括commitを作らない。
 - micro-step commit後に可能な範囲で最小testを実行する。
 - Step branchをStage branchへ統合するときにsquashしない。
-- commit messageにはStage/Stepと変更目的が分かる語を含める。
+- commit messageは今後**日本語**で、`Stage N Step M: <タイトル>`を1行目にし、空行の後に`変更内容:` / `理由:` / `検証:`を本文として書く。必要なら`影響:`を追加する。
+- Step→Stage merge commitも日本語で、`Stage N Step MをStage branchへ統合する`のように目的を明示し、本文に統合内容と検証を書く。
 - このユーザー指示により、**Stage/Step branch作成とmicro-step commit作成は明示許可済み**。
 - remote push、PR、Stage branchから`main`へのmergeは未許可。
+- 既存Step 1--6の英語commitやlinear historyは書き換えない。この規約は**Stage 1 Step 7以降とStage 2以降**へ適用する。
+- 将来Stage→mainを承認された場合も`--no-ff` mergeを基本とし、`main / Stage / Step`のbranch laneがGit Graph上で読み取れる履歴を残す。
 
 ## 14. Gate
 
@@ -265,7 +278,7 @@ Stage 1のstep branch:
 - approved spec: 本書
 - 実装目的: 外部挙動を変えず、WorkbenchをPackage / Service / Workflow構造へ整理し、研究の一本道を短い`VideoQAWorkflow`から読めるようにする。
 - 基準repository/commit: `RuikiHAYASHI/2026_09_hayashi_longvideoqa_workbench@main` / `2b5f8309ed380951d812c3f2191f57ce30fb7ccd`（GitHub remote main、実装着手時にlocal/remoteを再確認）
-- 変更scope: Section 2--10のStage 1構造refactorのみ。
+- 変更scope: Section 2--10に加え、Section 13のStage 1 Step 7 legacy compatibility cleanupまで。
 - 対象外・維持条件: Section 8--9。特にConfig schema、Prompt CRUD、Dataset別storage migration、scientific behaviorは変更しない。
 - success criteria: Section 11。
 - 許可されている短時間検証: unit/Fake/browser既存回帰、compile/import、CLI/API smoke、diff check。GPUを必要としない範囲。
