@@ -602,3 +602,112 @@ offlineは情報量としてはonline以上を見られるため、「onlineだ�
 を定量化でき、Onlineである意味が強くなる。
 
 現時点では「新規性あり」と断定せず、**有望だが、PACE / VideoHV-Agent / StreamAgentとの境界をさらに精査すればmethod contributionとして成立する可能性がある**とする。
+
+
+## 2026-10-01 20:xx 追加壁打ち: 仮説trajectory評価とOnline Agent研究のDataset / Model動向
+
+### 仮説が時間とともにどう変化するかの既存評価
+
+既存video研究ではcontinuous hypothesis trajectoryを直接標準評価するものはまだ少ない。
+近い評価骨格:
+
+- BlackSwanSuite (CVPR 2025)
+  - Forecaster: 前半のみで未来仮説を生成。
+  - Detective: post-eventを追加して、既存仮説をvalidate / invalidate。
+  - Reporter: main eventまで含めて再度仮説をvalidate / invalidateし、最終説明。
+  - Y/N variantでは各hypothesisが新しいvisual evidenceでvalid / invalidになったかを直接評価。
+  - したがって「新証拠後に仮説を正しく更新できるか」を段階的に評価するvideo benchmarkとして近い。
+
+- Belief-R (EMNLP 2024, text reasoning)
+  - tとt+1の2段階でbelief revisionを評価。
+  - BU-Acc (Belief Update Accuracy): 更新すべきとき正しく更新できるか。
+  - BM-Acc (Belief Maintain Accuracy): 更新不要なとき元のbeliefを維持できるか。
+  - BREU: BU-AccとBM-Accの平均。
+
+Online VideoQAへ応用する場合、既存評価に近い最小設計として:
+- timestampごとにanswer hypothesis stateを記録。
+- update-required区間とmaintain-required区間をannotation。
+- 正しい仮説更新率 / 不要なflip率 / update delayを測る。
+が考えられる。
+
+これは提案であり、video側で標準化済みのmetricではない。
+
+### Online / Streaming + Agent研究のDataset動向
+
+2024-2026の代表的研究では、次が頻出。
+
+1. StreamingBench
+   - 900 videos / 4,500 QA。
+   - 各videoに異なるtimestampの5 question。
+   - real-time visual / omni-source / contextual understanding。
+   - Streaming系の共通比較先として定着。
+
+2. OVO-Bench
+   - 644 videos / 約2,800 timestamp annotation。
+   - Backward Tracing / Real-Time Understanding / Forward Active Responding。
+   - 「過去を思い出す・今を見る・未来証拠を待つ」の3軸。
+   - StreamAgent / StreamReady / Dispider / StreamForest等で頻出。
+
+3. OVBench / VStream-QA
+   - Streaming/long-contextの補助評価として使用例が多い。
+
+4. Offline long-video benchmarksも併用
+   - VideoMME, MLVU, MVBench, EgoSchema, ActivityNet-QA等。
+   - Streaming専用性能だけでなく、一般LongVideo理解を壊していないかを見る。
+
+5. 新しい応用特化benchmark
+   - ProReady-QA: evidence window / answer timing。
+   - PhoStream: mobile-centric streaming、audio-visual、Forward task。
+   - ODV-Bench: autonomous driving。
+   - LiveProBench: standing request、1秒ごとのproactive response。
+   - OVO-S-Bench: streaming spatial intelligence。
+
+Training data側ではEgo4D、COIN、BEHAVIOR等の連続・手順動画が頻出し、offline annotationをstreaming dialogue / instructionへ変換する流れもある。
+
+### Model動向
+
+- 7B〜8B級open-source Video-LLM / MLLMが主流。
+- Qwen系列が非常に多い。
+  - Qwen2-VL-7B
+  - Qwen2.5-VL-7B
+  - Qwen3-VL-8B
+  - Qwen2.5-Omni / Qwen3-Omni
+- LLaVA-OneVision 7B、InternVL 7B/8B、MiniCPM-V/O 8B、Gemma系も比較対象。
+- proprietary baselineとしてGPT-4o / Gemini系を併記することが多い。
+
+Agent/system設計では、複数の巨大VLMを何個も常時回すより:
+- small decision / trigger / readiness module
+- 7B前後のmain reaction / reasoning VLM
+- streaming KV cache / event memory
+- asynchronous perception / decision / response
+という分業が多い。
+
+例:
+- Dispider: compact Qwen2-1.5BでPerception-Decision、Qwen2-7BでReaction。
+- StreamReady: Qwen-2-VL 7B backbone。Oryx-1.5-7B / LLaVA-OneVision 7Bでもbackbone ablation。
+- PhoStream: Qwen2.5-Omni-7B, Qwen3-VL-8B/30B, Qwen3-Omni-30BとGemini/Doubao等を比較。
+- VideoLLM-online: Llama-3-8B + SigLIP、Ego4D streaming data。repoでは後にQwen2.5-VL-Instructへの適用も推奨。
+- newer systems still largely 7B-scale online models, with 1 fps前後のstream処理が共通設定になっている例が多い。
+
+### 研究トレンドとしての解釈
+
+現在のStreaming Agent研究は、大きく:
+1. 何を覚えるか（memory / KV cache）
+2. いつ応答するか（trigger / readiness / proactive response）
+3. どこを見るか（task-driven perception / anticipation）
+4. どれだけ効率よく見るか（token compression / 1fps / low latency）
+5. audioを含むomnimodal化
+へ広がっている。
+
+一方、**answer choices / hypotheses自体の時系列trajectoryを中心評価対象にする研究は相対的に薄い**。
+ただしこれは現時点の調査所見であり、新規性確定ではない。
+
+### 今後の探索を狭める示唆
+
+「全部入り」ではなく、一つの核に絞るなら候補は:
+- Online belief revision for VideoQA
+  - いつ仮説を変えるべきか / 変えないべきか。
+- Adaptive observationは後段のmethod候補として分離。
+- Early answer / multi-scale / memoryは主貢献ではなくablation / extensionへ回す。
+
+これなら「仮説が時間とともにどう変化するか」という一つの問題設定で研究を立てやすい。
