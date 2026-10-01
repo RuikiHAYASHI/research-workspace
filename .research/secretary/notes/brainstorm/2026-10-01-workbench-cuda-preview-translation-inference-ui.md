@@ -554,3 +554,118 @@ Chunk 1 → Chunk 2 → ... → Chunk N → Final Answer
 - profileの保存・履歴データモデル
 - memory narrativeが長文化した場合の代表表示ルール
 - Final Answerの日本語訳対象範囲
+
+
+## 2026-10-01 14:41 JST 追記: Memory上限・Prompt固定性・研究者向け生出力
+
+### memory_budget_tokensの意味を訂正
+
+現行実装を再確認した結果、`memory_budget_tokens=6000`はAgentごとの生成上限ではない。
+
+- Situation / Memory / Answerごとの生成上限は各Agentの`generation.max_new_tokens`。
+- `memory_budget_tokens`はMemory Agentが更新した累積`narrative`を保持する際の**共有テキストMemory budget**。
+- `VideoQAWorkflow._commit_memory()`でMemory Agentのvalidated `narrative`へ`fit_narrative_to_budget(... token_budget=settings.memory_budget_tokens ...)`を適用する。
+- そのcompact済みMemoryは次のMemory入力、Answer入力、設定によってはSituationのprevious textにも使われる。
+
+したがってUIではAgent設定配下ではなく、独立した「Memory保持上限」「累積Memory上限」等として扱うのが正しい。
+
+### Promptは現行runでは固定
+
+現行ConfigServiceはrun開始前に各Agentの`prompt_id`を`PromptService.resolve_for_run()`で解決し、本文/hash/versionを含む`ExecutionSettings`へsnapshotする。TurnSessionはそのsettingsをrun中ずっと保持し、各chunkのSituation/Memory、EOFのAnswerは同じsnapshot済みPromptを使う。
+
+したがって現行契約では:
+
+- Situation Promptはrun中の全Situation stageで同一snapshot
+- Memory Promptはrun中の全Memory stageで同一snapshot
+- Answer PromptはEOFで同一run snapshotを使用
+- Prompt Library上のPromptをrun途中で編集しても、active runのPromptを差し替える通常機構はない
+
+これは再現性の面でも自然。よって有力UI方針:
+
+1. Prompt設計/CRUDはInference設定とは別の**Prompt Library画面**へ置く。
+2. Inference設定では各Agentが「このrunで使うPrompt」を選択する。
+3. run開始後は各chunk/stageの「Prompt」buttonから、実際にsnapshotされたresolved Promptを**read-only**で確認する。
+4. Prompt確認画面にも「日本語訳」を置く。
+5. run途中でPromptを変更する機能は通常操作には入れない。将来必要になった場合は「途中から研究条件を変更したrun」として別の実験契約/履歴設計が必要。
+
+### 研究者向け結果表示
+
+ユーザー要望: 通常表示を簡潔に保ちつつ、研究者はmodelの生出力と蓄積Memoryを確実に確認できること。
+
+有力構成は「通常表示 + 詳細drawer + 研究者表示toggle」。
+
+#### 通常chunk block
+
+- Situation `window_summary`
+- 日本語訳button
+- Memory update: current chunkで追加されたevent description群
+- 日本語訳button
+- Situation / Memory処理時間
+- 採用frame strip
+- 「詳細を見る」
+
+#### 詳細drawer
+
+上部をtab化する。
+
+**Memory**
+- 現在までの累積`narrative`
+- event ledger
+- unresolved
+- version / token count / budget
+- 英語原文 / 日本語訳の切替
+
+**モデル生出力**
+- Situation Agent
+  - modelが返した原文text
+  - 日本語訳
+- Memory Agent
+  - modelが返した原文text
+  - 日本語訳
+- Final Answer blockではAnswer Agentも同様
+- copy button
+- output validation成功/失敗状態
+
+**Prompt・入力**
+- snapshotされたresolved Prompt原文
+- 日本語訳
+- model ID / generation setting
+- input memory version
+- frame manifest / timestamp
+- 必要ならbackend情報
+
+**JSON / 内部情報**
+- validated structured output
+- backend raw metadata
+- model info
+- artifact参照
+
+### 「生出力」の定義
+
+Qwen3VLAdapterの現行`ModelResponse`は:
+
+- `text`: model decode直後の文字列
+- `raw_output.text`: 同じmodel文字列
+- `raw_output.generated_tokens`
+- `raw_output.hit_max_new_tokens`
+- `model_info`: adapter/model/dtype/device map
+
+Situation/MemoryではStageResultにmodel textを保持したうえでvalidated `structured_output`を別に持つ。Answerではvalidated後の`output`は回答文字列へ置き換わるため、**研究者向け「model生出力」はStageResult.outputだけに依存せず、Qwenの`raw_output.text`またはartifact上のraw model responseを正本として表示する**必要がある。
+
+UI上は「モデル生出力（原文）」と「検証済み出力」を明確に分ける。
+
+### 研究者表示toggle
+
+Inference結果領域上部に「研究者表示」を置く案。
+
+OFF:
+- 通常のchunk summary + Memory updateのみ
+
+ON:
+- 各chunk blockにvalidation status
+- model output preview
+- prompt version/hash
+- generated token数 / max token hit
+- 詳細drawerへの直接導線
+
+これにより、通常利用時の見やすさを壊さず、実験確認時には各stageの生出力へすぐ到達できる。
