@@ -8,7 +8,7 @@ sequence: 6
 sequence_total: 7
 baseline_repository: RuikiHAYASHI/2026_09_hayashi_longvideoqa_workbench
 baseline_ref: main
-baseline_commit: b868f4431e69d783632476752d3f41311a52b53a
+baseline_commit: 2b0d0ecef639bed338695d0dda62cc6a1b59e30d
 depends_on:
   - 2026-10-01-workbench-browser-preview-google-translation-spec.md
 source_brainstorm:
@@ -380,7 +380,7 @@ blockingな未決事項はないため本書を`approved`とする。
 
 - approved spec: 本書
 - 実装目的: Inference設定を通常/開発者/内部へ整理し、設定履歴・テンプレート、独立Prompt画面、run snapshot確認、実際に反映されるAgent別model selectionを実装する。
-- 基準repository/commit: 現時点 `RuikiHAYASHI/2026_09_hayashi_longvideoqa_workbench@main` / `b868f4431e69d783632476752d3f41311a52b53a`。着手はStage 5統合後の最新mainを再確認する。
+- 基準repository/commit: `RuikiHAYASHI/2026_09_hayashi_longvideoqa_workbench@main` / `2b0d0ecef639bed338695d0dda62cc6a1b59e30d`。Stage 5統合済みmain。着手直前にlocal HEAD/dirty stateとGitHub mainを再確認する。
 - 変更scope: Section 3–8、Section 13。
 - 対象外・維持条件: Section 9–10。
 - success criteria: Section 11。
@@ -388,3 +388,19 @@ blockingな未決事項はないため本書を`approved`とする。
 - 長時間runの許可状態: 未許可。実Qwen/GPU、model download、長尺全件runを開始しない。
 - Git操作: 別途明示許可が必要。
 - 未検証予定: 異なる実Qwen modelを同時loadした場合のVRAM、実モデル品質/速度。
+
+
+## 16. Stage 6 Preflight Baseline Refresh（2026-10-01）
+
+Stage 5実装をGitHub上で確認し、Stage 5 specを`implemented`へ更新した。
+
+Stage 6の実装基準を次へ更新する。
+
+- repository: `RuikiHAYASHI/2026_09_hayashi_longvideoqa_workbench`
+- branch: `main`
+- baseline commit: `2b0d0ecef639bed338695d0dda62cc6a1b59e30d`
+- commit: `Stage 5: previewとGoogle表示翻訳をmainへ統合`
+
+Stage 5で導入されたgeneric display translator、Google translation cache境界、Dataset QA表示、preview policyを既存実装として扱い、Stage 6で重複実装しない。
+
+Stage 6のscope/Gate/Success Criteria自体は変更しない。実装着手時はGitHub mainだけでなくlocal worktreeのbranch/HEAD/dirty stateを確認し、ユーザーの未commit変更を上書きしない。
