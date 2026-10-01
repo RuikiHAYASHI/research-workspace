@@ -295,3 +295,90 @@ Streaming VideoQAとして最も見たいのは「どの時間帯を見て、何
 - Google Translation provider変更
 - compact inference settings / Prompt UI
 - timeline-first result presentation
+
+
+## 2026-10-01 12:42 JST 追記: CUDA切り分け・preview条件・UI方向性
+
+### CUDAの追加Evidence
+
+ユーザーがWorkbenchの実利用venvで次を実行した。
+
+```text
+CUDA_VISIBLE_DEVICES=3 longvideoqa qwen-preflight
+{"cuda_visible_devices": "3", "cuda_available": true, "visible_device_count": 1, "logical_device_ids": [0]}
+```
+
+これにより、少なくとも当該venvで物理GPU 3を可視化した場合、PyTorchからCUDAが利用できGPU 1枚が論理ID 0として見えることを確認した。以前のブラウザ表示 `QwenCudaUnavailableError` はQwen/PyTorch自体の恒常的なCUDA不備ではなく、`serve` process側の起動環境差（例: UI確認用の `CUDA_VISIBLE_DEVICES=""`、別shell/venv、既存server process）が主要候補となる。実推論時は同じvenvでGPUを明示した`serve`を起動して確認する。
+
+### Stage 4 main統合の確認
+
+GitHub上のWorkbench `main` は `b868f4431e69d783632476752d3f41311a52b53a`、commit titleは「Stage 4: Dataset別 user data / cache storageを統合」。parentsはStage 3基点 `4f2546ef...` とStage 4側 `23a58e3...` の2本で、Stage→mainがmerge commitとして統合されている。README最終同期とDataset別cache routingもmainに存在する。
+
+### Preview仕様の方向性を更新
+
+ユーザー意図は「長いpreviewを見たい」ことではなく、冒頭のタイトル画面等を避けて動きのある場面をhoverですぐ見たいこと。
+
+採用方向:
+
+- preview clip長は10〜20秒。初期候補は15秒。
+- 長尺動画は60秒付近から開始。
+- 60秒付近から15秒を確保できない短尺動画では、動画長に応じて開始点を前へずらす。
+- hover dwell/debounceは入れず、pointer enter直後に再生要求を開始する。
+- cache hit時は即再生を目標にする。
+- 初回cache生成中はposter/loadingを維持し、生成後・次回hoverから高速化する。
+- MP4/H.264でも元長尺動画を直接返す既存shortcutはhover preview用途では廃止候補。
+- cache保存先はStage 4で実装済みのDataset別`WORKBENCH_HOME/.../cache/previews/`へ合わせる。
+
+短尺動画の開始点はまだ数式として確定していない。有力案は「60秒を上限としつつ、preview尺を確保できない場合は終端直前に寄り過ぎない範囲で前へずらす」。タイトル回避と終端credits回避の両方を考える。
+
+### 推論設定で現状扱っている項目
+
+現行mainのConfig/画面には以下が存在する。
+
+- `profile`: 既定設定セット。現在は内部設定をまとめて解決する入口。
+- `reader_mode`: `full_rgb` / `target_only`。全frameをRGB化するか、sample対象frameだけRGB化するかというReader内部方式。
+- `visual_input_mode`: `image_list` / `video_clip`。sampled frameを複数画像として渡すか、video入力として渡すか。
+- `observation_context_mode`: `none` / `previous_text`。Situation Agentへ直前までの確定textを渡すか。
+- `question_id`: datasetで選択した質問の内部ID。通常UIで手入力・常時表示する必要性は低い。
+- `window_seconds`: 1 chunkの動画時間。
+- `frames_per_window`: 1 chunkからsampleしてモデルへ渡すframe数。
+- `decoder_frames_per_sample`: Reader/decoder内部の処理単位。通常ユーザーが毎回触る値ではない。
+- `memory_budget_tokens`: 保持するtext memoryの上限。
+- Agentごとの `backend`: model adapter種別（現在`qwen3_vl`）。
+- Agentごとの `model_id`: 実際のmodel名。
+- Agentごとの `prompt_id`: 選択Prompt。
+- Agentごとの `enabled`: Agentを有効化するか。
+- Agentごとの `max_new_tokens`: 1回の生成上限。
+- Agentごとの `temperature`: 生成のsampling温度。
+- `resolved_profile`: 上記を解決した内部JSON。通常利用者向けではなく開発者情報へ移す候補。
+
+ユーザーが人間向け名称を決めるため、次の会話ではこれらの役割を説明し、表示名そのものはユーザー判断とする。
+
+### Prompt UI追加要望
+
+既存のAgentカード→Prompt Library panel方針を維持する。さらにPrompt本文にもQAと同様の「日本語訳」ボタンを置きたい。翻訳はread-only表示であり、推論へ渡すcanonical Prompt本文は英語原文を維持する。
+
+### 結果表示の方向性を更新
+
+timeline-first案から修正。
+
+- **1 stage = 1表示block**とする。
+- block左上に前stage矢印、右上に次stage矢印を置く。
+- backendのturn/stage構造は保持しつつ、UIでは完了済み`turns[].stages[]`を時系列にflattenしたstage historyとして閲覧できる案が有力。
+- 各blockにはchunk/time range、stage種別、出力、必要なら採用frame、処理時間をまとめる。
+- Prompt全文/raw output等は詳細へ畳む。
+- 実行を進めるたび最新stageを右端として追加するイメージ。
+- EOF前はFinal Answerが存在しないため表示しない。
+- EOF後にFinal Answer stageが生成されたら**一番右（stage historyの末尾）**へ追加する。
+- 現段階ではFinal Answer生成後に専用画面へ大きく切り替える必要はなく、同じstage navigation内の最終blockでよい。
+- 将来early-answer/早押し構成を実装した時点でFinal Answer表示方法を再設計できる。
+
+### Dataset Browser QA表示
+
+現行mainでは質問表示が `<question_id>: <question text>` になっている。ユーザーはQuestion IDの先頭表示を不要と判断した。
+
+採用方向:
+
+- QA blockの視覚表示は質問文 + 選択肢だけにする。
+- `question_id`は内部selection、URL、run contract、artifactでは維持する。
+- IDを消すのはpresentationだけであり、dataset annotationや推論contractは変更しない。
