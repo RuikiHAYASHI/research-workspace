@@ -669,3 +669,14 @@ ON:
 - 詳細drawerへの直接導線
 
 これにより、通常利用時の見やすさを壊さず、実験確認時には各stageの生出力へすぐ到達できる。
+
+
+## 2026-10-01 Spec昇格
+
+壁打ち終了。2026-10-01のユーザー指示により、確定内容を次のapproved implementation specへ昇格した。
+
+- [Stage 5: Preview高速化・Google表示翻訳・Dataset QA簡素化](../../../lab/projects/agentic-streaming-videoqa/specs/2026-10-01-workbench-browser-preview-google-translation-spec.md)
+- [Stage 6: 推論設定・Prompt・設定呼び出し UX](../../../lab/projects/agentic-streaming-videoqa/specs/2026-10-01-workbench-inference-settings-prompt-ux-spec.md)
+- [Stage 7: Chunk結果・Researcher View・生出力確認](../../../lab/projects/agentic-streaming-videoqa/specs/2026-10-01-workbench-run-results-researcher-view-spec.md)
+
+以後の実装判断はbrainstorm本文ではなく、上記approved specをAuthorityとして扱う。
