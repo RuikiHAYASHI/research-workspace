@@ -3,7 +3,7 @@ date: 2026-10-01
 last_updated: 2026-10-01
 project: agentic-streaming-videoqa
 type: implementation
-status: approved
+status: implemented
 sequence: 5
 sequence_total: 7
 baseline_repository: RuikiHAYASHI/2026_09_hayashi_longvideoqa_workbench
@@ -232,3 +232,34 @@ Git操作（branch/commit/merge/push/PR）はこのspec作成依頼から自動�
 - 長時間run/外部課金の許可状態: 未許可。実Google API呼出し、実Qwen/GPU、長尺全件run、model downloadを開始しない。
 - Git操作: 別途明示許可が必要。
 - 未検証予定: 実Google APIの課金環境での疎通、実HDD上の体感latency、実Qwen/GPU。
+
+
+## 13. Implementation Evidence（2026-10-01）
+
+GitHub上のWorkbench `main`でStage 5実装とmain統合を確認した。
+
+- repository: `RuikiHAYASHI/2026_09_hayashi_longvideoqa_workbench`
+- Stage 5 implementation commit: `e3b3d1386db5ca4d4ebd473ff117ca7df6623300`
+- main merge commit: `2b0d0ecef639bed338695d0dda62cc6a1b59e30d`
+- merge parents: Stage 4 main `b868f4431e69d783632476752d3f41311a52b53a` + Stage 5 implementation `e3b3d138...`。mainへの`--no-ff`統合を確認した。
+
+Success Criteria照合:
+
+1. 120秒動画は`-ss 60 -t 15`でproxy生成する実装とtestを確認。
+2. 70秒動画は開始50秒へ前倒しする実装とtestを確認。
+3. 15秒以下では`clip_length=min(15,duration)`、開始0秒となり範囲外seekしない。
+4. browser-compatible H.264 MP4の原動画shortcutは削除され、常に短尺preview proxy/cacheを経由する。
+5. policy-version付きcache fileを再利用し、cache hit時にffmpegを再実行しないtestを確認。
+6. browserのpointer enter/focusは従来どおり即`HoverPreviewController.start()`を呼び、debounceを追加していない。
+7. preview pathは既存Dataset別cache resolverを使い、Dataset分離testを確認。
+8. Google key未設定時はtranslation statusがunavailable reasonを返し、QA画面headerに理由を表示してbuttonをdisableする。Browser自体は継続する。
+9. generic text translation、fake Google transport、cache hit、provider failure時のBrowser継続testを確認。
+10. API keyは`GOOGLE_CLOUD_TRANSLATION_API_KEY`からのみ読み、`x-goog-api-key` request headerへ入れる。URLへ含めないtestを確認。repository/artifactへの保存経路は追加されていない。
+11. QA表示からQuestion ID prefixを削除し、DOM dataset/selection/URL/run用内部IDは維持している。
+12. implementation commit/merge commitには`compileall`、Stage 5関連pytest、full pytest、fake Google transport、`git diff --check`成功が記録されている。GitHub repositoryにはCI workflow/statusがないため、ChatGPTからGitHub上でテストprocess自体を独立再実行したEvidenceではない。
+
+Google Cloud公式仕様も2026-10-01時点で確認し、Basic v2の`POST https://translation.googleapis.com/language/translate/v2`、plain text request、API keyの`x-goog-api-key` header利用、model未指定時のNMT既定は実装契約と整合する。
+
+実Google API課金環境、実HDD上の体感latency、実Qwen/GPUはspecどおり未検証であり、Stage 5実装完了判定を妨げない。
+
+以上からapproved scopeと必須短時間検証の実装Evidenceが揃っており、本specを`implemented`とする。Stage 6はWorkbench `main@2b0d0ecef639bed338695d0dda62cc6a1b59e30d`以降を基準にpreflightする。
