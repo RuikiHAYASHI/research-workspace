@@ -826,3 +826,100 @@ trajectory metrics:
 
 これはmethod-firstではなくphenomenon-firstの研究であり、
 現時点の「やりたいことてんこ盛り」を避ける候補として有力。
+
+
+## 2026-10-01 22:xx 追加壁打ち: Offline vs Online比較の既存度と全選択肢検証型Online QA
+
+### Offline vs Onlineの得意不得意解析はどこまで既存か
+
+かなり既存。
+
+- OVBench / VideoChat-Online (CVPR 2025)
+  - offline MLLMとonline MLLMを同一online benchmark上で比較。
+  - online固有のpast/current/future temporal perspectiveを定義。
+  - offline modelをsliding-window等でstreamingへ適用し比較。
+- SimpleStream (2026)
+  - OVO-Bench / StreamingBench上で13個のoffline / online video LLMを比較。
+  - recent-only simple baselineが複雑なstreaming memory法に匹敵/上回ることを示す。
+  - memory-oriented behaviorとreal-time perceptionのtrade-offを分析。
+
+したがって、
+**「OfflineとOnlineはどちらがどの問題で得意か」を一般的に比較するだけでは研究差分は弱い。**
+
+独自性を作るなら、
+- belief reversal
+- option verification
+- procedural state
+など特定failure mode / reasoning primitiveに絞る必要がある。
+
+### 全選択肢の正誤を確定してから回答する考え方の近接研究
+
+かなり近い既存研究:
+
+1. Commonsense VideoQA through Video-Grounded Entailment Tree Reasoning (CVPR 2025)
+   - 各answer candidateをstatement / hypothesisへ変換。
+   - 各candidateをvideo fragmentへgroundし、entailmentとして検証。
+   - VideoQAでcandidate-wise verificationを明示的に扱う。
+
+2. VideoHV-Agent (CVPR 2026)
+   - each candidate answerをtestable hypothesisへ変換。
+   - ただし全hypothesisを独立に一つずつ検証するのではなく、Judgeが候補間のdiscriminative clueを作り、最小証拠を検証。
+   - final stageで各candidateをevidenceと再照合。
+
+3. PIVOT (CVPRW 2026, image)
+   - option-wise visual falsification。
+   - direct MCQ priorを一旦保留し、各optionをvisual evidenceで反証。
+
+4. Binary Verification for Zero-Shot Vision (CVPRW 2026)
+   - 1 candidateにつき1 True/False verification。
+   - exactly one Trueなら選択。
+   - 複数True / noneなら残候補でMCQへ戻る。
+   - 動画QAそのものではないが、ユーザー案に最も論理構造が近い。
+
+したがって、
+**「各選択肢を個別にTrue/False判定してから答える」自体は新しくない。**
+
+### Streamingへ持ち込む場合の未解決余地
+
+現重点検索範囲では、以下を中心にしたdirect precedentは未確認:
+
+- queryとchoicesがt=0で与えられる。
+- future frameへアクセス不可。
+- 各choice stateを
+  - SUPPORTED
+  - CONTRADICTED
+  - UNRESOLVED
+  で保持。
+- stream到着ごとに各stateを更新。
+- Answer Agentは「全choiceについて十分にstatusが確定」というcompletion conditionまで回答を保留。
+- EOF時に未解決が残ればINSUFFICIENT / AMBIGUOUSを許す。
+
+仮称:
+**Option-Complete Online Verification**
+または
+**Streaming Candidate Verification**
+
+中心問い:
+**Does requiring option-complete evidence verification reduce premature and prior-driven errors in streaming VideoQA, and at what latency cost?**
+
+重要:
+- MCQがsingle-correctなら、理論上は「1つが十分supportされた」だけで答えられる場合もある。
+- 全誤答を反証することを要求するとaccuracy改善とlatency増加のtrade-offが生じる。
+- このtrade-off自体が研究問いになり得る。
+
+最小比較:
+1. Direct Answer: chunkごとに直接A/B/C/Dを回答。
+2. Readiness: 1候補のconfidence/evidenceが十分なら回答。
+3. Option-Complete: 全候補のstatusが確定するまで待つ。
+
+評価候補:
+- final QA accuracy
+- premature answer rate
+- option-status accuracy
+- unresolved-at-EOF rate
+- answer latency
+- evidence completion time
+- false elimination rate
+
+この方向はmulti-scale / router / memoryを主貢献にせず、
+**回答候補の検証完了条件**だけをmethod coreにできるため、現在の「全部入り」を避けやすい。
