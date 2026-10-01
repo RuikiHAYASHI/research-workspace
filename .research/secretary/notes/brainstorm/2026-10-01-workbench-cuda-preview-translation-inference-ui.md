@@ -382,3 +382,175 @@ timeline-first案から修正。
 - QA blockの視覚表示は質問文 + 選択肢だけにする。
 - `question_id`は内部selection、URL、run contract、artifactでは維持する。
 - IDを消すのはpresentationだけであり、dataset annotationや推論contractは変更しない。
+
+
+## 2026-10-01 12:42 JST 追記2: 設定階層とchunk結果表示の収束
+
+### 設定UIの階層化
+
+ユーザー判断を受け、推論設定を次の4層へ分ける方向で収束する。
+
+#### 1. 通常設定
+
+日常的に変更する研究条件だけを見せる。
+
+- 1 chunkの動画時間 (`window_seconds`)
+- 1 chunkからモデルへ渡すsample frame数 (`frames_per_window`)
+- text memory上限 (`memory_budget_tokens`)
+- Situation / Memory / Answerのmodel (`model_id`)
+
+`decoder_frames_per_sample`はユーザー入力ではなく、他設定から算出する内部値へ寄せる候補とする。
+
+#### 2. Prompt
+
+`prompt_id`は通常設定から外し、各AgentのPrompt UIへ集約する。
+
+- Prompt名
+- 説明
+- version
+- 英語正本
+- 「日本語訳」切替
+- 編集 / コピー / 履歴等
+
+日本語訳はread-only displayで、推論に渡すcanonical本文は英語を維持する。
+
+#### 3. 開発者用
+
+通常利用で頻繁に触らない実装寄り設定をここへ移す。
+
+- `reader_mode`
+  - `target_only`等の内部値を直接見せず、日本語ラベルを付ける。
+  - 有力表示例: 「採用フレームのみ展開」 / 「全フレームを展開」
+- `visual_input_mode`
+  - `video_clip` / `image_list`を直接見せず、日本語ラベルを付ける。
+  - 有力表示例: 「動画として入力」 / 「画像列として入力」
+- `observation_context_mode`
+  - `none` / `previous_text`を直接見せず、日本語ラベルを付ける。
+  - 有力表示例: 「過去の記憶を渡さない」 / 「直前の記憶を渡す」
+- Agent generation
+  - `max_new_tokens`
+  - `temperature`
+- 必要ならbackend等を診断情報として表示するが、通常編集対象からは外す。
+
+`backend`、`Agent enabled`、手入力の`question_id`は通常UIから削除する方向。
+
+#### 4. 内部設定 / 詳細情報
+
+`resolved_profile` JSONは常時表示しない。明示的な「詳細」「内部設定を見る」等の操作をした場合のみ展開する。
+
+### Profileの再定義
+
+既存の`profile` selectを単なる設定項目として残すより、**設定の再利用機能**として再定義する方向。
+
+候補機能:
+
+- 過去に実行した設定を呼び出す「履歴」
+- よく使う設定を保存する「テンプレート」
+- 現在設定をテンプレートとして保存
+- 既定テンプレート
+
+通常のselectではなく、設定画面上部等の特別なbuttonからdrawer/modalを開くUIが適する。有力な入口表現は「設定を呼び出す」で、内部に「最近使った設定」と「テンプレート」を分ける。
+
+この再定義では、既存のprofile概念とrun履歴、persistent user settingの責務整理が必要なため、実装spec時に保存形式を決める。
+
+### Situation / Memoryの現在の出力契約
+
+Workbench mainの現行Prompt/validatorを確認した。
+
+Situation Agent (video mode)はJSONで次を返す。
+
+- `window_summary`: 当該chunkの短い全体要約
+- `observations[]`: 時間範囲、description、根拠frame、question relevance、certainty
+- `unresolved[]`: 未解決点
+
+Memory AgentはJSONで次を返す。
+
+- `events[]`: event ID、時間範囲、description、根拠frame、certainty、importance reasons
+- `narrative`: それまでの重要な出来事を統合したworking narrative
+- `unresolved[]`: 未解決点
+
+したがって両Agentとも「一言だけ」を返す契約ではない。ただし人間向け代表表示としてSituationの`window_summary`とMemoryの`narrative`を利用できる。
+
+注意点としてMemoryの`narrative`はcurrent chunkだけの一言ではなく、過去Memoryを統合した累積的な文章になり得る。そのため長くなった場合のUI制御が必要。
+
+### 結果表示の更新案: stage単位からchunk単位の見せ方へ
+
+ユーザーの「SituationとMemoryが一言程度ならまとめて見たい」を踏まえると、backendでは2 stageのまま維持しつつ、**人間向け表示blockは1 chunkにまとめる**案が有力。
+
+例:
+
+```text
+←                 Chunk 3  00:08–00:12                 →
+
+[採用 frame strip]
+
+状況理解
+Person A opens the refrigerator and takes out a bottle.
+[日本語訳]
+
+記憶
+A has taken a bottle from the refrigerator after entering the kitchen.
+[日本語訳]
+
+処理時間  Situation 1.2s / Memory 0.8s
+
+[詳細]
+```
+
+「詳細」の中に次を格納する。
+
+- Situation observations
+- Situation unresolved
+- Memory events
+- Memory unresolved
+- evidence frame IDs / timestamps
+- Prompt
+- raw JSON / raw model output
+- model info
+
+これなら研究上のstage境界は失わず、通常閲覧では1 chunkを一つのまとまりとして理解できる。
+
+矢印navigationは**chunkごと**に進め、EOF後だけ最後のblockとしてFinal Answerを追加する案が自然。
+
+```text
+Chunk 1 → Chunk 2 → ... → Chunk N → Final Answer
+```
+
+ただし、stage単位の逐次デバッグが必要な場合は「詳細」内または開発者表示でSituation / Memoryを個別確認できるようにする。
+
+### 日本語訳
+
+結果表示にも各代表textの横へ「日本語訳」buttonを置く。
+
+- Situation `window_summary`
+- Memory `narrative`
+- Final Answer（必要ならanswer text / evidence explanation）
+
+翻訳はdisplay only、英語原文がcanonical。Google翻訳cacheをQA/Promptと共通化できる設計が望ましい。
+
+### 現時点の削除・非表示候補
+
+通常設定から削除または隠すもの:
+
+- question ID input
+- decoder_frames_per_sample input
+- backend
+- Agent enabled
+- prompt_id（Prompt画面へ移動）
+- reader_mode（開発者用へ）
+- visual_input_mode（開発者用へ）
+- observation_context_mode（開発者用へ）
+- resolved_profile常時表示
+
+残すもの:
+
+- window_seconds
+- frames_per_window
+- memory_budget_tokens
+- Agentごとのmodel_id
+
+未確定:
+
+- profileの保存・履歴データモデル
+- memory narrativeが長文化した場合の代表表示ルール
+- Final Answerの日本語訳対象範囲
