@@ -317,3 +317,171 @@ offline/long-video寄りだが、explicit evidence sufficiency verificationを�
    - ただしProactiveBench等のsilence taskとの重複確認が必要。
 
 この追加調査により、前節の「Evidence-Sufficiency Controller単体を有力候補」とする評価は弱める。現在は **counter-evidence / strict causal / compute-aware / unanswerability** のいずれかを加えないと新規性主張は難しいと判断する。
+
+
+## 2026-10-01 19:xx 追加壁打ち: 実装起点ではなく Online × Agent × LongVideoQA から探索
+
+ユーザー指示により、現在のWorkbench実装を前提に新規性を考えるのではなく、
+**Online（未来参照なしの逐次処理）× Agent（観測・記憶・判断を自律制御）× LongVideoQA（長時間動画質問応答）**
+というタスク自体から研究空間を広げて検討する。
+
+### 1. 消去法Agent / 仮説検証Agent
+
+ユーザー案: 選択肢を順に消去して問題を解くAgent。
+
+近い既存研究:
+- MM-PoE (2024): multimodal MCQでProcess of Eliminationを導入。
+- VideoHV-Agent / Think, Then Verify (CVPR 2026): 各候補回答を検証可能なhypothesisへ変換し、必要なclueを導出してvideo evidenceで検証。
+
+したがって「選択肢を消去する」だけでは新規性が弱い。
+
+ただしOnline条件では未解決余地がある。
+
+候補:
+**Online Hypothesis Elimination Agent**
+- t=0で各選択肢を検証可能な仮説へ変換。
+- stream到着ごとに各仮説を support / contradiction / unknown で更新。
+- どの選択肢を区別するために何を見るべきかをAgentが決める。
+- 未来へseekせず、到着するstreamに対する観測budgetだけを変える。
+- 一度消去した選択肢を、後続証拠で復活可能にするかも研究軸。
+
+重要な差別化候補は、offline retrievalではなく、**選択肢間の識別に必要な証拠を逐次管理しながら観測戦略を変えること**。
+
+### 2. 質問からchunk秒数・frame数を決めるAgent
+
+近い既存研究:
+- Adaptive Keyframe Sampling (CVPR 2025): prompt relevance + coverageでkeyframe selection。
+- ReQuest (2026): question-aware / uncertainty-driven adaptive frame selection。
+- StreamAgent: question semanticsとhistoryから将来のtask-relevant temporal/spatial focusを予測してperception actionを変更。
+
+したがってquestion-aware sampling単独では競合が強い。
+
+一方、Streaming VideoQAで
+- chunk duration
+- frames per chunk
+- frame density
+- observation frequency
+を**明示的なAgent action**として逐次選択し、
+accuracy / compute / latencyのtrade-offを最適化する研究は検討価値がある。
+
+特に、質問の種類によって初期policyを変える案:
+- 物体有無 -> 粗い長chunk / 少frame
+- 瞬間的行動 -> 短chunk / 高密度frame
+- 長期的状態変化 -> 長chunk + memory重視
+- 順序・因果 -> 中密度 + event boundary重視
+
+さらに、stream中に候補選択肢が絞れたら観測粒度も変える。
+
+### 3. Online LongVideoQA向けの高難度Dataset / Benchmark
+
+既存の関連benchmark:
+- 1H-VideoQA: 40–90分の動画、hour-long long-context能力。
+- HLV-1K: 約1時間動画、frame / within-event / cross-event / long-term reasoning。
+- LSDBench: 平均45.39分、短い重要actionを高sampling密度で見つける必要がある。
+- HERBench: k>=3の時間的に離れた証拠を統合しないと解けないmulti-evidence QA。
+- SportsTime (ECCV 2026): 分単位に離れた複数eventをChain-of-Timeで統合するtemporal compositional reasoning。
+- VideoZeroBench (2026): 正答だけでなくspatio-temporal evidence groundingまで要求。
+
+したがって「動画が長い」「証拠が離れている」だけでは既存benchmarkがある。
+
+Online特有の難しさを定義すると研究余地がある。
+
+候補difficulty axes:
+- **Evidence latency**: 質問提示から最後の必須証拠が現れるまでの時間。
+- **Evidence span**: 最初の必須証拠から最後の必須証拠までの時間幅。
+- **Evidence gap**: 必須証拠どうしの最大時間間隔。
+- **Evidence sparsity**: 長時間の中で必要情報が占める割合。
+- **Distractor duration**: 誤答を支持しそうな無関係区間の長さ。
+- **Reversal risk**: 前半だけ見ると誤答がもっともらしいが、後半証拠で反転する度合い。
+- **Memory horizon**: 正答に必要な最古情報までの時間距離。
+- **Answerability time**: 初めて正答可能になる動画時刻。
+- **Cross-event composition depth**: 何個の離れた出来事を順序づけ・統合する必要があるか。
+
+特に「前半だけでは誤答が合理的に見えるが、数十分後の証拠で覆る」問題はOnline性を強く評価できる。
+
+### 4. Hallucination × Online Processing
+
+関連benchmark:
+- VideoHallucer: intrinsic / extrinsic video hallucination。
+- HAVEN: hallucination原因・対象・質問形式を多軸評価。
+- ELV-Halluc: long-video特有のSemantic Aggregation Hallucination (SAH)。frame-level認識が正しくても、複数eventを集約すると誤った意味へ統合される現象。
+- VideoSEAL (ICML 2026): agentic long-video QAでanswerとretrieved evidenceが一致しないEvidence Misalignmentを分析し、plannerとanswer authorityを分離。
+
+ユーザー仮説:
+Online処理では、一度に動画全体を圧縮・集約するのではなく、逐次eventを確定しながら進むため、long-video hallucination、特にSemantic Aggregation Hallucinationを減らせる可能性がある。
+
+これは現時点で有望な研究問い。
+
+例:
+**Does causal online aggregation reduce long-video hallucination?**
+- Offline full-video / sparse global sampling
+- Sliding-window recent-only
+- Online incremental event memory
+- Online hypothesis-tracking agent
+を同じbackbone・同程度budgetで比較。
+
+見る指標:
+- final QA accuracy
+- hallucination rate
+- evidence grounding
+- contradiction consistency
+- event order errors
+- answer-evidence alignment
+
+重要なのは「Onlineだから良い」と仮定せず、offline方法よりhallucinationが減る条件・増える条件を分析すること。
+逐次誤りがmemoryへ蓄積して逆にhallucinationが増える可能性も反例として重要。
+
+### 5. 現時点で統合しやすい研究案
+
+#### 案A: Online Hypothesis Elimination VideoQA
+
+各選択肢を仮説として保持し、stream到着ごとにsupport / contradiction / unknownを更新する。
+Agentは残った仮説を最も区別できるよう次の観測粒度を決める。
+
+研究問い:
+- 選択肢全体を毎回直接回答するより、逐次消去の方がlong-horizon reasoningに強いか。
+- distractorや遠隔証拠に強くなるか。
+- hallucinationが減るか。
+
+#### 案B: Question-Adaptive Online Perception Agent
+
+質問の種類・現在の仮説状態に応じてchunk duration / frame countを動的選択。
+
+研究問い:
+- 固定samplingより少ないcomputeで同等以上の精度を出せるか。
+- evidence sparsity / gap / latency別にどのpolicyが有効か。
+
+#### 案C: Online-Hard LongVideoQA Benchmark
+
+Online特有のdifficulty axesをannotationし、単純な動画長ではなく
+「どれだけ長く覚え、どれだけ待ち、どれだけ離れた証拠を統合する必要があるか」を評価する。
+
+#### 案D: Online Processing as Hallucination Mitigation
+
+逐次観測・逐次memory・仮説検証がlong-video hallucinationを抑えるかを研究する。
+特にELV-HallucのSemantic Aggregation Hallucinationと相性が良い可能性。
+
+### 6. 現時点の強い組み合わせ仮説
+
+単独より、以下の組み合わせが研究ストーリーとして強い可能性がある。
+
+**Hypothesis-Driven Adaptive Online VideoQA**
+
+1. 質問と選択肢から仮説を作る。
+2. 各仮説を区別するために必要な証拠を定義する。
+3. Online streamを未来参照なしで処理する。
+4. 現在残っている仮説に応じてchunk長 / frame数を変える。
+5. 証拠が来るたびに仮説を支持・反証・保留へ更新する。
+6. 十分に識別できたら回答する。
+
+評価はaccuracyだけでなく、
+- compute
+- answer timing
+- evidence grounding
+- hallucination
+- evidence gap / span別性能
+まで見る。
+
+この方向は、消去法、adaptive sampling、long-range difficulty、hallucinationという今回のユーザー案を一つの研究テーマへ統合できる。
+
+まだresearch-specへは昇格せず、探索候補として保持する。
