@@ -711,3 +711,118 @@ Agent/system設計では、複数の巨大VLMを何個も常時回すより:
 - Early answer / multi-scale / memoryは主貢献ではなくablation / extensionへ回す。
 
 これなら「仮説が時間とともにどう変化するか」という一つの問題設定で研究を立てやすい。
+
+
+## 2026-10-01 22:44 追加壁打ち: Continuous belief tracking / procedural state / agent routing
+
+### Black Swanとの関係
+
+今回の「仮説を時間とともに追う」はBlackSwanSuiteのdefeasible reasoningと近いが、
+単にBlack Swanを細かい時間刻みで再評価するだけでは研究差分が弱い。
+
+Black Swan:
+- atypical / expectation-violating eventを使う。
+- 限られたvisual informationからhypothesisを作る。
+- new/conflicting evidenceを追加してhypothesisをvalidate / invalidateする。
+
+今回の候補:
+- strict onlineでvideo先頭から連続的に処理。
+- chunkごとにhypothesis / state trajectoryを記録。
+- 短いunexpected eventだけでなく、数分〜数十分のprocedure / long-range stateを追う。
+- final answerだけでなく、update timing / unnecessary flip / recoveryを評価。
+
+したがって差を作るなら、
+**fine-grained Black Swan** より
+**Continuous Online Defeasible Reasoning / Belief Tracking**
+と捉える方が自然。
+
+### 「コップを取る→水を入れる→置く」を状態管理する既存研究
+
+VideoQAそのものよりprocedural video understandingで近い研究が多い。
+
+- Progress-Aware Online Action Segmentation (CVPR 2024)
+  - causal online action segmentation。
+  - ongoing action progressを逐次推定。
+  - training videosからtask graphを学び、procedure-consistentな予測に利用。
+  - 「現在どのstepか / どこまで進んだか」を逐次持つ点でflag管理に近い。
+
+- Task Graph learning (2025)
+  - procedural activitiesのtask graphを学習。
+  - online mistake detectionにも適用。
+
+- Ego4D Object State Change
+  - object state changeの有無とchange pointを扱う。
+
+- Action Scene Graphs (CVPR 2024)
+  - egocentric long videoでactionとobject state changeをgraphとして表現。
+  - PRE / PNR / POSTでstate transitionを記述。
+
+- MOSCATO (ICCV 2025)
+  - long procedural video中で複数objectのstateをactionに沿ってframe-levelで追跡。
+
+- Env-QA (ICCV 2021)
+  - long-term state tracking / multi-event temporal reasoningをVideoQAとして評価。
+
+研究実装ではboolean flagそのものより、
+- step state: not-started / active / completed / failed
+- object state
+- task graph node state
+- action progress
+のようなstructured state representationが多い。
+
+VideoQAでexplicit state trackerをonline更新し、そのstateを使ってanswerする設計は隣接研究と接続しやすいが、
+「状態をflagで管理する」だけでは新規性にならない。
+
+### 質問文・選択肢からAgentを選択する構想
+
+近い既存研究あり。
+
+- AoTD (CVPR 2025): complex video questionをsub-taskへ分解し、specialized vision modelsで処理。
+- VideoMultiAgents (2025): vision / scene graph / textなど専門Agentを組み合わせる。
+- LVAgent (ICCV 2025): Agent libraryからtaskに適したagent teamをpre-select。
+- Multi-Agent Cooperation for Traffic Safety (ICCVW 2025): question / segmentをvalidation performanceに基づきspecialized agentへrouting。
+- 2026のagentic long-video systemsでもspecialized agents / toolsの選択は一般化。
+
+したがって「question typeからAgentを選ぶrouter」単体は新規性が弱い。
+
+Online条件で差を作るなら:
+- questionだけで一度routingして終わりではなく、
+- stream中のstate / failure / uncertaintyに応じてprocessing policyを切り替える
+方向が考えられる。
+ただし再び全部入りになりやすいため、主研究問いとしては慎重に扱う。
+
+### 失敗・成功解析の独立した研究方向
+
+手法を盛らず、
+**When and why does online processing help LongVideoQA?**
+を中心問いにする方向も有力。
+
+同一backbone / visual budget / token budgetで:
+1. offline one-shot/global sampling
+2. simple online incremental processing
+3. online explicit state tracking
+を比較。
+
+QA/problem factorsごとに分析:
+- sequential procedure
+- long-range state dependency
+- belief reversal / unexpected event
+- sparse evidence
+- temporal order
+- counting
+- local visual detail
+
+trajectory metrics:
+- final accuracy
+- belief update accuracy
+- belief maintain accuracy
+- update delay
+- false revision / unnecessary flip
+- recovery after wrong belief
+
+これにより「Onlineは常に良い」ではなく、
+**どのVideoQAでonlineが有利/不利になるか**
+を明らかにする研究にできる。
+
+これはmethod-firstではなくphenomenon-firstの研究であり、
+現時点の「やりたいことてんこ盛り」を避ける候補として有力。
