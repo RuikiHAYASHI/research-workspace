@@ -235,3 +235,85 @@ Situation -> Evidence Memory -> Sufficiency Controller
 の組み合わせを優先して次の壁打ち対象とする価値が高い。
 
 research-specへの昇格はまだ行わない。
+
+
+## 2026-10-01 19:14 追加調査: 途中回答・応答時刻を直接扱う研究
+
+ユーザーの「StreamAgentも途中で終了して答えを返すのではないか」という確認を受けて、response timing / proactive responseを直接扱う研究を追加調査した。
+
+### StreamAgent (2025)
+
+StreamAgentの定式化では、各timestampでdecision functionがWAIT/RESPONDを判断し、十分な情報が集まった時点または動画終端で回答する。したがって、query単位で動画終端より前に回答する理解は正しい。
+
+ただし「回答後にシステム全体がstream監視を終了する」とは限らず、active interactionの文脈ではqueryへの応答とstream処理継続は区別する必要がある。
+
+### OVO-Bench (2025)
+
+Forward Active Respondingとして、質問時点では情報不足の場合にfuture情報が十分になるまで回答を遅延する能力を評価する。
+
+### Dispider (2025)
+
+Perception / Decision / Reactionを分離し、軽量なstreaming処理が適切なinteraction timingを判定する。interaction中も非同期でstream監視を継続するため、「一問に答えたらstreamを終了」とは異なる。
+
+### ProactiveVideoQA (2025)
+
+動画再生中にmodel自身がmulti-turn responseの時刻を決めるproactive interactionを評価するbenchmark。response timingを含むPAUC metricを提案。
+
+### MMDuet2 (2025)
+
+各turnでrespond / remain silentを判断し、precise response-time annotationなしでmulti-turn reinforcement learningによりtimely responseを学習する。
+
+### LiveStar (2025)
+
+response-silence decodingによりproactive response timingを決定するalways-on streaming assistant。回答後もstream継続を前提とする。
+
+### StreamReady / ProReady-QA (CVPR 2026)
+
+「What to answer and When」を直接主題化している。supporting evidenceが現れた時刻範囲をannotateし、早すぎる回答と遅すぎる回答を非対称に罰するAnswer Readiness Scoreを提案。learnable readiness mechanismがevidence sufficientになったかを判定して回答をgateする。
+
+このため、「十分なevidenceが集まったらearly answer」という単独アイデアは新規性として成立しにくい。
+
+### ProactiveBench (2026-09)
+
+standing requestを受け、1秒ごとにstreamを監視し、target event後の適切なintervalだけで応答し、それ以外はsilenceを保つ能力を評価する。premature responseが大きな失敗要因であることを報告。
+
+### REVEAL (2026-08)
+
+offline/long-video寄りだが、explicit evidence sufficiency verificationを導入し、単なるretrieval relevanceではなく「temporal / causal / fine-grained evidenceが本当に揃っているか」を検証して不足情報を再取得する。training-free agentic long-video QA。
+
+## 新規性候補の更新
+
+追加調査により、以下は単独では競合が強い。
+
+- WAIT / ANSWERの導入。
+- evidence sufficiency判定。
+- readiness score。
+- response timing metric。
+- proactive / silence decision。
+- hierarchical memory + sufficiency。
+- precise response-time annotationなしのtraining。
+
+したがって、現在の研究で新規性を狙うなら「途中回答」を中心機能として主張するのではなく、現在のWorkbenchが既に持つexplicit event ledger / unresolved / frame timestamp / evidence traceを利用した、より限定的な未解決問題へ寄せる必要がある。
+
+現時点の探索候補:
+
+1. **Counter-evidence-aware stopping**
+   - supporting evidenceだけでなく、現在回答を反転させ得るcounter-evidence / unresolved hypothesisを明示追跡する。
+   - 「証拠がある」ではなく「反証候補が十分に潰れた」を停止条件にする。
+
+2. **Strict-causal evidence verification**
+   - REVEALのようなfull-videoへのtargeted re-retrievalは許さず、到着済みstreamだけでevidence sufficiencyを検証する。
+   - past artifactの再参照は可能だがfuture seekは禁止。
+   - この差分が研究主張として十分かはさらに文献調査が必要。
+
+3. **Joint observation-cost / response-time control**
+   - when to answerだけでなく、回答までのframe budget / VLM call / token cost自体もcontrollerが調整する。
+   - accuracy + timing + computeの3軸で評価する。
+   - StreamAgentとの重複を避けるため、future event anticipationではなくcurrent evidence gap / contradictionをcontrol signalにする案を検討する。
+
+4. **Unanswerable / never-answer streaming QA**
+   - StreamReady自身がexplicit unanswerability modelingをfuture workとして挙げている。
+   - 動画を最後まで見ても答えられない質問、根拠が一度も十分にならない質問を含め、「いつ答えるか」だけでなく「最後まで答えないべきか」を扱う。
+   - ただしProactiveBench等のsilence taskとの重複確認が必要。
+
+この追加調査により、前節の「Evidence-Sufficiency Controller単体を有力候補」とする評価は弱める。現在は **counter-evidence / strict causal / compute-aware / unanswerability** のいずれかを加えないと新規性主張は難しいと判断する。
