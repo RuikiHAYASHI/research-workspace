@@ -485,3 +485,120 @@ Online特有のdifficulty axesをannotationし、単純な動画長ではなく
 この方向は、消去法、adaptive sampling、long-range difficulty、hallucinationという今回のユーザー案を一つの研究テーマへ統合できる。
 
 まだresearch-specへは昇格せず、探索候補として保持する。
+
+
+## 2026-10-01 20:25 追加壁打ち: マルチスケール・Online消去法・premature answer・新規性
+
+### MTGでの「マルチスケール」の意味
+
+Company議事録を再確認。
+
+2026-09-18 MTG原文:
+- 「マルチスケール - 短い～長い範囲を見るか」
+- Chunkは実装上ロードする単位。
+
+したがって、このMTGでの第一義は **temporal multi-scale chunk（時間幅の異なるchunkを使うこと）**。
+例:
+- 数秒の短chunk: 瞬間的な行動・細かい状態変化。
+- 数十秒〜数分の長chunk: 文脈・流れ・長期変化。
+
+2026-09-11 MTGでは別に:
+- 「要約のTime Scaleをマルチスケールにする」
+- multi-timescale memory
+も議論されている。
+
+よってCompany上では「マルチスケール」は少なくとも
+1. chunkの時間幅のmulti-scale
+2. memory / summaryの時間スケールのmulti-scale
+の2文脈がある。
+直近9/18の発言は1が中心。
+
+### ユーザー仮説: Online処理は直感に反する展開を追いやすいか
+
+ユーザーが意図したのは一般的なhallucinationより、
+「前半では人間の常識・直感上もっともらしい解釈があるが、後半の予想外の出来事でその解釈が覆る動画」に対して、
+offline一括処理よりonline逐次処理の方が時系列に沿ってbeliefを更新しやすいのでは、という仮説。
+
+この問題は **defeasible reasoning（新証拠で既存仮説を撤回・修正する推論） / belief revision（信念更新）** と見る方が近い。
+
+関連:
+- Black Swan (CVPR 2025): unpredictable eventsに対するabductive / defeasible video reasoning。新しいvisual informationが既存hypothesisを変更するtaskを含む。
+
+研究問い候補:
+**Does causal incremental belief revision help video models reason through counter-intuitive event reversals?**
+
+比較:
+- Offline one-shot: 全動画を一括入力 / global sampling。
+- Online incremental: 順番に入力し、各時点のhypothesis/beliefを更新。
+- Online + explicit hypothesis tracking: 候補仮説ごとにsupport / contradiction / unknownを更新。
+
+注意:
+offlineは情報量としてはonline以上を見られるため、「onlineだから情報的に有利」ではない。
+差が出るなら、order-preserving processing / state update / aggregation mechanismが原因。
+同一backbone・同程度visual/token budgetで比較し、処理方式の差として主張する必要がある。
+
+### Online消去法VideoQAの直接先行研究
+
+2026-10-01時点で重点検索した範囲では、
+**strict online / future inaccessibleなvideo streamで、MCQ選択肢を時系列にsupport/contradiction/unknownへ更新し、候補を逐次消去しながら回答する**
+ことを中心にした論文は確認できなかった。
+
+近いもの:
+- MM-PoE (2024/2025): multimodal multiple-choiceでprocess of elimination。ただしimage中心でstreaming videoではない。
+- VideoHV-Agent / Think, Then Verify (CVPR 2026): long-video候補回答をtestable hypothesisに変換して検証。ただしoffline long-video searchで、全動画空間へのretrieval/localizationが可能。
+- PACE / Finding the Right Evidence (2026-08): option-discriminative evidenceをcandidate answersから導出し、offline long-video indexから証拠取得。
+- TreeReasoner (CVPRW 2026): hypothesis-verification + temporal zoom/jump/slide。ただしoffline video navigation。
+
+したがって、**Online Hypothesis Elimination（逐次仮説消去）** は探索価値がある。ただし「論文が存在しない」と断定せず、現検索範囲で直接一致を未確認とする。
+
+### 根拠前のpremature answerを直接調べる研究
+
+かなり明確に存在。
+
+- StreamReady (CVPR 2026):
+  - supporting visual evidenceが現れる前の回答をspeculationとして問題化。
+  - answer evidence windowとAnswer Readiness Scoreを導入。
+- PhoStream (ICML 2026):
+  - Forward taskでrequired visual/audio cuesがまだ出ていない段階のEarly Responseを明示評価。
+  - forward performance低下の主因がearly response。
+- ProactiveBench (2026-09):
+  - 適切なevent前に応答するpremature responseを評価。
+  - 6 system中4つでpremature responseがmissed responseを上回ると報告。
+- OVO-Bench (CVPR 2025):
+  - sufficient future informationまで回答をdelayするForward Active Responding。
+
+したがって「根拠が出る前に答えてしまう」は既に独立したfailure modeとして研究されている。
+
+### Hypothesis-Driven Adaptive Online VideoQAの新規性再評価
+
+名前・大枠だけでは新規性は不十分。
+
+既存要素:
+- hypothesis verification: VideoHV-Agent, TreeReasoner
+- process of elimination: MM-PoE
+- option-discriminative retrieval: PACE
+- question-adaptive frame selection: ReQuest, AKS
+- online perception / response timing: StreamAgent, StreamReady, OVO-Bench, PhoStream
+
+一方、次の組み合わせは直接一致する研究を現検索範囲では確認できていない:
+
+**Strict-Online Discriminative Hypothesis Tracking**
+1. t=0でanswer choicesをtestable hypothesesへ変換。
+2. future access禁止。
+3. stream到着ごとに各hypothesisをsupport / contradiction / unknownで更新。
+4. remaining hypothesesを最も区別するため、次のchunk duration / frames-per-chunk / observation densityをAgent actionとして選択。
+5. 仮説消去は必要ならreversibleにし、新証拠によるbelief revisionを許す。
+6. final answerだけでなくhypothesis trajectoryとevidence timestampを評価。
+
+特に新規性候補は:
+**「質問関連性」ではなく「残存仮説間の識別に必要な証拠」を使って、future-inaccessible streamの観測粒度をオンライン制御すること。**
+
+これはPACEのoption-discriminative evidenceという発想と近いため、offline index retrievalとの差を明示する必要がある。
+
+さらにBlack Swan型のcounter-intuitive / defeasible videoを評価対象にすると、
+- 早期消去の誤り
+- 後続証拠による仮説復活
+- belief revision
+を定量化でき、Onlineである意味が強くなる。
+
+現時点では「新規性あり」と断定せず、**有望だが、PACE / VideoHV-Agent / StreamAgentとの境界をさらに精査すればmethod contributionとして成立する可能性がある**とする。
