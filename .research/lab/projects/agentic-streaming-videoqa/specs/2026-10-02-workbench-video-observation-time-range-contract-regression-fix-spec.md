@@ -3,7 +3,7 @@ date: 2026-10-02
 last_updated: 2026-10-02
 project: agentic-streaming-videoqa
 type: implementation
-status: draft
+status: approved
 baseline_repository: RuikiHAYASHI/2026_09_hayashi_longvideoqa_workbench
 baseline_ref: main
 baseline_commit: c35b3e2b5a081a5dd953ed36830bc18eb640cc16
@@ -297,7 +297,7 @@ validatorは変更しない。
 
 ## 9. Implementation Handoff
 
-- approved spec: ユーザー承認後に本書をapprovedへ変更。
+- approved spec: 本書。2026-10-02、ユーザーがStage 10実装用プロンプト作成を明示し、本specの実装開始を承認した。
 - 実装目的: Situation / Memory video Promptのevent time-range指示をactual manifest timestamp validator contractと一致させる。
 - 基準repository/commit: `RuikiHAYASHI/2026_09_hayashi_longvideoqa_workbench@main` / `c35b3e2b5a081a5dd953ed36830bc18eb640cc16`。着手時に最新mainを再確認。
 - 変更scope: Section 3、Section 8。
@@ -305,5 +305,26 @@ validatorは変更しない。
 - success criteria: Section 6。
 - 許可されている短時間検証: validator / PromptService / workflow / browser Fake tests、compile/import、diff check。
 - 長時間runの許可状態: 未許可。
-- Git操作: draft段階。実装開始指示後にStage/Step topologyを使用。
+- Git操作: 2026-10-02の実装開始指示により、Stage/Step branch作成、対象fileだけのmicro-step commit、Step→Stageのlocal `--no-ff` mergeは許可済み。remote push、PR、Stage→main mergeは未許可。
 - 未検証予定: Prompt修正後の実Qwen time-range adherence率、実LongVideoBench品質・速度。
+
+
+## 10. Approval（2026-10-02）
+
+ユーザーは本specに対する「Stage 10実装用プロンプト」を明示的に依頼した。
+これを本specの内容承認および実装開始指示として扱い、statusを `approved` とする。
+
+実装順はSection 8のとおり、Step 1 → Step 2 → Step 3とする。
+
+Git操作の許可境界:
+
+- Stage branch `stage-10-video-time-range-contract-fix` 作成: 許可済み。
+- Step branch作成: 許可済み。
+- 対象fileのみをstageしたmicro-step commit: 許可済み。
+- Step→Stageのlocal `--no-ff` merge: 許可済み。
+- remote push: 未許可。
+- PR作成: 未許可。
+- Stage→main merge: 未許可。Stage 10完了報告後にユーザー確認を待つ。
+- 実Qwen/GPU、model download、LongVideoBench実run、Google Cloud Translation実API: 未許可。
+
+実装者はStep 1〜3をStage branchへ統合し、Success CriteriaとGit graphを確認したところで停止して報告する。
