@@ -3,7 +3,7 @@ date: 2026-10-02
 last_updated: 2026-10-02
 project: agentic-streaming-videoqa
 type: implementation
-status: draft
+status: approved
 baseline_repository: RuikiHAYASHI/2026_09_hayashi_longvideoqa_workbench
 baseline_ref: main
 baseline_commit: 33bb63ded6ed9a95d72108ed69d1860f618470a4
@@ -193,7 +193,7 @@ branch: `stage9-step03-browser-folder-regression-audit`
 
 ## 9. Implementation Handoff
 
-- approved spec: ユーザー承認後に本書をapprovedへ変更。
+- approved spec: 本書。2026-10-02、ユーザーが2件のregression fixを同一Stageで実装させるプロンプト作成を明示し、実装開始を承認した。
 - 実装目的: Dataset未選択時のempty folder requestによるserver tracebackを解消する。
 - 基準repository/commit: `RuikiHAYASHI/2026_09_hayashi_longvideoqa_workbench@main` / `33bb63ded6ed9a95d72108ed69d1860f618470a4`。着手時に最新mainを再確認。
 - 変更scope: Section 3、Section 8。
@@ -201,5 +201,46 @@ branch: `stage9-step03-browser-folder-regression-audit`
 - success criteria: Section 6。
 - 許可されている短時間検証: Browser/API/storage/Fake tests、compile/import、diff check。
 - 長時間runの許可状態: 未許可。
-- Git操作: draft段階。実装開始指示後にStage/Step topologyを使用。
+- Git操作: 2026-10-02の共同実装指示により、Stage/Step branch作成、対象fileだけのmicro-step commit、Step→Stageのlocal `--no-ff` mergeは許可済み。remote push、PR、Stage→main mergeは未許可。
 - 未検証予定: 実Qwen/GPU、長尺実データ性能。
+
+
+## Joint Implementation Approval（2026-10-02）
+
+ユーザーは、Dataset未選択時folder API regressionとvideo Situation/Memory `unresolved` schema contract regressionを、**同一の実装Stageでまとめて修正する**よう指示した。
+
+この共同実装では、本書Section 8に記載した単独実装用Stage/Step branch名より、次の共同topologyを優先する。
+
+```text
+main
+  \
+   stage-9-dual-regression-fixes
+      \
+       stage9-step01-reproduce-dual-regressions
+      \
+       stage9-step02-fix-browser-folder-empty-dataset
+      \
+       stage9-step03-fix-video-unresolved-schema-contract
+      \
+       stage9-step04-dual-regression-audit
+```
+
+実装順:
+
+1. 2件のregressionをそれぞれtestで再現・固定する。
+2. Browser folder empty-dataset bugをClient guard + Server defensive handlingで修正する。
+3. Situation / Memory video Promptの `unresolved` array contractをvalidatorと一致させる。
+4. 両specのSuccess CriteriaとStage 6/7/8周辺回帰をまとめて監査する。
+
+Git操作の許可境界:
+
+- Stage branch作成: 許可済み。
+- Step branch作成: 許可済み。
+- 対象fileのみをstageしたmicro-step commit: 許可済み。
+- Step→Stageのlocal `--no-ff` merge: 許可済み。
+- remote push: 未許可。
+- PR作成: 未許可。
+- Stage→main merge: 未許可。共同Stage完了報告後にユーザー確認を待つ。
+- 実Qwen/GPU、model download、Google Cloud Translation実API、長尺LongVideoBench run: 未許可。
+
+本共同実装は2件のbug scopeをまとめて運用するだけであり、各specの修正契約・Compatibility・対象外・Success Criteriaは変更しない。
