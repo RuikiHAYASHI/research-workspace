@@ -265,3 +265,12 @@ research-spec化時に以下を確定する。
 3. canonical validated structured outputでは互換性のため同fieldをbackend-derived値として維持する。
 4. single evidence frameの場合は `start_seconds == end_seconds` のzero-length Evidence区間を許容する。
 5. UI/文書上では時刻を「eventの真の開始終了」ではなく「Evidence区間」として扱う。
+
+
+## 2026-10-02 14:40 昇格
+
+このbrainstormで採用したdeterministic Evidence時刻導出方針は、次のapproved specへ昇格した。
+
+- `.research/lab/projects/agentic-streaming-videoqa/specs/2026-10-02-workbench-deterministic-evidence-time-derivation-spec.md`
+
+以後の実装契約は上記specを正本とする。
