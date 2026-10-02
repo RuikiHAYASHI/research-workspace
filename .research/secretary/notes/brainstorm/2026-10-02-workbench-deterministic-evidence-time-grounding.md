@@ -188,3 +188,80 @@ Situation Agentの出力に `window_summary` と `description` の両方を持�
 - Situation Agentのcanonical semantic text fieldを1つに統一する。
 - field名を `description` とするか `window_summary` とするかを、現在コード・artifact・UI・Memory入力の利用箇所を確認して決める。
 - 既存保存済みartifactとの後方互換性が必要かを確認する。
+
+
+## 2026-10-02 14:24 追記: deterministic time derivation方針を採用
+
+ユーザーは、Situation / Memory Agentに `start_seconds/end_seconds` を生成させず、モデルが返したEvidence参照からbackendが時刻を決定的に導出する方向を採用した。
+
+### 採用方向
+
+model raw outputでは、時刻そのものを出力させない。
+
+Situation observationのmodel出力候補:
+
+```json
+{
+  "description": "...",
+  "evidence_frame_indices": [24, 36, 48],
+  "question_relevance": "high",
+  "certainty": "fact"
+}
+```
+
+backendはvalidated evidence refsからactual source-video timestampを参照し、
+
+```text
+start_seconds = min(actual timestamp of cited evidence frames)
+end_seconds   = max(actual timestamp of cited evidence frames)
+```
+
+をcanonical structured outputへ付与する。
+
+Memory eventも同様に、model-generated `start_seconds/end_seconds` を廃止し、validated evidence refsからbackendが導出する方向とする。
+
+### canonical output互換性
+
+現時点の最有力は、model raw schemaから時刻fieldを削除しつつ、backendで導出した `start_seconds/end_seconds` をcanonical validated structured outputには残す案。
+
+これにより:
+
+- UI / artifactの既存time表示を維持しやすい。
+- model-generated floatの丸め・hallucinationを除去できる。
+- actual timestampのSSOTをmanifestへ一本化できる。
+- old runはsaved raw/validated outputをそのままread-onlyで保持できる。
+
+時刻fieldの意味は真のevent boundaryではなく、**cited evidenceが支持するEvidence time range**として文書化する必要がある。
+
+### Stage 10の扱い
+
+Stage 10差分をGitHubで確認した結果、変更は以下のみ。
+
+- Situation video Prompt 2種へのtime contract追記。
+- Memory video Promptへのtime contract追記。
+- Prompt/time validator回帰test追加。
+
+validator本体、artifact schema、sampling、runtimeはStage 10で変更していない。
+
+したがってStage 9へreset/revertする必要はない。公開済みmainの履歴を巻き戻さず、Stage 10を「Prompt adherenceで解決を試した履歴」として残し、次Stageで以下をforward changeする方針とする。
+
+- Stage 10で追加したmodel向けtime contract文を削除または再構成。
+- model raw schemaから `start_seconds/end_seconds` を削除。
+- backend validator/enrichmentでEvidence refsから時刻を導出。
+- Stage 10のPrompt-time adherence testを新しいdeterministic derivation testへ置換・整理。
+
+### Git方針
+
+次の実装Stageは現在の `main@09b5b4277981dc985d4ceb1d499e90ea1ee93040` を起点にする。
+
+Stage 9 `c35b3e2...` へreset/revertしない。Stage 10のmerge履歴を保持したまま新設計へ進める。
+
+### 未決事項
+
+research-spec化時に以下を確定する。
+
+1. Situation raw model schemaから `start_seconds/end_seconds` を完全削除する。
+2. Memory raw event schemaからも同fieldを完全削除する。
+3. canonical validated structured outputでは互換性のため同fieldをbackend-derived値として維持する。
+4. single evidence frameの場合は `start_seconds == end_seconds` のzero-length Evidence区間を許容する。
+5. UI/文書上では時刻を「eventの真の開始終了」ではなく「Evidence区間」として扱う。
