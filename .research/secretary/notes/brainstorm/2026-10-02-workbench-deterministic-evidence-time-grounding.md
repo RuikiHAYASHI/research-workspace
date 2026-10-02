@@ -166,3 +166,25 @@ Stage 10はPrompt adherence改善であり、model-generated timestampという�
 2. canonical field名を既存の `start_seconds/end_seconds` のまま維持するか、`evidence_*` へ変更するか。
 3. single-frame evidenceのzero-length intervalを許容するか。
 4. その後、research-specでnew model output schema / backward compatibility / artifact semanticsを確定する。
+
+
+## 2026-10-02 14:16 追記: Situation Agent出力の重複整理
+
+Situation Agentの出力に `window_summary` と `description` の両方を持たせる必要はない、というユーザー判断を記録する。
+
+### 判断
+
+- `window_summary` と `description` は役割が重複しており、Situation Agentの1回の推論から両方を生成・保持する設計は不要。
+- Situation Agentのsemantic text outputは、原則として単一の情報表現へ整理する方向とする。
+- どちらのfield名を残すか、また既存artifact/UI/Memory Agentとの互換性をどう扱うかは、現行実装と後段データフローを確認した上でspecで確定する。
+- この記録は設計判断のbrainstormであり、現時点ではコード変更やapproved specを意味しない。
+
+### 背景
+
+現在の構成ではSituation Agentが同一レスポンス内で複数fieldを構造化出力する想定であり、`window_summary` を生成した後に別推論で `description` を生成する2段階構成ではない。そのため、意味の近い2つのtext fieldを同時に保持することによる情報上の利点が明確でなく、schema・prompt・downstream処理を複雑にする可能性がある。
+
+### 次のspec候補
+
+- Situation Agentのcanonical semantic text fieldを1つに統一する。
+- field名を `description` とするか `window_summary` とするかを、現在コード・artifact・UI・Memory入力の利用箇所を確認して決める。
+- 既存保存済みartifactとの後方互換性が必要かを確認する。
