@@ -3,7 +3,7 @@ date: 2026-10-02
 last_updated: 2026-10-02
 project: agentic-streaming-videoqa
 type: implementation
-status: draft
+status: approved
 baseline_repository: RuikiHAYASHI/2026_09_hayashi_longvideoqa_workbench
 baseline_ref: main
 baseline_commit: ae8df468b86db90811d400dcb2086f90be60c400
@@ -398,7 +398,7 @@ Stage branchで以下が揃った時点で実装完了候補とする。
 
 ## 10. Implementation Handoff
 
-- approved spec: ユーザー承認後に本書を`approved`へ変更して利用する。
+- approved spec: 本書。2026-10-02、ユーザーがStep 1–3を実装させるプロンプト作成を明示し、実装開始を承認した。
 - 実装目的: Prompt表示metadataのAgent Config混入によりInference validationが失敗するregressionを修正する。
 - 基準repository/commit: `RuikiHAYASHI/2026_09_hayashi_longvideoqa_workbench@main` / `ae8df468b86db90811d400dcb2086f90be60c400`。着手時に最新mainを再確認する。
 - 変更scope: Section 3、Section 8。
@@ -406,5 +406,29 @@ Stage branchで以下が揃った時点で実装完了候補とする。
 - success criteria: Section 6。
 - 許可されている短時間検証: Config/API/browser/Fake model pytest、compile/import、diff check、Git graph確認。
 - 長時間runの許可状態: 未許可。実Qwen/GPU、model download、長尺LongVideoBench runを開始しない。
-- Git操作: 本書は計画作成段階。branch/commit/merge/pushは実装開始の明示指示に従う。実装時はSection 8のStage/Step topologyを使う。
+- Git操作: 2026-10-02の実装指示により、Stage/Step branch作成、対象fileだけのmicro-step commit、Step→Stageのlocal `--no-ff` mergeは許可済み。remote push、PR、Stage→main mergeは未許可。Stage→mainはユーザー確認後にのみ `--no-ff` で行う。
 - 未検証予定: 実Qwen/GPU品質・速度、実LongVideoBench長時間run。
+
+
+## 11. Approval（2026-10-02）
+
+ユーザーは本specで定義した以下のStepを実装させるプロンプト作成を明示した。
+
+1. regression再現
+2. Agent Config / 表示metadata境界修正
+3. regression audit
+
+これを本specの内容承認および実装開始指示として扱い、statusを `approved` とする。
+
+Git操作の許可境界:
+
+- Stage branch作成: 許可済み。
+- Step branch作成: 許可済み。
+- 対象fileのみをstageしたmicro-step commit: 許可済み。
+- Step→Stageのlocal `--no-ff` merge: 許可済み。
+- remote push: 未許可。
+- PR作成: 未許可。
+- Stage→main merge: 未許可。Stage 8完了報告後にユーザー確認を待つ。
+- 実Qwen/GPU、model download、長尺LongVideoBench run: 未許可。
+
+実装者はStep 1→2→3を順番に完了し、Stage branch上でSuccess CriteriaとGit graphを確認したところで停止して報告する。
