@@ -1,9 +1,9 @@
 ---
 project: agentic-streaming-videoqa
 status: active
-summary: Ego4D動画を取得中。Workbenchのvideo_clip・窓単位観測・テキスト記憶を短時間検証済み、実Qwen評価は未実施。
+summary: Workbenchのデータセット・動画・QA選択UIを試作。Agent実行は未確認で、入出力・Prompt・永続化・推論設定の整理を優先中。
 created: 2026-09-10
-last_updated: 2026-09-30
+last_updated: 2026-10-02
 ---
 
 # エージェント型オンラインストリーミングVideoQAの研究
@@ -34,6 +34,8 @@ YouTubeなどのライブ配信を想定し、動画を先頭から逐次的に�
 
 2026-09-30に、承認済みspecに基づきWorkbenchのvideo_clip入力、窓単位Situation観測、根拠付きMemory記録、EOF Answer、read-only履歴表示を実装し、Workbenchの`main`（`2b5f830`）へfast-forward統合・GitHubへpushした。Fake・短い合成動画・Firefoxを含む181件の短時間テストが成功した。実Qwen/GPU・LongVideoBench実データでの品質と速度は未検証である。詳細は同日付のWorkbench Agent mode spec第14節に記録した。
 
+2026-10-02のMTGで、データセット・動画・QA選択画面（プレビュー、お気に入り、検索を含む）を試作した一方、推論画面とAgentのエンドツーエンド動作は未確認であることを整理した。フォルダとプレビューキャッシュの実行間永続化、推論設定の矛盾解消、Agentの入出力・JSON・Prompt・責務の可視化を優先する。Situation / Memory / Answer Agentのデータフローを図と具体例で説明し、結果表示とサムネイルを整える方針を確認した。
+
 ## マイルストーン
 
 - [ ] 研究方針を整理する
@@ -55,6 +57,10 @@ YouTubeなどのライブ配信を想定し、動画を先頭から逐次的に�
 - [x] 状況理解・情報集約・最終回答のAgent責務と編集点を明示する
 - [x] 重要イベントを保存するJSON形式と、各Agent用promptを設計する
 - [ ] Qwen3-VLの複数frame入力とオーケストレーションの実装例を調査する
+- [ ] Workbenchのデータセット・動画・QA選択UIを実行間も保持できるDB・永続化構成に整理する
+- [ ] 推論設定の矛盾とエラーを解消し、3段階Agentのエンドツーエンド実行を確認する
+- [ ] Situation / Memory / Answer Agentの責務・入出力・JSON形式・根拠データフローを図と具体例で整理する
+- [ ] Promptの妥当性を検討し、結果表示・サムネイル・メモリ内容を確認できるUIを整える
 
 ## Workbench個人利用の起動・終了運用（2026-09-29ユーザー指示）
 
@@ -78,3 +84,4 @@ Workbenchは本人だけが必要時に利用するローカル開発用UIであ
 | 2026-09-25 | MTGでEgo4Dの取得方針、Workbenchの入口・表示改善、3段階Agentの責務明示とイベントJSON設計を確認。 |
 | 2026-09-29 | Workbenchの個人利用・前面起動・Ctrl+C終了の運用境界を明記。 |
 | 2026-09-30 | video_clip、窓単位観測、根拠付き記憶、EOF回答と可読表示を実装し、Fake・短い合成動画・Firefoxを含む181件を確認。Workbench `main`へ統合・push。実Qwen評価は未実施。 |
+| 2026-10-02 | データセット・動画・QA選択UIを試作。Agent実行は未確認のため、入出力・Prompt・設定・永続化・結果表示の整理を優先する方針を確認。 |
