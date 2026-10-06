@@ -380,3 +380,193 @@ run/
 - TurnSessionをRunService内部実装にするか独立runtime objectにするか。
 - Recordファイル構成の具体名。
 - PresentationServiceとBrowserServiceがRecordServiceをどう読むか。
+
+
+## 2026-10-07 00:30 JST 追記 — 要約版（現在構造 / 問題点 / 理想構造）
+
+### 現在の構造
+
+Workbenchは大きく、Browser（ブラウザ画面）とPython実行系に分かれる。
+
+```text
+Browser
+  web/app.js
+      |
+      | HTTP（ブラウザとPythonの通信）
+      | JSON（通信で使うデータ形式）
+      v
+entrypoints/server.py
+      |
+      | 現在はHTTP受付だけでなく
+      | Run管理・Dataset取得・Streaming・Record等も担当
+      v
+ServerContext
+      |
+      +-- Dataset / Streaming / Model / Record / Browser / Presentation
+      |
+      v
+TurnSession
+      |
+      v
+VideoQAWorkflow
+      |
+      +-- Situation
+      +-- Memory
+      +-- Answer
+```
+
+- `web/app.js`: Browser側のUI制御。設定を集め、HTTPでPythonへ送り、返ってきたJSONを画面へ表示する。
+- `entrypoints/server.py`: ローカルWebサーバー。HTTP request（要求）を受ける。
+- `ServerContext`: 現在はServiceや共有状態の保持に加え、Run開始・Dataset取得・Streaming生成・Record生成なども担う。
+- `RunService`: 現在は処理本体ではなく、ほぼ `ServerContext` へ処理を転送するproxy（代理窓口）。
+- `TurnSession`: Webで1 windowずつ進めるための実行状態を保持する。
+- `VideoQAWorkflow`: Situation -> Memory -> ... -> EOF -> Answer という研究上の処理順序を管理する。
+
+CLI（コマンドライン実行）ではDatasetService / VideoStreamService / RecordService等を比較的明示的に利用する一方、WebではServerContextから内部実装を直接呼ぶ経路がある。
+
+### 現在の問題点
+
+本質的な問題は「Serviceが多いこと」ではなく、**Serviceが正式な入口として統一されていないこと**。
+
+例:
+
+```text
+Dataset
+
+CLI:
+DatasetService
+  -> DatasetAdapter
+
+Web:
+ServerContext
+  -> registry.dataset(...)
+  -> DatasetAdapter
+```
+
+Datasetを読む処理自体を二重実装しているわけではないが、「Datasetを使うとき、DatasetServiceを通るのか直接Adapterを呼ぶのか」が統一されていない。
+
+StreamingやRecordも同様。
+
+この結果、
+
+- 正式な入口が分かりにくい。
+- CLIとWebで処理経路が違う。
+- `RunService` という名前なのにRun管理の本体は `ServerContext`。
+- `runtime` が `entrypoints/server.py` に依存し、依存方向が直感と逆。
+- `server.py` がHTTP境界以上の責務を持ち、巨大化している。
+- 新しくコードを読む人が「どこから追えばよいか」迷いやすい。
+
+### 理想とする構造案
+
+Service（サービス）を各機能の正式な入口にする。
+
+```text
+Browser
+  web/app.js
+      |
+      | HTTP + JSON
+      v
+entrypoints/server.py
+      |
+      | HTTP <-> Python の変換だけ
+      v
+ServiceContainer
+      |
+      +-- ConfigService
+      +-- PromptService
+      +-- DatasetService
+      +-- VideoStreamService
+      +-- AgentService / Model boundary
+      +-- RunService
+      +-- RecordService
+      +-- PresentationService
+      +-- BrowserService
+```
+
+`ServiceContainer` はServiceをまとめて保持するだけの箱とする。
+全データを中継したり、Run処理そのものを実行したりしない。
+
+Run開始は次のようにする。
+
+```text
+server.py
+  -> RunService.start_run()
+       |
+       +-- DatasetService
+       +-- VideoStreamService
+       +-- Agent / Model
+       +-- VideoQAWorkflow
+       +-- RecordService
+```
+
+これにより、
+
+- Datasetを使うならDatasetService
+- StreamingならVideoStreamService
+- Run管理ならRunService
+- 保存ならRecordService
+- 表示用変換ならPresentationService
+
+と、機能ごとの入口が一意になる。
+
+### ServiceContainerという名前を使う理由
+
+`AppContext`（アプリ全体の共有文脈）という名前も可能だが、Path・State・Environmentなど何でも入れやすく、巨大化しやすい。
+
+`ServiceContainer` なら「Serviceを入れる箱」という責務が名前から明確で、今回の目的に合う。
+
+### 新3 Agentと保存情報
+
+研究コアはSituation / Summary / Answerへ単純化する方向。
+
+```text
+window 0
+  -> SituationAgent
+  -> SummaryAgent
+
+window 1
+  -> SituationAgent
+  -> SummaryAgent
+
+...
+
+EOF
+  -> AnswerAgent
+```
+
+保存情報も現在のObservation / Event / Evidence中心から単純化し、
+
+```text
+run/
+  - execution settings
+  - resolved prompts
+  - run status
+  - window / frame metadata
+  - situation_description per window
+  - summary per window
+  - model実行情報（研究再現に必要な範囲）
+  - final answer
+```
+
+程度を中心にする案が有力。
+
+### 今回出た主な質問
+
+- `web/app.js` は何をしているのか。
+- `entrypoints/server.py` は何をしているのか。
+- HTTPとは何か。
+- `runtime/service.py` は何をしているのか。
+- `entrypoints/server.py` が各Serviceを呼んでいるのか。
+- `agents/Agent` は何をしているのか。
+- `records/` はどこに何を保存しているのか。
+- 新3 Agent実装後はどのようなRecord構造が期待されるか。
+- `POST /api/recipe/preview` はなぜ実行されるのか。
+- `/api/recipe/preview` はどこに存在するのか。
+- BrowserからPythonコードをどのように呼び、出力をどう受け取るのか。
+- `ServerContext` とは何か。クラスなのか。
+- 「ServerContextへのproxy」とは何か。
+- CLIとWebの違いは何か。
+- Dataset / Streaming / Recordの処理をServerContext側で重複実装しているのか。
+- JavaScript（JS）とJSONの関係は何か。
+- この文脈でserverを日本語でどう理解すればよいか。
+- `ServiceContainer` と `AppContext` の違いは何か。
