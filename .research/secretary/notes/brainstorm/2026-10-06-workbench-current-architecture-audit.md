@@ -778,3 +778,13 @@ Serviceを正式な入口にし、ServiceContainerはService保持、server.py�
 - commit messageはタイトル+本文で5〜6行程度、箇条書きではなく日本語の文章とする。
 - Codexにはbranch作成とcommitまでを任せる。mainへのmergeとpushはユーザーが実装完了後に行う。
 - 最終mergeは履歴をbranch単位で残したい場合は --no-ff、完全な直線履歴を優先する場合は --ff-only をユーザーが選択する。
+
+
+## 2026-10-07 — spec昇格
+
+本brainstormで整理したRuntime / Service / Workflow / Record簡略化方針は、以下の実装specへ昇格した。
+
+- `.research/lab/projects/agentic-streaming-videoqa/specs/2026-10-07-workbench-runtime-workflow-record-simplification-spec.md`
+- status: `draft`（blockingなし、ユーザー明示承認待ち）
+
+以後、実装契約は上記specを正本とし、本brainstormは探索経緯として保持する。
