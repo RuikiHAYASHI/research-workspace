@@ -761,3 +761,8 @@ Serviceを正式な入口にし、ServiceContainerはService保持、server.py�
 - WorkflowStateは明示化し、初期はcurrent_summary程度に限定する。
 - 新RecordはSituation/Summary/Answer中心へ単純化し、旧Runはread-onlyで分離する。
 - Resumeは初期refactorで作り込みすぎず、将来復元可能なsummary等の保存を確保する。
+
+
+## 2026-10-07 01:30 JST — 初心者向け統合説明を作成
+
+これまでの壁打ち全体を、現行構造→問題点→理想構造→Service間フロー→RunService/RunSession/Workflow責務→3-Agent→Record→Legacy/Resumeの順に、図を中心として初心者向けに再整理した。設計方針自体は直前までの合意事項を維持する。
