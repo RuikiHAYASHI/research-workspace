@@ -665,3 +665,72 @@ while not done:
 - scientific state（Summaryなど）をWorkflow自身が持つか、RunSessionが保持してWorkflowへ渡すか。
 - Record書き込みをWorkflowが直接行うか、RunServiceがWorkflow結果を受けてRecordServiceへ渡すか。
 - ModelPool / AgentServiceを独立Serviceとして残すか。
+
+
+## 2026-10-07 00:50 JST 追記 — Workflow / RunSession / Record の責務分離
+
+ユーザー意向として、RunSessionはあくまで「実行役」とし、Agentへの入力構築やSituation/Summary/Answer間の研究ロジックはVideoQAWorkflowへ寄せる方向が有力。
+
+### 有力な責務分担
+
+```text
+RunService
+  -> RunSessionを作成・管理
+
+RunSession
+  -> 次のwindowを取得
+  -> VideoQAWorkflowへ渡す
+  -> WorkflowResultを受け取る
+  -> RecordServiceへ保存を依頼
+  -> EOF / cancel / current turn等の実行状態を管理
+
+VideoQAWorkflow
+  -> Agent入力を構築
+  -> SituationAgentを実行
+  -> SummaryAgentを実行
+  -> research state（例: current_summary）を更新
+  -> EOF時にAnswerAgentを実行
+  -> 保存非依存のWorkflowResultを返す
+
+RecordService
+  -> WorkflowResult / Run metadataを永続化
+```
+
+### 境界の考え方
+
+- RunSessionは「何を実行したか」を管理するが、「Agentへ何を入力するか」は知らない。
+- VideoQAWorkflowは研究契約とAgent間データフローを知るが、HTTP / Browser / ファイル保存方式を知らない。
+- RecordServiceは研究ロジックを知らず、渡された結果を保存する。
+- current turn, EOF, cancel, stream iteratorなどはRunSession側。
+- current_summaryなど研究意味を持つstateはWorkflow側に置く案が自然。
+
+### 期待するstep flow
+
+```text
+RunSession.advance()
+  -> next(video_window)
+  -> workflow.process_window(video_window)
+       -> build SituationInput
+       -> SituationAgent
+       -> build SummaryInput
+       -> SummaryAgent
+       -> update workflow state
+       -> WindowWorkflowResult
+  -> record_service.save_window_result(...)
+  -> update run execution state
+```
+
+EOF:
+
+```text
+RunSession.advance()
+  -> EOF
+  -> workflow.finish()
+       -> build AnswerInput
+       -> AnswerAgent
+       -> FinalWorkflowResult
+  -> record_service.save_final_result(...)
+  -> mark run completed
+```
+
+これにより、Workflow単体をRecordなしでtestでき、CLI/Web/将来の実験runnerから同じ研究ロジックを再利用しやすくなる。
