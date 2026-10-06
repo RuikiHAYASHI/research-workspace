@@ -217,3 +217,166 @@ EOF時はTurnSessionが `VideoQAWorkflow.answer_at_eof()` を呼ぶ。
 2. 薄いが将来差替え点として残す価値がある
 3. 単なるforwardingで理解コストだけ増やしている
 のどれかを一緒に判定する。
+
+
+## 2026-10-07 00:23 JST 追記 — HTTP / ServerContext / Service入口の理解整理
+
+### HTTPとWeb UI
+
+`web/app.js` はブラウザ上で動くJavaScriptであり、Pythonの研究処理を直接呼び出せない。
+そのためHTTPを介して `entrypoints/server.py` に要求を送る。
+
+例:
+
+```text
+JavaScript object
+  -> JSON.stringify()
+  -> HTTP POST
+  -> server.py
+  -> JSON parse
+  -> Python object / dict
+  -> Service / Python処理
+  -> Python dict
+  -> json.dumps()
+  -> HTTP response
+  -> response.json()
+  -> JavaScript object
+```
+
+JSONはJavaScriptそのものではなく、JavaScript・Python間で共有できるデータ表現形式。
+
+### `/api/recipe/preview` の意味
+
+`/api/recipe/preview` はファイルやディレクトリではなくHTTP endpoint。
+`web/app.js` が `POST /api/recipe/preview` を送ると、`server.py` の `do_POST()` がpathを判定し、`context.preview(settings)` を呼ぶ。
+
+用途はrun作成前の設定検証・解決済みPrompt/Question/Choices等のpreview。
+run開始時にもvalidationされるため、previewは主にUX上の事前確認であり、推論実行そのものではない。
+
+### `ServerContext` の実態
+
+`ServerContext` は `entrypoints/server.py` にあるdataclass。
+現在はServiceや共有状態を保持するだけでなく、
+- Dataset取得
+- stream生成
+- Record作成
+- ModelPool利用
+- TurnSession生成
+- run lifecycle
+- Browser / media / translation
+- settings / prompt周辺
+などの実処理・調停まで担っている。
+
+したがって名前はContextだが、実態は「共有情報の保持 + application orchestration + run管理」が混在している。
+
+### RunServiceとproxy
+
+現行 `runtime/service.py::RunService` は本体処理を持たず、
+`ServerContext.start_run()`, `start_next_turn()` などへforwardする。
+さらに `__getattr__` によりRunServiceにない属性・メソッドもServerContextへ転送する。
+
+この意味で現在のRunServiceは「ServerContextへの代理窓口(proxy)」であり、Service自体が責務の本体になっていない。
+
+### Serviceを正式な入口にする方向
+
+現在の壁打ちでは、次を有力方向とする。
+
+- Datasetを利用する正式入口: DatasetService
+- VideoWindow生成の入口: VideoStreamService
+- Config解決の入口: ConfigService
+- Prompt管理の入口: PromptService
+- Run lifecycleの入口: RunService
+- Record永続化の入口: RecordService
+- 表示用projectionの入口: PresentationService
+- Dataset browsingの入口: BrowserService
+
+`entrypoints/server.py` はHTTP request/response変換だけを担当し、研究処理・Dataset・Recordの詳細を知らない形を目指す。
+
+概念:
+
+```text
+Browser (web/app.js)
+  -> HTTP
+entrypoints/server.py
+  -> Service
+  -> domain / workflow
+  -> Service result
+entrypoints/server.py
+  -> JSON / HTTP
+Browser
+```
+
+### ServiceContainer案
+
+ServerContextの代わりに、Serviceをまとめて保持するだけの `ServiceContainer` を置く案が有力。
+
+```text
+ServiceContainer
+├─ ConfigService
+├─ PromptService
+├─ DatasetService
+├─ VideoStreamService
+├─ AgentService
+├─ RunService
+├─ RecordService
+├─ PresentationService
+└─ BrowserService
+```
+
+`AppContext` という名前も候補だが、Service以外のpath/state/environmentまで何でも入れやすく、現在のServerContextのように巨大化する危険がある。
+今回の「Serviceを入口にする」という意図には `ServiceContainer` の方が責務を明示しやすい。
+
+重要なのは、ServiceContainerを「全データの中継地点」にしないこと。
+ContainerはServiceを組み立て・保持する場所であり、実処理は各Serviceが担う。
+
+例:
+
+```text
+server.py
+  -> services.runs.start_run(...)
+
+RunService
+  -> DatasetService
+  -> VideoStreamService
+  -> Agent / Model boundary
+  -> VideoQAWorkflow
+  -> RecordService
+```
+
+### 保存情報の単純化方向
+
+新しいSituation / Summary / Answer構成に合わせ、新run artifactは現在のObservation/Event/Evidence中心から単純化したい。
+
+現時点の最小候補:
+
+```text
+run/
+├─ execution settings
+├─ resolved prompts
+├─ run status
+├─ window/frame metadata
+├─ Situation description per window
+├─ Summary per window
+├─ model execution metadata / raw output（研究再現に必要な範囲）
+└─ final answer
+```
+
+現行の `memory.jsonl`, event ledger, certainty, importance, unresolved, evidence chain等を新runでも残す必然性は再検討する。
+旧run互換は新しい研究契約を複雑化させず、必要ならlegacy/read-only境界で扱う方向。
+
+### 現在の方向性
+
+有力:
+- Serviceを機能ごとの正式入口にする。
+- `server.py` をHTTP境界へ縮小する。
+- `RunService` をproxyではなくrun管理の本体へする。
+- `ServiceContainer` をServiceの組立・保持だけに使う。
+- Dataset/Streaming/Recordなどへの直接アクセス経路を整理し、CLI/Webで同じService境界を利用する。
+- 新3 Agentに合わせて保存artifactを単純化する。
+
+まだ未決:
+- ServiceContainerの具体的な所有関係・生成場所。
+- AgentServiceとModelPoolをどう整理するか。
+- TurnSessionをRunService内部実装にするか独立runtime objectにするか。
+- Recordファイル構成の具体名。
+- PresentationServiceとBrowserServiceがRecordServiceをどう読むか。
