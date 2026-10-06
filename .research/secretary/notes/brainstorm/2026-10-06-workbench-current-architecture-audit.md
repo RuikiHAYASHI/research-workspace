@@ -744,3 +744,20 @@ Serviceを正式な入口にし、ServiceContainerはService保持、server.py�
 ## 2026-10-07 設計候補の追加整理
 
 有力候補として、runtime/service.py=RunService、runtime/session.py=RunSession、runtime/container.py=ServiceContainerを検討する。generic Agentと薄いAgentServiceは削除寄りで、ModelPool相当はModelServiceとしてmodel解決/cacheの入口へ整理する案。SituationTask/MemoryTask/AnswerTaskはSituationAgent/SummaryAgent/AnswerAgentへ一本化。Workflow固有Input/OutputとWorkflowStateはworkflow/contracts.pyへ置き、research stateとexecution stateを分離する。新RecordはJSON+JSONLの少数ファイルへ単純化し、旧Runはread-only readerとして分離する。Resumeは初期実装で過剰に作り込まず、将来復元可能なsummary保存だけ確保する方向。
+
+
+## 2026-10-07 01:24 JST — 現時点の合意事項
+
+- Serviceを各機能の正式な入口にする。
+- ServiceContainerはServiceを保持するだけとし、実処理を持たせない。
+- entrypoints/server.pyはHTTP request/response変換へ責務を縮小する。
+- RunServiceはRun全体の公開入口・管理役、RunSessionは1 Runをstep実行する役とする。
+- VideoQAWorkflowはAgent入力生成、Situation->Summary->Answerの研究フロー、research stateを担当する。
+- WorkflowはRecordへ直接書かずWorkflowResultを返し、RunSessionがRecordServiceへ保存を依頼する。
+- research stateはWorkflow、execution stateはRunSessionに分離する。
+- SituationTask/MemoryTask/AnswerTaskはSituationAgent/SummaryAgent/AnswerAgentへ一本化する方向。
+- generic Agentと薄いAgentServiceは削除寄り。ModelPool相当はModelの解決・再利用を担う正式なServiceへ整理する方向。
+- Agent固有Input/Outputは各Agent付近、Workflow横断Resultはworkflow/contracts.pyへ置く方向。
+- WorkflowStateは明示化し、初期はcurrent_summary程度に限定する。
+- 新RecordはSituation/Summary/Answer中心へ単純化し、旧Runはread-onlyで分離する。
+- Resumeは初期refactorで作り込みすぎず、将来復元可能なsummary等の保存を確保する。
