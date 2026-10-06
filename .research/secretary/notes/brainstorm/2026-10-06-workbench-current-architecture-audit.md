@@ -739,3 +739,8 @@ RunSession.advance()
 ## 2026-10-07 統合要約
 
 Serviceを正式な入口にし、ServiceContainerはService保持、server.pyはHTTP境界、RunServiceはRun全体管理、RunSessionは1 step実行、VideoQAWorkflowはAgent入力生成・Situation/Summary/Answer・research state、RecordServiceは保存を担当する方向が有力。Workflowは保存せずResultを返し、RunSessionがRecordServiceへ保存を依頼する。CLI/Webは同じRunService/RunSession/Workflowを使い、advanceを誰が呼ぶかだけを変える。新run artifactはSituation/Summary/Answer中心へ単純化する。
+
+
+## 2026-10-07 設計候補の追加整理
+
+有力候補として、runtime/service.py=RunService、runtime/session.py=RunSession、runtime/container.py=ServiceContainerを検討する。generic Agentと薄いAgentServiceは削除寄りで、ModelPool相当はModelServiceとしてmodel解決/cacheの入口へ整理する案。SituationTask/MemoryTask/AnswerTaskはSituationAgent/SummaryAgent/AnswerAgentへ一本化。Workflow固有Input/OutputとWorkflowStateはworkflow/contracts.pyへ置き、research stateとexecution stateを分離する。新RecordはJSON+JSONLの少数ファイルへ単純化し、旧Runはread-only readerとして分離する。Resumeは初期実装で過剰に作り込まず、将来復元可能なsummary保存だけ確保する方向。
