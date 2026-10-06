@@ -766,3 +766,15 @@ Serviceを正式な入口にし、ServiceContainerはService保持、server.py�
 ## 2026-10-07 01:30 JST — 初心者向け統合説明を作成
 
 これまでの壁打ち全体を、現行構造→問題点→理想構造→Service間フロー→RunService/RunSession/Workflow責務→3-Agent→Record→Legacy/Resumeの順に、図を中心として初心者向けに再整理した。設計方針自体は直前までの合意事項を維持する。
+
+
+## 2026-10-07 — 実装前の追加合意とGit方針
+
+- Agent出力のJSON構造をmodelへ強制するのではなく、Situation/Summary/Answerは単純なPython側contractとして扱い、RecordのJSON/JSONL化はコード側で行う方向。
+- 新実装ではmemory field/Memory roleを削除し、Summaryへ一本化する。旧artifact内のmemoryはLegacy read-only readerだけが扱う。
+- 新Recordは execution_settings.json / resolved_prompts.json / question.json / run_status.json / turns.jsonl / final_answer.json を第一候補とする。
+- 旧実装をbackup用途でrepo内に残さない。新経路から不要になったfile/alias/helperは積極的に削除し、Git historyを復元手段とする。Legacy Run閲覧に必要な最小readerだけは別責務として残す。
+- Gitは速度優先で、mainから1本の実装branchを作り、そのbranch内に独立して説明・検証できるmicro-commitを積む。Stepごとのbranchは作らない。
+- commit messageはタイトル+本文で5〜6行程度、箇条書きではなく日本語の文章とする。
+- Codexにはbranch作成とcommitまでを任せる。mainへのmergeとpushはユーザーが実装完了後に行う。
+- 最終mergeは履歴をbranch単位で残したい場合は --no-ff、完全な直線履歴を優先する場合は --ff-only をユーザーが選択する。
