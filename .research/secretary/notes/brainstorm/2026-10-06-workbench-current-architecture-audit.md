@@ -734,3 +734,8 @@ RunSession.advance()
 ```
 
 これにより、Workflow単体をRecordなしでtestでき、CLI/Web/将来の実験runnerから同じ研究ロジックを再利用しやすくなる。
+
+
+## 2026-10-07 統合要約
+
+Serviceを正式な入口にし、ServiceContainerはService保持、server.pyはHTTP境界、RunServiceはRun全体管理、RunSessionは1 step実行、VideoQAWorkflowはAgent入力生成・Situation/Summary/Answer・research state、RecordServiceは保存を担当する方向が有力。Workflowは保存せずResultを返し、RunSessionがRecordServiceへ保存を依頼する。CLI/Webは同じRunService/RunSession/Workflowを使い、advanceを誰が呼ぶかだけを変える。新run artifactはSituation/Summary/Answer中心へ単純化する。
