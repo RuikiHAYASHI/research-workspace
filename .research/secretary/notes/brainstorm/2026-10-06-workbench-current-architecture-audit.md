@@ -570,3 +570,98 @@ run/
 - JavaScript（JS）とJSONの関係は何か。
 - この文脈でserverを日本語でどう理解すればよいか。
 - `ServiceContainer` と `AppContext` の違いは何か。
+
+
+## 2026-10-07 00:40 JST 追記 — Service間フローと実行管理責務
+
+### 新たな論点
+
+Serviceを各機能の正式入口にすると、別途「どのServiceを、いつ、どの順番で呼ぶか」というapplication-level orchestration（アプリケーション全体の実行調停）が必要になる。
+
+この責務を `ServerContext` に戻すと再び巨大化するため、現時点では `RunService` を実行管理の中心にする案が有力。
+
+### 役割分担の候補
+
+- `ServiceContainer`: Serviceを生成・保持するだけ。実行順序を持たない。
+- `RunService`: 1回のRunの開始・進行・終了・取消を調停する。Dataset / Stream / Model / Record / Workflowを接続する。
+- `RunSession`（現TurnSession相当）: Webの途中状態を保持する。current turn、stream iterator、EOF、cancel等。研究ロジックは持たない。
+- `VideoQAWorkflow`: Situation -> Summary -> ... -> EOF -> Answer という研究上の順序・研究stateを担当する。HTTPやBrowser事情を知らない。
+- 各Service: 自分の専門機能だけを提供する。
+
+概念:
+
+```text
+ServiceContainer
+  |
+  +-- ConfigService
+  +-- PromptService
+  +-- DatasetService
+  +-- VideoStreamService
+  +-- Agent/Model service
+  +-- RecordService
+  +-- PresentationService
+  +-- BrowserService
+  +-- RunService
+          |
+          +-- RunSession
+          |
+          +-- VideoQAWorkflow
+```
+
+### Serviceの仕事とRun時の流れ
+
+```text
+1. ConfigService
+   UI/Config入力をExecutionSettingsへ解決
+   PromptServiceからPromptも解決
+
+2. RunService.start_run()
+   DatasetServiceからQuestionSample取得
+   VideoStreamServiceでVideoWindow streamを開く
+   Agent/Model境界からModelを用意
+   RecordServiceでRunRecordを作る
+   VideoQAWorkflowを作る
+   RunSessionへ実行途中stateを保持
+
+3. RunService.advance()
+   RunSessionから次のVideoWindowを取得
+   VideoQAWorkflowへ渡す
+      -> SituationAgent
+      -> SummaryAgent
+   RecordServiceへ必要情報を保存
+   EOFならAnswerAgentを実行
+
+4. PresentationService
+   保存済みRecordをBrowser表示用データへ変換
+
+5. server.py
+   Serviceの返り値をJSON化してBrowserへ返す
+```
+
+BrowserServiceは推論Runの途中には基本的に参加せず、「何を実行するか選ぶ」前段を担当する。
+
+### CLIとWebの統一候補
+
+同じRunService APIを利用し、進め方だけ変える。
+
+```text
+Web:
+start_run()
+advance()  # 1回だけ
+ユーザー操作
+advance()
+
+CLI:
+start_run()
+while not done:
+    advance()
+```
+
+これによりDataset / Streaming / Record / Workflowへの入口はCLIとWebで共通化できる。
+
+### 未決
+
+- RunServiceとRunSessionの具体的なファイル配置・名称。
+- scientific state（Summaryなど）をWorkflow自身が持つか、RunSessionが保持してWorkflowへ渡すか。
+- Record書き込みをWorkflowが直接行うか、RunServiceがWorkflow結果を受けてRecordServiceへ渡すか。
+- ModelPool / AgentServiceを独立Serviceとして残すか。
