@@ -185,3 +185,12 @@ Agentの実行結果を人間が確認するための出力形式は、Markdown�
 Workbench内部の機械可読な実行記録はJSON / JSONLのまま保持してよいが、人間が確認しNotionやMTG資料へ持ち込むためのprojectionはMarkdown表とする。
 
 現段階では正誤判定、failure category、複数動画の一括比較は含めない。
+
+
+## 2026-10-08 02:45 JST 追記: Markdown trace specへ昇格
+
+Agent出力をMarkdown表として保存する方針を、次のdraft specへ昇格した。
+
+- `.research/lab/projects/agentic-streaming-videoqa/specs/2026-10-08-workbench-agent-trace-markdown-spec.md`
+
+以後、実装契約の詳細は上記specを参照する。
