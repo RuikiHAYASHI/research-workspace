@@ -139,3 +139,40 @@ READMEで明示する:
 - micro-commitを意味単位で積む。
 - commit messageは日本語のタイトル + 箇条書きでない本文5〜6行程度。
 - mainへのmerge、remoteへの追加push、PRは行わない。
+
+
+## 11. Implementation Status — 2026-10-07
+
+実装branch:
+
+```text
+RuikiHAYASHI/2026_09_hayashi_longvideoqa_workbench
+refactor/workbench-shell-entrypoints
+head: a080ea4169134bcb6f4f2cef179890b7cfaec2f5
+```
+
+実装済み:
+
+- 旧 `verify-runtime-smoke.sh` 追加を最初のcommitで打ち消し、親tree相当から再構築した。
+- `.env.example` と `scripts/workbench.sh` を追加した。
+- `workbench.sh` は `serve / preflight / run / verify` を提供し、引数なしは `serve` とする。
+- `.venv/bin/longvideoqa` / `.venv/bin/python` を必須とし、system Pythonへfallbackしない。
+- `verify-runtime-smoke.sh` はCUDA設定とPYTHONPATHを変更せず、Fake回帰だけを実行する。
+- READMEと `docs/development.md` をdispatcher / `.env` 中心の手順へ更新した。
+- tracked文書・exampleへ具体的なGPU番号を既定値として固定しない。
+
+短時間確認:
+
+- `bash -n` で両shell scriptの構文を確認した。
+- Fake `.venv/bin/longvideoqa` を用いたharnessで `.env` のCUDA値、serve/preflight/runの引数転送を確認した。
+- `.venv` 不在時にfallbackせずexit 1となることを確認した。
+- Fake Python harnessで `verify-runtime-smoke.sh` が外部の `CUDA_VISIBLE_DEVICES` を変更しないことを確認した。
+- Git tree上で両scriptがmode `100755` であることを確認した。
+
+未実施:
+
+- research serverの実 `.venv` 上での `./scripts/workbench.sh verify`。
+- 実Qwen/GPU/LongVideoBench run。
+
+このため、コード実装は完了しているが、本specのstatusは `approved` のままとし、
+research serverでFake smokeが成功した後に `implemented` へ更新する。
