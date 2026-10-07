@@ -112,3 +112,22 @@ GPUを変える場合はtracked fileを変更せず `.env` の `CUDA_VISIBLE_DEV
 - READMEの通常起動手順短縮
 
 をまとめて変更するのが適切。
+
+
+## 2026-10-07 ユーザー指示による運用修正
+
+ユーザーが求める「動作確認」は、Fake test、compile、Qwen preflightではなく、
+**実Qwen3-VLを用いて対象動画を最初からEOFまで処理し、3Agent経路を通ってFinal Answerが生成されることの確認**を指す。
+
+したがって今後のユーザー向け標準手順では次を優先する。
+
+- Qwen3-VLを必須とする。
+- LongVideoBench実データを使う。
+- Situation -> Summary -> Answerを最後まで実行する。
+- EOF前に終了するpreflightやFake smokeを「動作確認」の主手順として案内しない。
+- verify / preflight は必要なら内部開発用として残してもよいが、通常利用者向けの中心導線にはしない。
+- CLIでの確認では、question_idを含む実Qwen recipeを使って1 QAをEOFまで通す。
+
+現在確認済みの候補として、configs/recipes/p9h-target-only-10min-32frames.yaml は LongVideoBenchの
+P9hDA0u6FO0_0 を対象に、Situation / Summary / Answerの全Agentで
+Qwen/Qwen3-VL-4B-Instruct を使用し、最終回答まで実行する設定である。
