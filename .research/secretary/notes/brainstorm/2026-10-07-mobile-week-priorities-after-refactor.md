@@ -95,3 +95,33 @@ Company READMEに残る未完了事項のうち、スマホで進めやすい。
     ↓
 事前に決めた評価表でtrace review
 ```
+
+
+## 2026-10-07 追記: 評価表はGround Truth記述を必須にしない
+
+canary / trace review用の評価表は、各windowについて「実際に起きたこと」をユーザーが手入力する形式を標準にしない。
+
+標準形はWorkbenchのrun artifactだけから埋められるようにする。
+
+候補列:
+
+| Window | Situation | Situation判定 | Summary | Summary判定 | Answerへの影響 | 備考 |
+|---|---|---|---|---|---|---|
+
+EOF後は別途、次を記録する。
+
+| Final Answer | Correct? | Summaryに回答根拠が残っていたか | Failure source | 備考 |
+|---|---|---|---|---|
+
+ここでの判定は最初から厳密なGround Truth annotationを要求せず、
+`○ / △ / ×` と短い備考を中心にする。
+
+動画の実内容確認は、次の場合だけ追加で行う。
+
+- Situationが正しいか判断できない。
+- Summaryで情報が消えたかを確認したい。
+- 最終誤答の原因をSituation / Summary / Answerへ切り分ける必要がある。
+- 研究Evidenceとして人手確認済みのfailure caseを残したい。
+
+つまり通常は「モデル出力のtrace表」を先に作り、
+必要な行だけ動画へ戻って人手確認する二段階方式とする。
