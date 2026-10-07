@@ -159,3 +159,29 @@ tags: [brainstorm, server-migration, paper, evaluation, baseline, workbench]
 サーバ移行中は、新しい機能追加よりも「論文に書ける設計の固定」と「復旧直後にEvidenceを取れる評価設計」を優先する。
 
 特に、Introduction / Related Workに加えてMethod / Problem Settingと評価表まで先に作っておくと、サーバ復旧後は実験結果を流し込む作業へ直結する。
+
+
+## 2026-10-08 02:45 JST 追記: Agent traceの確認形式
+
+Agentの実行結果を人間が確認するための出力形式は、Markdown表を採用する。
+
+目的は現時点では正誤評価ではなく、1本の動画について各windowで
+
+- Situation Agentが何を出力したか。
+- Summary Agentが何を出力したか。
+- EOF時にAnswer Agentが何を出力したか。
+
+を時系列で見やすく確認すること。
+
+確認用の基本形:
+
+| Window | Situation Agent | Summary Agent | Answer Agent |
+|---:|---|---|---|
+| 1 | ... | ... | — |
+| 2 | ... | ... | — |
+| 3 | ... | ... | — |
+| EOF | — | — | ... |
+
+Workbench内部の機械可読な実行記録はJSON / JSONLのまま保持してよいが、人間が確認しNotionやMTG資料へ持ち込むためのprojectionはMarkdown表とする。
+
+現段階では正誤判定、failure category、複数動画の一括比較は含めない。
