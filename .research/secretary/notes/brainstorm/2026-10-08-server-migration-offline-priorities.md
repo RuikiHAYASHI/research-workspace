@@ -329,3 +329,17 @@ Workbenchの `full_rgb` 経路ではこの挙動をコードとtestで直接確�
 違いは、serveがBrowser操作で1 windowずつ進めるのに対し、runは `ready / awaiting_next_turn` ごとに自動advanceしてEOFまで進むこと。
 
 `./scripts/workbench.sh run` と `serve` は同じ `OUTPUT_ROOT` を渡すため、同じ保存rootにRecord v3 Run directoryを作る。ただしBrowserで選んだ設定とCLI configが異なればAgent出力内容まで同一とは限らない。
+
+
+## 2026-10-08 17:24 JST 追記: UI重複表示 / partial window sampling修正specへ昇格
+
+ユーザー承認を受け、次の2点をapproved実装specへ昇格した。
+
+- Record v3通常画面で旧Stage rendererによるSituation / Summary重複表示をやめる。
+- 最終partial windowでも `delta = window_seconds / frames_per_window` を維持し、通常windowと同じsampling cadenceにする。
+
+正本:
+
+- `.research/lab/projects/agentic-streaming-videoqa/specs/2026-10-08-workbench-ui-dedup-partial-window-sampling-spec.md`
+
+以後の実装契約は上記specを参照する。
