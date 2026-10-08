@@ -16,25 +16,25 @@ related_specs:
   - 2026-10-08-workbench-ui-dedup-partial-window-sampling-spec.md
 ---
 
-# Workbench 20秒Canary + 2分5条件 batch-run spec
+# Workbench 20秒Canary + 3分5条件 batch-run spec
 
 ## 1. 目的
 
 実験開始前にユーザーが次の2つのLongVideoBench Question IDを与えるだけで、Codexが実装を開始できる状態を作る。
 
 - 20秒前後の動画に対応するQuestion ID
-- 約2分の動画に対応するQuestion ID
+- 約3分の動画に対応するQuestion ID
 
 実装完了後は、ユーザーが実装branchを確認してmainへmerge / pushし、そのmainから
 
 ```text
-exp/initial-behavior-20s-2min
+exp/initial-behavior-20s-3min
 ```
 
 を作成すれば、experiment branch上で次の1コマンドだけで今回の6 Runを開始できる状態を最終目標とする。
 
 ```bash
-./scripts/workbench.sh batch-run experiments/2026-10-09-initial-behavior-20s-2min.yaml
+./scripts/workbench.sh batch-run experiments/2026-10-09-initial-behavior-20s-3min.yaml
 ```
 
 実験run自体は本specの実装検証には含めず、実Qwen / GPU runはユーザーがexperiment branch上で明示的にコマンドを実行した時だけ開始する。
@@ -45,7 +45,7 @@ exp/initial-behavior-20s-2min
 
 ```text
 QUESTION_ID_20S=<20秒前後のQuestion ID>
-QUESTION_ID_2MIN=<約2分のQuestion ID>
+QUESTION_ID_3MIN=<約3分のQuestion ID>
 ```
 
 両方が無い場合は実装を開始しない。
@@ -64,19 +64,19 @@ Question IDは今回のexperiment manifestへ固定するための値であり�
 |---|---:|---:|---:|
 | `canary-20s` | 4秒 | 0.5秒 | 8 |
 
-### 3.2 約2分 controlled comparison
+### 3.2 約3分 controlled comparison
 
-2分用Question IDを5条件すべてで共有する。
+3分用Question IDを5条件すべてで共有する。
 
 | case_id | Window | Sampling interval | Frames / full window | Window数の目安 |
 |---|---:|---:|---:|---:|
-| `two-min-w2` | 2秒 | 0.5秒 | 4 | 約60 |
-| `two-min-w4` | 4秒 | 0.5秒 | 8 | 約30 |
-| `two-min-w8` | 8秒 | 0.5秒 | 16 | 約15 |
-| `two-min-s025` | 4秒 | 0.25秒 | 16 | 約30 |
-| `two-min-s100` | 4秒 | 1.0秒 | 4 | 約30 |
+| `three-min-w2` | 2秒 | 0.5秒 | 4 | 約90 |
+| `three-min-w4` | 4秒 | 0.5秒 | 8 | 約45 |
+| `three-min-w8` | 8秒 | 0.5秒 | 16 | 約23 |
+| `three-min-s025` | 4秒 | 0.25秒 | 16 | 約45 |
+| `three-min-s100` | 4秒 | 1.0秒 | 4 | 約45 |
 
-`W4` と `S050` は同一条件なので `two-min-w4` 1 Runだけとする。
+`W4` と `S050` は同一条件なので `three-min-w4` 1 Runだけとする。
 
 Sampling intervalは現行contractどおり
 
@@ -93,43 +93,43 @@ partial final windowも現行fixed-cadence target contractに従う。
 repositoryへ次を追加する。
 
 ```text
-experiments/2026-10-09-initial-behavior-20s-2min.yaml
+experiments/2026-10-09-initial-behavior-20s-3min.yaml
 ```
 
 schemaを次で固定する。
 
 ```yaml
-experiment_id: initial-behavior-20s-2min
+experiment_id: initial-behavior-20s-3min
 base_config: configs/default.yaml
 
 cases:
   - id: canary-20s
-    question_id: <QUESTION_ID_20S>
+    question_id: I2Fyzav8MxE_0
     window_seconds: 4
     frames_per_window: 8
 
-  - id: two-min-w2
-    question_id: <QUESTION_ID_2MIN>
+  - id: three-min-w2
+    question_id: 66dwcQ1Y048_0
     window_seconds: 2
     frames_per_window: 4
 
-  - id: two-min-w4
-    question_id: <QUESTION_ID_2MIN>
+  - id: three-min-w4
+    question_id: 66dwcQ1Y048_0
     window_seconds: 4
     frames_per_window: 8
 
-  - id: two-min-w8
-    question_id: <QUESTION_ID_2MIN>
+  - id: three-min-w8
+    question_id: 66dwcQ1Y048_0
     window_seconds: 8
     frames_per_window: 16
 
-  - id: two-min-s025
-    question_id: <QUESTION_ID_2MIN>
+  - id: three-min-s025
+    question_id: 66dwcQ1Y048_0
     window_seconds: 4
     frames_per_window: 16
 
-  - id: two-min-s100
-    question_id: <QUESTION_ID_2MIN>
+  - id: three-min-s100
+    question_id: 66dwcQ1Y048_0
     window_seconds: 4
     frames_per_window: 4
 ```
@@ -149,7 +149,7 @@ longvideoqa batch-run
 shell wrapperでは次を公開する。
 
 ```bash
-./scripts/workbench.sh batch-run experiments/2026-10-09-initial-behavior-20s-2min.yaml
+./scripts/workbench.sh batch-run experiments/2026-10-09-initial-behavior-20s-3min.yaml
 ```
 
 `scripts/workbench.sh` は既存 `run` と同様に、
@@ -198,15 +198,15 @@ batch-runのexperiment-level状態はRecord v3とは分離する。
 保存先:
 
 ```text
-<OUTPUT_ROOT>/experiments/initial-behavior-20s-2min/index.json
+<OUTPUT_ROOT>/experiments/initial-behavior-20s-3min/index.json
 ```
 
 最低限、各caseについて次を保持する。
 
 ```json
 {
-  "experiment_id": "initial-behavior-20s-2min",
-  "manifest_path": "experiments/2026-10-09-initial-behavior-20s-2min.yaml",
+  "experiment_id": "initial-behavior-20s-3min",
+  "manifest_path": "experiments/2026-10-09-initial-behavior-20s-3min.yaml",
   "cases": [
     {
       "case_id": "canary-20s",
@@ -444,7 +444,7 @@ Codexによる実装完了後、ユーザーが実装を確認してmainへmerge
 その後、ユーザーが更新済みmainから次を作る。
 
 ```text
-exp/initial-behavior-20s-2min
+exp/initial-behavior-20s-3min
 ```
 
 experiment branchでは原則コード変更を行わない。
@@ -452,7 +452,7 @@ experiment branchでは原則コード変更を行わない。
 そのbranch上で、
 
 ```bash
-./scripts/workbench.sh batch-run experiments/2026-10-09-initial-behavior-20s-2min.yaml
+./scripts/workbench.sh batch-run experiments/2026-10-09-initial-behavior-20s-3min.yaml
 ```
 
 を実行するだけで6 Runが開始される状態を完成条件とする。
@@ -488,7 +488,7 @@ Record v3の、
 - `src/longvideoqa_workbench/presentation/web_view.py`
 - 必要ならsingle-run / batch-run共通の小さなhelper
 - `scripts/workbench.sh`
-- `experiments/2026-10-09-initial-behavior-20s-2min.yaml`
+- `experiments/2026-10-09-initial-behavior-20s-3min.yaml`
 - 関連unit / CLI / Record v3 / trace tests
 
 新dependencyは追加しない。YAMLは既存PyYAMLを利用する。
@@ -555,7 +555,7 @@ Record v3 fixture / Fake Runで次を確認する。
 ## 18. Success Criteria
 
 1. 2つのQuestion IDをconcrete manifestへ固定できる。
-2. manifestに20秒1条件 + 2分5条件の計6 caseがある。
+2. manifestに20秒1条件 + 3分5条件の計6 caseがある。
 3. W4 / S050の重複Runが無い。
 4. `./scripts/workbench.sh batch-run <manifest>` が1 processで全caseを逐次処理する。
 5. 同一Qwen modelはcase間で再loadせずModelServiceで再利用できる。
@@ -565,7 +565,7 @@ Record v3 fixture / Fake Runで次を確認する。
 9. experiment indexからcase_id -> run_id / statusを追跡できる。
 10. 各Runは既存Record v3として独立保存される。
 11. trace.md冒頭にQuestion / Ground truth / Model answer / Correct / Total runtimeが表示される。
-12. 2分5条件を含む全RunでTotal runtimeを記録できる。
+12. 3分5条件を含む全RunでTotal runtimeを記録できる。
 13. Window表にSituation time / Summary time / Window inference timeが表示される。
 14. Window inference timeは既存elapsed_secondsの和であり、decode / I/Oを混同しない。
 15. Answer Prompt / Prompt本文 / max_new_tokens / sampling contractは本specで変わらない。
@@ -582,7 +582,7 @@ Record v3 fixture / Fake Runで次を確認する。
 実装開始時に必要なのは次の2値だけ。
 
 - 20秒用Question ID
-- 2分用Question ID
+- 3分用Question ID
 
 これらが未入力ならCodexは実装を開始しない。
 
@@ -620,6 +620,6 @@ draft -> approved
 - 対象外: Section 16
 - success criteria: Section 18
 - 許可される短時間検証: Fake/unit/CLI/Record/trace/compile/diff check
-- 長時間run: 未許可。実Qwen / GPU / 20秒・2分の実Runを開始しない。
+- 長時間run: 未許可。実Qwen / GPU / 20秒・3分の実Runを開始しない。
 - Git: branch作成 / implementation / verification / commitのみ。merge / push / PR禁止。
-- 未検証予定: 実Qwenでのthroughput、20秒・2分の実測runtime、Prompt品質、科学的結果
+- 未検証予定: 実Qwenでのthroughput、20秒・3分の実測runtime、Prompt品質、科学的結果
