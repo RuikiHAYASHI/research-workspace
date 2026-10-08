@@ -222,3 +222,18 @@ Sampling intervalは `window_seconds / frames_per_window` の現行契約から�
 - reusableなbatch/trace変更はfeature branch。
 - 実験条件YAMLはexperiment branch。
 - Run outputsはresearch code Gitへ入れず、Companyのexperiment logへ結果を残す。
+
+
+## 2026-10-09 00:38 JST spec引き継ぎ
+
+この計画を、2つのQuestion IDを入力として実装を開始できるdraft specへ昇格した。
+
+- spec: `.research/lab/projects/agentic-streaming-videoqa/specs/2026-10-09-workbench-initial-behavior-batch-run-spec.md`
+- status: `draft`
+- 実装開始入力: 20秒用Question ID、2分用Question ID
+- 実装branch: mainから1本だけ
+- 実装scope: batch-run、resume、trace timing、concrete experiment YAML、短時間test
+- 実Qwen / GPU run: 本実装taskでは未許可
+- experiment branch: ユーザーがmain統合後に作成し、1コマンドで6 Run開始
+
+ユーザー承認後に `approved` へ移行し、engineering-taskへ引き継ぐ。
