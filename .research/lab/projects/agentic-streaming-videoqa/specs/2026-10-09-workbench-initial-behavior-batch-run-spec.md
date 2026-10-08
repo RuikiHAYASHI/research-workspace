@@ -3,7 +3,7 @@ date: 2026-10-09
 last_updated: 2026-10-09
 project: agentic-streaming-videoqa
 type: implementation
-status: approved
+status: implemented
 baseline_repository: RuikiHAYASHI/2026_09_hayashi_longvideoqa_workbench
 baseline_ref: main
 baseline_commit: 59d4312dac242eba4eebace93c3f94a61979bc64
@@ -44,9 +44,11 @@ exp/initial-behavior-20s-3min
 実装者はコード変更前に、ユーザーから以下2値を受け取る。
 
 ```text
-QUESTION_ID_20S=<20秒前後のQuestion ID>
-QUESTION_ID_3MIN=<約3分のQuestion ID>
+QUESTION_ID_20S=I2Fyzav8MxE_0
+QUESTION_ID_3MIN=66dwcQ1Y048_0
 ```
+
+今回の固定値は `I2Fyzav8MxE_0`（metadata duration 21.98秒）と `66dwcQ1Y048_0`（metadata duration 186.81秒）。どちらもLongVideoBench metadataに存在し、参照動画を確認済み。
 
 両方が無い場合は実装を開始しない。
 
@@ -70,11 +72,11 @@ Question IDは今回のexperiment manifestへ固定するための値であり�
 
 | case_id | Window | Sampling interval | Frames / full window | Window数の目安 |
 |---|---:|---:|---:|---:|
-| `three-min-w2` | 2秒 | 0.5秒 | 4 | 約90 |
-| `three-min-w4` | 4秒 | 0.5秒 | 8 | 約45 |
-| `three-min-w8` | 8秒 | 0.5秒 | 16 | 約23 |
-| `three-min-s025` | 4秒 | 0.25秒 | 16 | 約45 |
-| `three-min-s100` | 4秒 | 1.0秒 | 4 | 約45 |
+| `three-min-w2` | 2秒 | 0.5秒 | 4 | 約94 |
+| `three-min-w4` | 4秒 | 0.5秒 | 8 | 約47 |
+| `three-min-w8` | 8秒 | 0.5秒 | 16 | 約24 |
+| `three-min-s025` | 4秒 | 0.25秒 | 16 | 約47 |
+| `three-min-s100` | 4秒 | 1.0秒 | 4 | 約47 |
 
 `W4` と `S050` は同一条件なので `three-min-w4` 1 Runだけとする。
 
@@ -257,7 +259,7 @@ Record v3の `trace.md` 冒頭を次の形式へ拡張する。
 - Correct: true
 - Total runtime: 123.456 s
 
-| Window | Range | Situation Agent | Situation time (s) | Summary Agent | Summary time (s) | Window inference time (s) |
+| Window | Range | Situation Agent | Situation time (s) | Summary Agent | Summary time (s) | Window inference time (s) | Answer Agent |
 |---:|---|---|---:|---|---:|---:|
 ...
 ```
@@ -598,28 +600,18 @@ Record v3 fixture / Fake Runで次を確認する。
 
 ## 20. Spec Gate
 
-本specは、2026-10-09のユーザー指示を実装可能な契約へ変換した **draft**。
-
-設計上のblocking ambiguityはない。実装時に必要な2 Question IDだけが未入力である。
-
-ユーザーが本specを承認した後、
-
-```text
-draft -> approved
-```
-
-とし、2 Question IDをCodexへ渡してengineering-taskを開始する。
+本specは2026-10-09にユーザー承認され、`draft -> approved` へ更新後に実装を開始した。ユーザーから指定されたIDは `I2Fyzav8MxE_0`（21.98秒）と `66dwcQ1Y048_0`（186.81秒）。後者は約3分条件として扱う。
 
 ## 21. Implementation Handoff
 
-- approved spec: 承認後、本spec
-- 実装目的: 2 Question IDからconcrete experiment manifestを作り、single-process batch-run、resume、trace timingを実装して、main統合後のexperiment branchから1コマンドで6 Runを開始可能にする。
-- 基準repository/commit: `RuikiHAYASHI/2026_09_hayashi_longvideoqa_workbench@main` / `59d4312dac242eba4eebace93c3f94a61979bc64`。着手直前にGitHub mainとlocal HEAD / dirty stateを再確認。
-- 実装branch: mainから1本。推奨 `feat/initial-behavior-batch-run`
+- approved spec: 本spec（実装検証完了後、statusを`implemented`へ更新）
+- 実装目的: 20秒・約3分の2 Question IDからconcrete experiment manifestを作り、single-process batch-run、resume、trace timingを実装して、main統合後のexperiment branchから1コマンドで6 Runを開始可能にする。
+- 基準repository/commit: `RuikiHAYASHI/2026_09_hayashi_longvideoqa_workbench@main` / `9fc2a50ea11c54efd69b68b93c4652c5c78de06a`。着手直前にGitHub mainをfetchして確認。
+- 実装branch: `feat/initial-behavior-batch-run`（`9d6b094`, `15063a7`）
 - 変更scope: Sections 4--15
 - 対象外: Section 16
-- success criteria: Section 18
-- 許可される短時間検証: Fake/unit/CLI/Record/trace/compile/diff check
+- success criteria: Section 18。実装branchで達成し、既存pytest suite、Fake batch CLI smoke、compileall、CLI help、wrapper syntax、diff checkが成功。
+- 許可される短時間検証: Fake/unit/CLI/Record/trace/compile/diff check。すべて実施済み。
 - 長時間run: 未許可。実Qwen / GPU / 20秒・3分の実Runを開始しない。
 - Git: branch作成 / implementation / verification / commitのみ。merge / push / PR禁止。
-- 未検証予定: 実Qwenでのthroughput、20秒・3分の実測runtime、Prompt品質、科学的結果
+- 未検証予定: 実Qwenでのthroughput、実データ6条件のruntime、Prompt品質、科学的結果。実Qwen/GPU実験は起動していない。
