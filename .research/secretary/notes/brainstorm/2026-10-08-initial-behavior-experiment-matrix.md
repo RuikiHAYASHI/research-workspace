@@ -104,3 +104,33 @@ accuracyの有意差を主張するconfirmatory experimentではなく、次の�
 - LongVideoBench内で具体的にどのQAを選ぶか。
 - Situation / Summaryのhuman evaluation rubricをどこまで定量化するか。
 - 10分より長い動画を初期比較へ入れるか。
+
+## 2026-10-08 22:22 JST 追記: 10分動画でのlong-window / coarse-sampling stress test
+
+ユーザー希望として、10分程度の動画に対して64秒Windowのようなかなり粗い時間解像度も試す方向を追加する。
+
+これはWindow長だけのcontrolled ablationではなく、長尺動画を限られた観測回数・frame数で扱うscalability / stress testとして分ける。
+
+有力な比較は、10分動画で `frames_per_window=8` を固定し、Window長を倍々に伸ばす系列。
+
+| 条件 | 動画長 | Window | Frames / full window | Sampling interval | Window数目安 | 総sampled frame数目安 |
+|---|---:|---:|---:|---:|---:|---:|
+| B4 | 600秒 | 4秒 | 8 | 0.5秒 | 150 | 1,200 |
+| C8 | 600秒 | 8秒 | 8 | 1秒 | 75 | 600 |
+| C16 | 600秒 | 16秒 | 8 | 2秒 | 38 | 300 |
+| C32 | 600秒 | 32秒 | 8 | 4秒 | 19 | 150 |
+| C64 | 600秒 | 64秒 | 8 | 8秒 | 10 | 75 |
+
+C64では64秒ごとにSituationを1回だけ実行し、1 Windowにつき8 frame、10分全体でも約75 frameだけを見る非常に粗い条件になる。
+
+観察したいこと:
+
+- 64秒分の出来事をSituationが一つの説明へまとめられるか。
+- 8秒間隔のsamplingで重要イベントを見逃すか。
+- Window数が約10まで減ることでSummary更新回数の減少が有利に働くか。
+- sampling不足による失敗とSummary忘却による失敗を区別できるか。
+- 計算時間と正答・trace品質のtrade-off。
+
+この系列は複数要因を同時に変えるため、2 / 4 / 8秒Window・0.5秒interval固定のcontrolled comparisonとは別結果として扱う。
+
+必要なら64秒Windowについて `frames_per_window=16`（4秒interval）も追加し、64秒という長いWindow自体の問題と8秒intervalという粗いsamplingの問題を部分的に切り分ける。
