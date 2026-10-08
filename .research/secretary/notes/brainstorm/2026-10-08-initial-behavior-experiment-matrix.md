@@ -134,3 +134,112 @@ C64では64秒ごとにSituationを1回だけ実行し、1 Windowにつき8 fram
 この系列は複数要因を同時に変えるため、2 / 4 / 8秒Window・0.5秒interval固定のcontrolled comparisonとは別結果として扱う。
 
 必要なら64秒Windowについて `frames_per_window=16`（4秒interval）も追加し、64秒という長いWindow自体の問題と8秒intervalという粗いsamplingの問題を部分的に切り分ける。
+
+
+## 2026-10-08 22:22 JST 追記: Codexによる実験自動化の有力方式
+
+現在のWorkbench実装を確認した結果、初期Behavior実験の自動化には **同一process内で複数Runを順番に実行するmanifest-driven batch runner** が最有力。
+
+### 理由
+
+現行 `longvideoqa run` は1回のCLI invocationごとに `ServiceContainer` と `RunService` を新規作成するため、shell loopで複数回呼ぶとprocess終了ごとにQwen runtimeも破棄される。
+
+一方、`ServiceContainer.models` の `ModelService` は `(backend, model_id)` ごとにmodel instanceをcacheし、同一process内では同じQwen adapterを再利用できる。
+
+したがって、複数条件を一括で実行する場合は、1つの `ServiceContainer` / `RunService` を作り、caseごとにExecutionSettingsだけを切り替えて順番に `start_run -> advance -> terminal` まで回す方が自然。
+
+### 推奨interface案
+
+例:
+
+```yaml
+experiment_id: initial-behavior-2026-10-08
+base_config: configs/default.yaml
+
+cases:
+  - id: short-canary
+    question_id: <20秒前後QA>
+    window_seconds: 4
+    frames_per_window: 8
+
+  - id: two-min-w2
+    question_id: <2分前後QA>
+    window_seconds: 2
+    frames_per_window: 4
+
+  - id: two-min-w4
+    question_id: <同じ2分QA>
+    window_seconds: 4
+    frames_per_window: 8
+
+  - id: two-min-w8
+    question_id: <同じ2分QA>
+    window_seconds: 8
+    frames_per_window: 16
+
+  - id: ten-min-c64
+    question_id: <10分前後QA>
+    window_seconds: 64
+    frames_per_window: 8
+```
+
+CLIイメージ:
+
+```bash
+./scripts/workbench.sh batch-run experiments/initial-behavior.yaml
+```
+
+### 実験runnerの責務
+
+- manifestをvalidateする。
+- base configを1回解決する。
+- Qwenを同一processで再利用する。
+- caseは並列化せず1件ずつ順番に実行する。
+- 各caseは既存Record v3 Runとして独立保存する。
+- case_idとrun_idの対応をexperiment-level indexへ残す。
+- succeeded / failed、Answer、correct、total runtime、window数、sampled frame数等の比較用summaryを生成する。
+- 1 case失敗時に全実験を停止するか次へ進むかはmanifestまたは明示契約で決める。
+- 既存 `result.json` / `trace.md` / `frames/` を正本として再利用し、独自のAgent出力formatを作らない。
+
+### experiment-level artifact案
+
+個別RunのRecord v3を壊さず、別の薄いindexだけ追加する。
+
+```text
+<experiment-output>/<experiment-id>/
+  manifest.yaml
+  index.json
+  summary.csv
+
+<existing OUTPUT_ROOT>/
+  <run-id-1>/
+    result.json
+    trace.md
+    frames/
+  <run-id-2>/
+    ...
+```
+
+`index.json` はcase_id -> run_id / statusを主に保持し、Agent traceそのものを複製しない。
+
+`summary.csv` は分析導入用projectionとして、case_id、question_id、duration、window_seconds、frames_per_window、sampling_interval、window_count、sampled_frame_count、runtime、prediction、ground_truth、correct、run_id程度に限定する案が有力。
+
+### 初期実験での並列化
+
+GPU memoryと比較条件の安定性を優先し、最初は並列runを行わない。1 model instanceを維持したままcaseを逐次実行する。
+
+### Codexの役割
+
+Codexにはrunner / manifest schema / short Fake testの実装を任せられる。
+
+実Qwenで20秒・2分・10分を連続実行する行為は長時間runになり得るため、実装承認とは分離し、実際の実験起動は別の明示許可で行う。
+
+### 棄却寄り
+
+- shellで `longvideoqa run` を単純loop: 実装は最小だが、Qwen再loadとexperiment index管理が弱い。
+- Browser自動操作: UI回帰には有効だが、研究実験のlauncherとしては脆い。
+- 最初からSlurm / 複雑なjob scheduler: 現在の単一GPU/少数caseの探索には過剰。
+
+### 次のspec候補
+
+実装へ進む場合は、batch-run CLI、manifest schema、experiment-level artifact、failure policy、resume policy、実行許可境界をresearch-specで固定してからengineering-taskへ渡す。
