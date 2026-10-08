@@ -269,3 +269,63 @@ Window履歴
 - evaluation targetを取得できない場合は推測せず「判定不可」とする案を残す。
 
 第一段階ではQuestion choices自体の色付けやpredicted/correct marker追加は行わず、Final Result cardだけで判定を完結させる方が単純。
+
+
+## 2026-10-08 17:24 JST 追記: 実Qwen画面確認で見つかったUI重複と末尾window sampling
+
+実際のserve画面を確認した結果、次の2点を調査した。
+
+### 1. Situation / Summaryの二重表示
+
+現行 `web/app.js` の `renderViewedTurn()` は、新しいhuman-readableな `renderChunkBlock()` に加えて、旧来の `renderTurnStages()` も同時に呼んでいる。
+
+そのため同じSituation / Summary semantic outputが、
+
+- 上部のFrames / Situation / Summary block
+- 下部の旧Stage result card
+
+の両方へ表示されている。
+
+下部cardで常時表示されている本文は厳密にはraw outputではなくvalidated / semantic outputで、raw model outputとresolved promptは折りたたみdetails内にある。
+
+この旧Stage result表示は初期Browser実装のcommit `7e7eaf0d38679b879b55c4be512fb14dc8a714b8` で、各段階のvalidated output / prompt / raw outputを追跡する目的で追加されたもの。現在は新しいChunk blockと詳細dialogが同じ責務を持つため、Record v3の通常表示では冗長。
+
+有力方針:
+
+- v3通常画面では旧 `stage-results` の重複表示をやめる。
+- raw output / Prompt / generation等は既存の詳細dialogだけで確認する。
+- v2 / Legacy read-only互換に旧rendererが必要なら、その範囲だけ残す。
+
+### 2. 最終partial windowのsampling cadence
+
+現行Workbenchの `streaming/sampling.py::time_grid_targets()` は、windowの実長にかかわらず常に `frames_per_window` 個のtargetを作る。
+
+例えば `window_seconds=4`, `frames_per_window=8`, 動画長22秒では、
+
+- 通常window: 4秒 / 8 frames = 0.5秒間隔 = 2 fps
+- 最終window 20--22秒: 2秒 / 8 frames = 0.25秒間隔 = 4 fps
+
+となり、最後だけsampling cadenceが2倍になる。
+
+Workbenchの `full_rgb` 経路ではこの挙動をコードとtestで直接確認した。
+`target_only` が利用するsequential_loader側の `TimeGridSamplingPolicy` も、確認できたtarget-frame-stream実装では短い最終windowへ固定 `frames_per_window` を再配分する同じ方式である。
+
+有力な修正契約:
+
+- `frames_per_window` は「通常window長に対するframe数」と解釈する。
+- 基準sampling intervalを `window_seconds / frames_per_window` とする。
+- 最終partial windowでもこのintervalを維持し、`start + k * interval < end` のtargetだけ生成する。
+- 4秒8frameならinterval=0.5秒なので、20--22秒は20.0, 20.5, 21.0, 21.5の4 targetとする。
+- Workbenchのfull_rgbとsequential_loaderのtarget_onlyで同じ意味へ揃える必要がある。
+
+この変更はsampling policy /比較条件を変えるため、実装前にspecへ反映する必要がある。
+
+### 3. CLI runとの関係
+
+現行 `longvideoqa run` とBrowser serveはどちらも `ServiceContainer -> RunService -> RunSession -> VideoQAWorkflow -> RecordService` を利用する。
+
+したがってRecord v3 artifact、frame保存、Situation / Summary / EOF Answer、evaluation、trace生成は同じ実装経路を通る。
+
+違いは、serveがBrowser操作で1 windowずつ進めるのに対し、runは `ready / awaiting_next_turn` ごとに自動advanceしてEOFまで進むこと。
+
+`./scripts/workbench.sh run` と `serve` は同じ `OUTPUT_ROOT` を渡すため、同じ保存rootにRecord v3 Run directoryを作る。ただしBrowserで選んだ設定とCLI configが異なればAgent出力内容まで同一とは限らない。
