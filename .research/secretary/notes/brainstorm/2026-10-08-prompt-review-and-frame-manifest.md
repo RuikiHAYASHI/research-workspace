@@ -213,3 +213,16 @@ Company / GitHub上では、この具体値に研究上の根拠や比較Evidenc
 - Prompt title / descriptionの最終文言。
 - image_list版Promptも同じ意味へ揃えるか。
 
+
+
+## 2026-10-08 23:30 JST spec引き継ぎ
+
+この壁打ち内容を、current defaultの `video_clip` built-in Promptに限定した実装draft specへ昇格した。
+
+- spec: `.research/lab/projects/agentic-streaming-videoqa/specs/2026-10-08-workbench-prompt-grounding-and-title-unification-spec.md`
+- status: `draft`
+- scope: Situation / Summary Prompt本文、video built-in 3 Agentのtitle、関連test
+- 維持: Answer本文、frame_manifest、sampling、max_new_tokens、Prompt ID / schema
+- 実Qwen / GPU / 長時間run: 対象外
+
+ユーザー承認後に `approved` へ移行し、engineering-taskへ引き継ぐ。
