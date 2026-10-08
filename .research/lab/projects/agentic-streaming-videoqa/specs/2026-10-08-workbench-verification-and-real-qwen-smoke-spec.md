@@ -3,7 +3,7 @@ date: 2026-10-08
 last_updated: 2026-10-08
 project: agentic-streaming-videoqa
 type: implementation
-status: draft
+status: approved
 baseline_repository: RuikiHAYASHI/2026_09_hayashi_longvideoqa_workbench
 baseline_ref: main
 baseline_commit: 8426194b6e42e34342f9ea4b58b64d52e69b0a99
@@ -886,3 +886,46 @@ real smokeがenvironment blockerで実行不能な場合は、
 - model/dataset download: 未許可
 - Git: mainから1 implementation branch + micro-commitまで許可。push / PR / main mergeは別許可
 - failure handling: 実行不能原因をSection 11形式で記録し、未確認を成功扱いしない
+
+## Implementation / Verification Status — 2026-10-08
+
+**Status: approved.** Fake regression, test migration, and launcher work are implemented on `fix/workbench-verification-launchers`. The real Qwen E2E did not reach a valid Answer, so this spec remains approved and the three-agent real E2E is not confirmed.
+
+Implementation commits on the research-code branch are `4fbb8d7` (obsolete test migration), `d3af02b` (remaining Config/Prompt contract cleanup), `623d808` (Fake verifier and LongVideoBench launcher), `41532b7` (Legacy Run read-only regression), `e641fc8` (README synchronization), `3ded238` (public API/lifecycle regressions and translation exception fix), `ec001a1` (verification coverage docs), `cf383ad` (isolated CLI user data), and `ec035ac` (atomic Record JSON writes). The branch is based on the confirmed current main commit `8426194b6e42e34342f9ea4b58b64d52e69b0a99`; no push, PR, or merge was performed.
+
+### Tests and Fake verification
+
+- `./scripts/workbench.sh verify`: passed. It uses only `<REPO_ROOT>/.venv/bin/python`, runs compileall and the current targeted Fake tests, and sets neither `PYTHONPATH` nor `CUDA_VISIBLE_DEVICES`.
+- Full short pytest: passed (133 tests). `compileall`, CLI `--help`, `git diff --check main...HEAD`, Runtime/Workflow boundary audits, and the old Runtime reference audit passed.
+- The Fake integration covers CLI and HTTP/API/Browser, Prompt and translation APIs, media ranges, Run restart/cancellation, validation, two Situation/Summary windows, EOF Answer, the six-file Record v2 contract, saved-run reload, and Legacy Run read-only behavior. Record JSON snapshots use atomic replace; a concurrent status-reader regression covers the CLI polling race found during final verification.
+- A fake CLI harness confirmed missing/invalid `LVB_ROOT` stops serve/run and a valid root is forwarded with `configs/default.yaml` and `--question-id`. `preflight` and `verify` work without `LVB_ROOT`.
+
+### Research server environment and Dataset
+
+- Repository root `.env` was absent. It was created as an ignored local file with the discovered `<LVB_ROOT>` and one currently idle GPU selection; no credential was added. `.env` remains ignored and untracked.
+- Shell `LVB_ROOT` and `CUDA_VISIBLE_DEVICES` were initially unset. `.venv/bin/python` and `.venv/bin/longvideoqa` exist. `sequential_loader` imports successfully; torch is `2.14.0+cu130` with CUDA available, transformers is `5.17.0`, and accelerate is `1.15.0`.
+- `nvidia-smi` reported four NVIDIA RTX A6000 devices with about 48 GB free each and no compute process at the preflight and smoke checks. The bounded run used one idle GPU; no process was stopped.
+- LongVideoBench was found under `<LVB_ROOT>`. Its `lvb_val.json` contains 1,337 validation entries and `videos/` exists. The selected short sample was question `GZFL58_pXPg_0`, relative locator `GZFL58_pXPg.mp4`, annotation duration 7.97 seconds and probed video duration 8.006672 seconds. The annotation-referenced video exists. The adapter passes question and choices to inference but does not include `correct_choice` in `QuestionSample`.
+- `Qwen/Qwen3-VL-4B-Instruct` has a complete local snapshot in `<MODEL_CACHE>` (about 8.3 GB); model shards, index, processor, and tokenizer files resolve locally. `AutoProcessor.from_pretrained(..., local_files_only=True)` succeeded. The real run used Hugging Face offline flags, so it did not download model files or Dataset data.
+
+### Real Qwen smoke result
+
+- Command used a temporary config derived from `configs/default.yaml`, with `window_seconds=8.1`, and `--question-id GZFL58_pXPg_0`. It preserved LongVideoBench, Qwen3-VL-4B-Instruct, Situation/Summary/Answer, `target_only`, `video_clip`, and built-in prompts. Output was under `<TMP_OUTPUT>`; the temporary config was not committed.
+- The real video decoded and one window completed. Situation and Summary were non-empty, and both recorded `model_info` with adapter `qwen3_vl` and model ID `Qwen/Qwen3-VL-4B-Instruct`.
+- Run `20261008T035005Z-e9132d92` ended with status `failed`, `artifact_schema_version=2`, and one line in `turns.jsonl`. `final_answer.json` has null answer/index/text and completed window count 0. No successful answer or matching choice was recorded.
+
+
+```text
+Stage: EOF Answer Agent (Qwen3-VL)
+Command / operation: one offline `workbench.sh run` using `<TMP_CONFIG>`, `<LVB_ROOT>`, and question `GZFL58_pXPg_0`
+Expected: real decode -> Situation -> Summary -> valid EOF Answer -> succeeded Record v2
+Observed: real decode, Situation, and Summary succeeded; CLI exited 2 after Answer validation; run status is `failed` and final answer fields are null
+Failure category: model output validation
+Confirmed cause: `AnswerValidationError` reports that the generated answer did not satisfy the required `number. choice text` format. The rejected model text was not persisted, so its exact wording is unavailable.
+Evidence: `run_status.json` records category `answer_validation_failed` and type `AnswerValidationError`; `turns.jsonl` contains one non-empty Situation/Summary window with Qwen model info; `final_answer.json` has null answer fields.
+Action taken: inspected the Record and GPU state; did not retry the real GPU run or change the built-in prompt/production answer contract.
+Remaining blocker: Qwen's EOF output did not pass deterministic choice-format validation.
+Retry condition: a separately authorized bounded smoke after deciding how to address the observed output-format failure.
+```
+
+No model/Dataset download, full evaluation, multi-question benchmark, training, long-duration performance run, remote push, PR, or main merge was performed.

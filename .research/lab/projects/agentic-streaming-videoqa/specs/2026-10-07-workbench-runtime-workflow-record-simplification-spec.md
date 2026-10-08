@@ -1,9 +1,9 @@
 ---
 date: 2026-10-07
-last_updated: 2026-10-07
+last_updated: 2026-10-08
 project: agentic-streaming-videoqa
 type: implementation
-status: approved
+status: implemented
 baseline_repository: RuikiHAYASHI/2026_09_hayashi_longvideoqa_workbench
 baseline_ref: main
 baseline_commit: 85bdda340e2609cc7c9525208c436b8b05ed6218
@@ -1296,3 +1296,7 @@ draft -> approved
 - Git: 1 implementation branchの作成とmicro-commitまで許可。main merge / push / PRは禁止。
 - 旧実装: 新経路切替後、不要参照を確認して積極削除。backup copyは禁止。
 - 未検証予定: 実Qwen/GPU、LongVideoBench実データ、長尺科学的性能
+
+## Implementation Status Addendum — 2026-10-08
+
+The Situation / Summary / Answer Runtime and Record v2 integration on current main was re-audited alongside its regression suite. Runtime/server dependency boundaries and Workflow persistence boundaries pass the source audit. The Fake end-to-end test now covers two windows, EOF Answer, Record v2, Browser/API saved-run reload, and Legacy Run read-only behavior and atomic Record status snapshots under concurrent reads. Full short pytest (133 tests), compileall, CLI help, and diff checks pass. This spec's implementation and short-verification criteria are complete; real-model E2E is tracked separately by the 2026-10-08 follow-up spec.

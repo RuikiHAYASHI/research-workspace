@@ -1,9 +1,9 @@
 ---
 date: 2026-10-07
-last_updated: 2026-10-07
+last_updated: 2026-10-08
 project: agentic-streaming-videoqa
 type: implementation
-status: approved
+status: implemented
 baseline_repository: RuikiHAYASHI/2026_09_hayashi_longvideoqa_workbench
 baseline_ref: main
 baseline_commit: 86947e3560f0ae644b3d164fcb3bbdf0caa936e5
@@ -176,3 +176,7 @@ head: a080ea4169134bcb6f4f2cef179890b7cfaec2f5
 
 このため、コード実装は完了しているが、本specのstatusは `approved` のままとし、
 research serverでFake smokeが成功した後に `implemented` へ更新する。
+
+## Implementation Status Addendum — 2026-10-08
+
+The launcher contract was reverified on the current implementation branch. The project-venv Fake verification passes; `workbench.sh` syntax, CLI availability, no-fallback behavior, and valid-root argument forwarding passed an isolated fake-CLI harness. Missing and invalid `LVB_ROOT` stop serve/run explicitly, while preflight and verify run without it. `.env.example` contains placeholders only, `.env` remains ignored, and README usage is synchronized. The shell entrypoint implementation and verification criteria are complete.

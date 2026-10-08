@@ -1,9 +1,9 @@
 ---
 project: agentic-streaming-videoqa
 status: active
-summary: Workbenchのデータセット・動画・QA選択UIを試作。Agent実行は未確認で、入出力・Prompt・永続化・推論設定の整理を優先中。
+summary: Situation / Summary / AnswerとRecord v2のFake回帰は完了。実Qwen smokeはSituation/Summary後にAnswer形式検証で停止し、3-Agent E2Eは未確認。
 created: 2026-09-10
-last_updated: 2026-10-02
+last_updated: 2026-10-08
 ---
 
 # エージェント型オンラインストリーミングVideoQAの研究
@@ -35,6 +35,8 @@ YouTubeなどのライブ配信を想定し、動画を先頭から逐次的に�
 2026-09-30に、承認済みspecに基づきWorkbenchのvideo_clip入力、窓単位Situation観測、根拠付きMemory記録、EOF Answer、read-only履歴表示を実装し、Workbenchの`main`（`2b5f830`）へfast-forward統合・GitHubへpushした。Fake・短い合成動画・Firefoxを含む181件の短時間テストが成功した。実Qwen/GPU・LongVideoBench実データでの品質と速度は未検証である。詳細は同日付のWorkbench Agent mode spec第14節に記録した。
 
 2026-10-02のMTGで、データセット・動画・QA選択画面（プレビュー、お気に入り、検索を含む）を試作した一方、推論画面とAgentのエンドツーエンド動作は未確認であることを整理した。フォルダとプレビューキャッシュの実行間永続化、推論設定の矛盾解消、Agentの入出力・JSON・Prompt・責務の可視化を優先する。Situation / Memory / Answer Agentのデータフローを図と具体例で説明し、結果表示とサムネイルを整える方針を確認した。
+
+2026-10-08に、Runtime簡略化後の旧契約testを現行Situation / Summary / Answer + Record v2へ整理し、Fake CLI・HTTP / Browser・saved-run reload・Legacy read-onlyを含む短時間回帰を確認した。LongVideoBench実動画とlocal Qwen3-VLの1件smokeではdecode、Situation、Summaryまで成功したが、EOF Answerが選択肢形式validationに失敗したため、実3-Agent E2Eは未確認のままとする。
 
 ## マイルストーン
 
@@ -85,3 +87,4 @@ Workbenchは本人だけが必要時に利用するローカル開発用UIであ
 | 2026-09-29 | Workbenchの個人利用・前面起動・Ctrl+C終了の運用境界を明記。 |
 | 2026-09-30 | video_clip、窓単位観測、根拠付き記憶、EOF回答と可読表示を実装し、Fake・短い合成動画・Firefoxを含む181件を確認。Workbench `main`へ統合・push。実Qwen評価は未実施。 |
 | 2026-10-02 | データセット・動画・QA選択UIを試作。Agent実行は未確認のため、入出力・Prompt・設定・永続化・結果表示の整理を優先する方針を確認。 |
+| 2026-10-08 | Situation / Summary / AnswerのFake回帰とRecord v2を確認。実QwenはSituation / Summary後にAnswer形式validationで失敗し、3-Agent E2Eは未確認。 |
