@@ -331,6 +331,103 @@ GitHubの `docs/target-frame-stream` branchを、local source確認なしにchec
 
 sourceが編集不能なinstalled wheelのみで、対応するcurrent source repositoryを一意に特定できない場合は、target_onlyをhackで迂回せず停止して報告する。
 
+## 9.1 Sampling contractの絶対条件
+
+同一のstreaming設定に対してsampling contractはentrypoint / reader mode / visual input modeで変化してはならない。
+
+基準ケース:
+
+```text
+duration_seconds = 22
+window_seconds = 4
+frames_per_window = 8
+delta = 0.5
+```
+
+最終window `[20, 22)` の**sampling target**は必ず
+
+```text
+20.0
+20.5
+21.0
+21.5
+```
+
+の4個とする。
+
+この条件は少なくとも次の全経路で成立しなければ実装完了としない。
+
+```text
+reader_mode=full_rgb
+reader_mode=target_only
+Fake Dataset経路
+LongVideoBench streaming経路
+serve entrypoint
+run entrypoint
+visual_input_mode=video_clip
+visual_input_mode=image_list
+```
+
+`visual_input_mode` はsampling後のAgent入力表現だけを変える設定であり、sampling target集合を変えてはならない。
+
+### target timestampとactual frame timestamp
+
+実動画のdecode frameは必ずしも0.5秒刻みに存在しない。
+
+したがって、固定すべきものは
+
+```text
+target_timestamp_seconds
+```
+
+である。
+
+25fps前後の動画では例えばtarget 20.5秒に対して実採用frameが20.52秒になることは正常。
+
+期待例:
+
+```text
+targets:       20.0, 20.5, 21.0, 21.5
+actual frames: 20.0, 20.52, 21.0, 21.52
+```
+
+のような差は許容する。
+
+一方、
+
+```text
+targets: 20.0, 20.25, 20.5, 20.75, 21.0, 21.25, 21.5, 21.75
+```
+
+のようにpartial windowへ8 targetを再配置することは禁止。
+
+### frame count
+
+sourceに各target以降かつwindow終端未満のdecodable frameが存在する通常ケースでは、最終20--22秒windowの採用frame数も4枚であること。
+
+source自体に必要frameが存在しない、decode error、timestamp欠損等の場合までfake frameを生成して4枚へ水増ししてはならない。
+
+つまり保証は、
+
+- sampling targetは常に4個。
+- 各targetを満たす有効frameが存在する通常動画では採用frameも4枚。
+- source不足時は既存のfailure / unreached-target契約に従い、捏造しない。
+
+とする。
+
+### sequential_loader compatibility
+
+Workbenchのdefault `target_only` が外部 `sequential_loader` のsampling policyを利用する以上、Workbench側だけが修正済みで外部policyが旧挙動の状態を許容しない。
+
+実装では次の両方を行う。
+
+1. 現在利用しているsequential_loader sourceの `TimeGridSamplingPolicy` をfixed-cadence契約へ修正する。
+2. Workbench側でtarget_onlyから返った `target_timestamps_seconds` がWorkbenchの期待gridと一致することを短時間integration testで固定する。
+
+可能ならruntimeでも、外部policyが旧契約を返した場合に誤った8-frame resultを黙って処理せず、明確なsampling contract mismatchとして停止する。
+
+このguardは古い挙動へのsilent fallbackを目的とせず、環境stalenessを早期検出するためだけに使用する。
+
 ## 10. Test契約
 
 ### UI
@@ -450,11 +547,16 @@ Stepごとにbranchを増やさない。
 8. first-after-target規則とcausal window境界を維持する。
 9. unreached targetをfake / future frameで埋めない。
 10. full_rgbとtarget_onlyで同一設定から同じtarget timestampsを得る。
-11. serveとrunでsampling contractを二重実装せず共有する。
-12. Record v3 schemaを変更しない。
-13. 既存Runをmigration / rewriteしない。
-14. short unit / integration / Browser regressionが成功する。
-15. 実Qwen/GPU/LongVideoBench full runを実装成功条件にしない。
+11. duration=22 / window=4 / frames=8ではfull_rgb・target_only・Fake・LongVideoBench・serve・runの全対象経路で最終sampling targetが4個になる。
+12. 同条件の通常動画では最終20--22秒の採用frameも4枚になる。
+13. visual_input_mode=video_clip / image_listの違いでsampling targetが変わらない。
+14. target timestampとactual frame timestampの差を許容しつつ、partial windowへtarget自体を再配置しない。
+15. 古いsequential_loaderが8 targetを返す環境では誤結果を黙って受理しない。
+16. serveとrunでsampling contractを二重実装せず共有する.
+17. Record v3 schemaを変更しない。
+18. 既存Runをmigration / rewriteしない。
+19. short unit / integration / Browser regressionが成功する。
+20. 実Qwen/GPU/LongVideoBench full runを実装成功条件にしない.
 
 ## 15. Ambiguity Gate
 
