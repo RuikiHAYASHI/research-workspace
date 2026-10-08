@@ -234,3 +234,38 @@ Run artifact簡略化、sampled frame永続化、評価用gold分離、Markdown 
 旧 `2026-10-08-workbench-agent-trace-markdown-spec.md` は、新specに置き換えられ `superseded` とした。
 
 以後の実装契約はRecord v3統合specを正本とする。
+
+
+## 2026-10-08 15:24 JST 追記: Browser最終結果表示の設計案
+
+Record v3で評価用goldをAnswer成功後に取得する方針に合わせ、Browserでも正誤を即座に確認できるUIを追加する案を有力候補とする。
+
+推奨レイアウト:
+
+```text
+Run status / progress
+
+┌ 最終結果 ────────────────────────── [✓ 正解 / ✕ 不正解 / — 判定不可]
+│ Model Answer   2. ...
+│ Correct Answer 2. ...
+└────────────────────────────────────
+
+Window履歴
+  Window 1: Frames / Situation / Summary
+  Window 2: Frames / Situation / Summary
+  ...
+```
+
+設計意図:
+
+- Final Answerはwindow turn navigationの一部ではなく、Run全体のtop-level resultとして独立表示する。
+- result cardはAnswer validationとevaluation完了後だけ表示する。
+- 正誤は色だけに依存せず、icon/text badgeで明示する。
+- Model AnswerとCorrect Answerを2行で並べ、choice indexとchoice textを両方表示する。
+- raw output / Prompt / generation / model info等は既存の詳細表示へ残し、main result cardを増やしすぎない。
+- Window側は現在のframe / Situation / Summary確認UIを維持し、最終結果カードの下で履歴を追えるようにする。
+- gold labelはEOF Answer成功後にevaluation経路から取得した結果だけをBrowser payloadへ出し、実行中には表示しない。
+- Answer validation失敗時はgoldを取得・表示せず、通常のRun errorとして扱う。
+- evaluation targetを取得できない場合は推測せず「判定不可」とする案を残す。
+
+第一段階ではQuestion choices自体の色付けやpredicted/correct marker追加は行わず、Final Result cardだけで判定を完結させる方が単純。
