@@ -61,6 +61,10 @@ final_answer.json
 - sampled frame画像はRun artifactへ永続保存する。
 - 現時点ではMarkdownへ画像を埋め込まない。
 - MarkdownはSituation / Summary / Answerを人間が確認しやすい表とする。
+- BrowserではFinal Answerをwindow履歴から分離し、Run全体のtop-levelな「最終結果」カードとして表示する。
+- 最終結果カードにはModel Answer、Correct Answer、正解 / 不正解を表示する。
+- 正誤は色だけに依存せず、`✓ 正解` / `✕ 不正解` のtext badgeでも明示する。
+- goldを持たないv2 / Legacy等のread-only runは `— 判定不可` と表示してよく、正解を推測しない。
 
 ## 3. 現行実装の確認
 
@@ -606,10 +610,47 @@ Browserはv3 `result.json` から以下を表示できること。
 - Situation
 - Summary
 - Final Answer
+- Ground Truth
+- 正誤
 - frame preview
 - saved-run reload
 
 server再起動後も保存済みJPEGを表示可能にする。
+
+#### Final Result card
+
+Final Answerはwindow turn navigationの一部として扱わず、Run全体のtop-level resultとして独立した「最終結果」cardへ表示する。
+
+推奨構成:
+
+```text
+┌ 最終結果 ────────────────────────── [✓ 正解 / ✕ 不正解 / — 判定不可]
+│ Model Answer
+│ 2. ...
+│
+│ Correct Answer
+│ 2. ...
+└────────────────────────────────────
+```
+
+表示規則:
+
+- v3のAnswer validationとevaluationが完了した後だけFinal Result cardを表示する。
+- `answer.prediction` をModel Answerとして表示する。
+- `answer.ground_truth` をCorrect Answerとして表示する。
+- `answer.correct == true` は `✓ 正解`。
+- `answer.correct == false` は `✕ 不正解`。
+- gold / correctnessを持たないv2 / Legacy等のread-only runは `— 判定不可` とし、正解を推測しない。
+- 正誤は色だけで表現しない。icon / text badgeを必須とする。
+- choice indexとchoice textを両方読める表示にする。
+- raw output / Prompt / generation / model info / latencyはFinal Result cardへ詰め込まず、既存の詳細表示へ残す。
+- Question choices自体へのpredicted / correct markerや色付けは初期scopeに含めない。
+- Window履歴はFinal Result cardの下で従来どおり追跡できる構成とする。
+- v3ではFinal AnswerをWindow turn countへ含めず、Window navigationはcompleted windowだけを対象とする。
+
+gold leakage防止のため、実行中のBrowser payloadへGround Truthを含めない。Answer validation成功後にevaluation targetを取得し、`result.json.answer` へ保存された後だけBrowser projectionへ公開する。
+
+新規v3のLongVideoBench / Fake RunではAnswer成功後にGround Truthとboolean `correct` が存在することを必須とする。
 
 ### CLI
 
@@ -799,9 +840,14 @@ verify:
 - final Run
 - presentation failure isolation
 
-### Step 5: Browser / CLI / recent settings / restart
+### Step 5: Browser Final Result / CLI / recent settings / restart
 
 - v3 projection
+- Final Result cardをwindow履歴から独立表示
+- Model Answer / Correct Answer / 正解・不正解badge
+- v3 Final Answerをwindow navigationから分離
+- 実行中のgold非公開
+- v2 / Legacyの判定不可表示
 - v3 recent settings
 - v3 restart
 - saved-run reload
@@ -809,6 +855,12 @@ verify:
 
 verify:
 
+- correct v3 Runで `✓ 正解`
+- incorrect v3 Runで `✕ 不正解`
+- Model Answer / Correct Answerのindex + text表示
+- Answer完了前にgoldがBrowser payload / DOMへ存在しない
+- v2 / Legacyでgoldを推測せず `— 判定不可`
+- Final Answerがwindow navigation件数へ入らない
 - Fake HTTP / Browser E2E
 - Fake CLI
 - restart
@@ -865,6 +917,14 @@ verify:
 29. 不要な旧writer / helperをrepo内backupとして残さない。
 30. short full regression / compileall / diff checkが成功するか、環境依存failureを分離報告する。
 31. 実Qwen/GPU/LongVideoBench full runを実装成功条件に含めない。
+32. v3 BrowserでFinal Result cardがwindow履歴から独立して表示される。
+33. v3 correct RunでModel Answer / Correct Answerと `✓ 正解` が表示される。
+34. v3 incorrect RunでModel Answer / Correct Answerと `✕ 不正解` が表示される。
+35. 正誤表示は色だけに依存せずtext / iconでも判別できる。
+36. Answer validation / evaluation完了前のBrowser payloadとDOMにGround Truthが露出しない。
+37. v2 / Legacy等goldを持たないread-only runでは正解を推測せず `— 判定不可` と表示できる。
+38. v3 Final Answerはwindow navigationのturn countへ含めず、completed windowだけを履歴移動対象にする。
+39. Final Result cardへraw output / Prompt / generation / latencyを重複表示せず、既存詳細表示の責務を維持する。
 
 ## 22. Ambiguity Gate
 
@@ -898,11 +958,11 @@ verify:
 ## 24. Implementation Handoff
 
 - approved spec: 本spec
-- 実装目的: Record v2の6-file出力をRecord v3の `result.json + trace.md + frames/` へ単純化し、gold leakageなしでFinal Answerの正誤まで保存する。
+- 実装目的: Record v2の6-file出力をRecord v3の `result.json + trace.md + frames/` へ単純化し、gold leakageなしでFinal Answerの正誤まで保存し、Browserの独立したFinal Result cardでModel Answer / Correct Answer / 正誤を確認できるようにする。
 - 基準repository: `RuikiHAYASHI/2026_09_hayashi_longvideoqa_workbench`
 - spec作成時基準: `main@2a40379cf98f3c6d5c9784d0bcb0439c3577cbbb`
 - 実装開始点: 最新mainを再確認し、stalenessがなければそこから1 implementation branchを作る。
-- 変更scope: Record / Runtime frame persistence / Dataset evaluation boundary / Presentation trace / Browser saved-run projection / CLI/restart/recent-settings / tests /必要最小限docs。
+- 変更scope: Record / Runtime frame persistence / Dataset evaluation boundary / Presentation trace / Browser Final Result card・saved-run projection / CLI/restart/recent-settings / tests /必要最小限docs。
 - 対象外: Section 18。
 - success criteria: Section 21。
 - 許可される短時間検証: unit、Fake workflow、Fake HTTP/Browser、Fake CLI、restart/reload、v2/Legacy read-only、compileall、diff check。
