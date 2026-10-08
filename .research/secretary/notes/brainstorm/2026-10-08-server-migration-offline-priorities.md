@@ -194,3 +194,32 @@ Agent出力をMarkdown表として保存する方針を、次のdraft specへ昇
 - `.research/lab/projects/agentic-streaming-videoqa/specs/2026-10-08-workbench-agent-trace-markdown-spec.md`
 
 以後、実装契約の詳細は上記specを参照する。
+
+
+## 2026-10-08 15:24 JST 追記: Run artifact簡略化と画像保存方針
+
+現行Record v2の確認を踏まえ、Run artifactは今後さらに単純化する方向を有力とする。
+
+現在の合意:
+
+- 人間確認用Markdownには、現時点では画像列を直接埋め込まない。
+- sampled frame / thumbnail自体は、server session内だけでなくRun artifactとして永続保存する方向とする。
+- MarkdownはSituation / Summary / 最終回答等のテキスト確認を中心にする。
+- 正解ラベルはAgent推論入力へ混ぜない。
+- Answer完了後または評価用経路でDataset annotationから正解を取得し、予測との正誤判定を保存する方向とする。
+- Run全体の機械可読記録は、現在の6ファイル構成より単純な単一JSONへ統合する案を有力候補とする。
+- Answerだけを別fileへ分離する必要性は低く、Run全体結果の上位fieldとして保存する案を有力候補とする。
+- Run directory名は timestamp + random hash より、人間が読める日時ベースを優先する案が有力。
+
+有力なartifactイメージ:
+
+```text
+<OUTPUT_ROOT>/
+└── <human-readable timestamp>/
+    ├── result.json
+    ├── trace.md
+    └── frames/
+        └── sampled-frame-thumbnails...
+```
+
+この時点では実装specの更新・コード変更は行わない。既存の `2026-10-08-workbench-agent-trace-markdown-spec.md` は、画像埋め込みを行わない点は維持できるが、Record構成やAnswer保存位置について今回の方向性と不一致が生じているため、実装前にrefreshが必要。
