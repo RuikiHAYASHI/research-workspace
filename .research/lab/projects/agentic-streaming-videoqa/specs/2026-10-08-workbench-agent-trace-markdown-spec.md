@@ -3,7 +3,7 @@ date: 2026-10-08
 last_updated: 2026-10-08
 project: agentic-streaming-videoqa
 type: implementation
-status: draft
+status: superseded
 target_repository: RuikiHAYASHI/2026_09_hayashi_longvideoqa_workbench
 baseline_ref: main
 baseline_commit: 5a4de708b1ac645fe17452420fc85ab9226dd53d
@@ -11,9 +11,12 @@ depends_on:
   - 2026-10-07-workbench-runtime-workflow-record-simplification-spec.md
 source_brainstorm:
   - 2026-10-08-server-migration-offline-priorities.md
+superseded_by: 2026-10-08-workbench-run-artifact-trace-simplification-spec.md
 ---
 
 # Workbench Agent Trace Markdown 出力 spec
+
+> **Superseded:** Run artifact構成・Answer保存・frame永続化までscopeが拡張されたため、実装契約は `2026-10-08-workbench-run-artifact-trace-simplification-spec.md` へ置き換えた。本specから実装しない。
 
 ## 1. 目的
 
