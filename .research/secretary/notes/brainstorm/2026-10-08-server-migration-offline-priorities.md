@@ -223,3 +223,14 @@ Agent出力をMarkdown表として保存する方針を、次のdraft specへ昇
 ```
 
 この時点では実装specの更新・コード変更は行わない。既存の `2026-10-08-workbench-agent-trace-markdown-spec.md` は、画像埋め込みを行わない点は維持できるが、Record構成やAnswer保存位置について今回の方向性と不一致が生じているため、実装前にrefreshが必要。
+
+
+## 2026-10-08 15:24 JST 追記: Record v3統合specへ昇格
+
+Run artifact簡略化、sampled frame永続化、評価用gold分離、Markdown traceの現在方針を、次のapproved specへ昇格した。
+
+- `.research/lab/projects/agentic-streaming-videoqa/specs/2026-10-08-workbench-run-artifact-trace-simplification-spec.md`
+
+旧 `2026-10-08-workbench-agent-trace-markdown-spec.md` は、新specに置き換えられ `superseded` とした。
+
+以後の実装契約はRecord v3統合specを正本とする。
