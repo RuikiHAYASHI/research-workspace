@@ -132,3 +132,72 @@ raw outputを確認する前に緩めない。
 3. Fake testで3種類のfailureとraw output保存を確認する。
 4. 実Qwenで短い1件だけsmokeし、raw Answerを観察する。
 5. そのEvidenceを見てPrompt修正 / validator緩和 / max_new_tokens調整のどれが必要か判断する。
+
+
+## 2026-10-09 11:02 JST 生出力確認の具体方針
+
+最優先は正誤判定ではなく、Answer Agentが実際に返したraw textを観察することとする。
+
+### 1. validation失敗時にもraw Answerを保存する
+
+現行 `AnswerAgent.run()` ではModelResponse取得後にvalidationし、失敗するとAnswerOutputが作られない。
+そこで `AnswerValidationError` にdiagnostic情報を保持させる。
+
+最低限:
+
+- validation_code
+- response_text
+- raw_output
+- elapsed_seconds
+- model_info
+- generation
+- prompt_id / prompt_hash / prompt_version
+
+`RunRecord.fail()` はerrorに `details` が存在すれば `status.error.details` へJSON-safeに保存する。
+
+成功時のAnswer保存契約は変更しない。
+
+### 2. trace.mdでもfailed Answer attemptを見られるようにする
+
+failed Answer attemptがある場合はtrace末尾へ、
+
+```text
+## Failed Answer Attempt
+Validation: ...
+Raw output: ...
+Generated tokens: ...
+Hit max_new_tokens: ...
+```
+
+を表示する。
+
+final Answer失敗後にもtraceを再生成し、result.jsonを直接開かなくても診断できるようにする。
+
+### 3. 既存failed runは動画を再処理しない
+
+既存の長尺failed runは全windowのSituation / Summaryが既に保存済み。
+したがって診断では、
+
+- result.json.question.question
+- result.json.question.choices
+- 最後のturnのsummary.summary
+- config内のAnswer prompt / generation / model設定
+
+を読み、Answer Agentだけを1回再実行すればよい。
+
+これは元Runを変更せず、別のdiagnostic outputとして扱う。
+
+Answerはtext-onlyなので、動画decodeやSituation / Summaryを再実行する必要はない。
+
+### 4. raw outputを見てから契約変更を判断する
+
+観察後に次を区別する。
+
+- `2) ...` 等の軽微なformat差
+- `The answer is ...` 等の説明追加
+- choice本文の言い換え
+- 番号だけ
+- max_new_tokens到達
+- その他の異常出力
+
+Evidence取得前にvalidatorやPromptを緩和しない。
