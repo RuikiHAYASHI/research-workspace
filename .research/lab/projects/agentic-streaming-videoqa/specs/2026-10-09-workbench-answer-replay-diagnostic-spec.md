@@ -3,7 +3,7 @@ date: 2026-10-09
 last_updated: 2026-10-09
 project: agentic-streaming-videoqa
 type: implementation
-status: approved
+status: implemented
 baseline_repository: RuikiHAYASHI/2026_09_hayashi_longvideoqa_workbench
 baseline_ref: main
 baseline_commit: 15063a7a0c7037cb1e484f10973b0bec16b02b98
@@ -282,3 +282,12 @@ Fake ModelAdapterまたはtest doubleで少なくとも次を確認する。
 - success criteria: Section 12
 - 長時間run: 未許可
 - 実Qwen replay: 実装完了後に別途明示実行
+
+## 16. Implementation Status — 2026-10-09
+
+- 実装commit: `RuikiHAYASHI/2026_09_hayashi_longvideoqa_workbench@4b0b25e`
+- `diagnostics/answer_replay.py`で保存artifactからAnswerだけを1回呼び、raw responseと形式・選択番号・選択肢本文のvalidation結果を新規Markdownへ記録する。
+- `longvideoqa answer-replay <RUN_ID>` と `./scripts/workbench.sh answer-replay <RUN_ID>` を追加した。
+- compileall、Answer replayのFake/test-double 8ケース（validation 4種、model resolve/generate error、非上書き、CLI）、既存Fake三Agent CLI run、`bash -n` を確認した。
+- Workbench `.venv` にpytestがないため、pytest runner自体での実行は未実施。テスト関数はPython 3.12上でfixture shimを使って実行した。
+- 実Qwen replayは未実施。元Run artifact、通常Run経路、validator、Record schema、trace表示は変更していない。
