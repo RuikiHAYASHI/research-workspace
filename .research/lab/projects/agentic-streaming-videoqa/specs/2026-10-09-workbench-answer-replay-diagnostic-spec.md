@@ -3,7 +3,7 @@ date: 2026-10-09
 last_updated: 2026-10-09
 project: agentic-streaming-videoqa
 type: implementation
-status: draft
+status: approved
 baseline_repository: RuikiHAYASHI/2026_09_hayashi_longvideoqa_workbench
 baseline_ref: main
 baseline_commit: 15063a7a0c7037cb1e484f10973b0bec16b02b98
@@ -270,9 +270,7 @@ Fake ModelAdapterまたはtest doubleで少なくとも次を確認する。
 
 ## 14. Spec Gate
 
-本specは現在 `draft`。
-
-ユーザーが本specを承認した後に `approved` とし、engineering-taskへ引き継ぐ。
+ユーザーは2026-10-09に本specを承認し、実装とcommitを明示的に依頼した。
 
 ## 15. Implementation Handoff
 
