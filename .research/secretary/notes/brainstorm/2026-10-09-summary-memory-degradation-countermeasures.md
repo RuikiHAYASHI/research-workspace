@@ -226,3 +226,91 @@ W4等1条件で、
 - EOF Answerへchapter summariesを直接渡すか、final synthesisを1回行うか。
 - long videoでchapter summaries自体が増えた場合の第2階層compressionが必要か。
 - question-independent summaryだけで将来の任意QAに必要な細部をどこまで保持できるか。
+
+
+## 2026-10-09 14:16 JST 既存研究の対策との照合
+
+公開論文を再調査すると、長尺・streaming videoで過去情報を保持する代表的な方向は、1本の自然言語Summaryを毎window全文再生成し続ける方式より、memoryを分割・階層化・選択的圧縮・検索する方式が中心である。
+
+### MovieChat
+
+MovieChatは短期memoryと長期memoryを分離する。
+短期memoryは固定長FIFOで最近のdense visual tokensを保持し、押し出された古いtokensを隣接類似度に基づいてmergeしてlong-term sparse memoryへconsolidateする。
+
+今回の観点では「古い全情報を毎回自然言語で書き直す」のではなく、古い情報を別storeへ移して固定的に保持し、compressionをtoken mergeとして行う点が重要。
+
+### LangRepo
+
+Language Repository for Long Video Understandingはall-textualなrepositoryを維持し、multi-scale video chunksに基づくwrite/readを持つ。
+write/readはtextのredundancy pruningと複数時間scaleの情報抽出を目的とする。
+
+今回に最も近いtext-memory系の参考であり、「全文rolling summary」より、structured repository + multi-scale read/writeでtext memoryを管理する方向。
+
+### MA-LMM / StreamMem
+
+MA-LMMはonlineにvideoを処理し、過去情報をmemory bankへ保存する。
+StreamMemはstreaming frameを処理しながらfixed-size KV cache memoryを保ち、generic query tokenとのattention scoreでvisual tokenを圧縮する。
+
+いずれも自然言語Summaryを唯一の正本にせず、latent/KV visual memoryを保持する。
+
+### MovieChat / Flash-VStream / StreamForestの共通方向
+
+MovieChat: short-term / long-term memory。
+Flash-VStream: low-capacity context memory + high-capacity augmentation memory。
+StreamForest: event-level tree structuresでpersistent long-term memory + fine-grained recent window。
+
+粒度や実装は異なるが、短期詳細と長期圧縮表現を分離するmulti-timescale / hierarchical memoryという共通パターンがある。
+
+### StreamAgent
+
+StreamAgentはhierarchical streaming KV-cache memoryを用い、task-relevant tokenをselective recallする。
+「全部の過去を1本に押し込む」のではなく、必要な過去をretrievalする方向。
+
+### ReWind / VideoAgent / MemoryCard
+
+ReWindはlearnable memoryを逐次更新し、memoryに基づいてinstruction-relevant frameを選択して最終推論へ使う。
+VideoAgentはQuestionを使って必要情報をiteratively探索・取得する。
+MemoryCardはvideoをtopic/event単位にsegmentし、event gist + representative visual momentsをself-contained cardとして保存し、QA時にretrievalする。
+
+これらはanswer-time retrieval / query-aware memoryの系統。
+
+## 今回との対応
+
+現行:
+```text
+Summary_t = LLM(Summary_{t-1}, Situation_t)
+```
+
+既存研究に多い:
+```text
+recent detailed memory
++ persistent / hierarchical compressed memory
++ selective retrieval
+```
+
+したがって、今回候補の
+`immutable Situation log + fixed-size Chapter Summary`
+は、既存研究のshort/long-term、hierarchical/event memoryの流れと整合する。
+
+ただしそのままでは新規性にはならない。
+研究差分を主張する場合は、
+
+- strict streaming / future-free条件
+- question-independent memory
+- recursive textual rewriteによるfact loss自体の定量化
+- chapter boundary / timescaleの決め方
+- memory degradationとwindow length / samplingの相互作用
+
+等で既存研究との差を確認する必要がある。
+
+## 主要参照
+
+- MovieChat: arXiv:2307.16449
+- LangRepo: arXiv:2403.14622
+- MA-LMM: arXiv:2404.05726
+- Flash-VStream: arXiv:2406.08085 / 2506.23825
+- ReWind: arXiv:2411.15556
+- StreamAgent: arXiv:2508.01875
+- StreamMem: arXiv:2508.15717
+- StreamForest: arXiv:2509.24871
+- MemoryCard: arXiv:2606.05917
