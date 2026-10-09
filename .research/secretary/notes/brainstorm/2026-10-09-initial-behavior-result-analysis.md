@@ -122,3 +122,78 @@ W2ではSummary更新回数が増えるため飽和しやすく、S100ではvisu
 - Window inference timeの和とwall-clock total runtimeを区別する。
 - Final SummaryがQuestion回答に必要なEvidenceを失っている場合、Answer Agentだけを責めない。
 - replay raw outputがPrompt literal placeholderを返す場合は、Answer formatting / instruction-following問題としてSummary品質と分離する。
+
+
+## 2026-10-09 12:51 JST 定量集計とqualitative auditの二段階化
+
+### 先に出す定量表
+
+Answer品質列は一旦外し、次の列だけを集計する。
+
+- Case
+- Run ID
+- Window (s)
+- Sampling interval (s)
+- Actual windows
+- Sampled frames
+- Model calls
+- Summary max_new_tokens hits / rate
+- Total runtime
+- Total inference
+- Avg Situation time / window
+
+`Avg Summary`、`Final Summary evidence`、`Replay Answer`、`Validation`、`Correct` はこの第一表から外す。
+
+`Total runtime` は `finished_at - started_at` のwall-clock。
+`Total inference` はrecorded Situation / Summary / Answer model elapsedの和とし、failed source RunでAnswer elapsedが保存されていない場合は勝手に0扱いしない。Answer replay artifactが存在してそのtimeを使う場合は、その旨を明記する。
+
+### qualitative auditはSituationとSummaryを分離する
+
+Situationの正しさはtrace本文だけでは確定できない。対応するsaved frames / video windowとの比較が必要。
+
+Situation audit:
+- unsupported / hallucinated object, person, action, attribute
+- missed salient event
+- temporal/order error
+- identity / clothing / state inconsistency
+- over-specific unsupported detail
+- obvious repetition / boilerplate
+
+Summary auditは各windowについて、
+`previous summary + current situation -> new summary`
+という実際の契約に対して評価する。
+
+見るもの:
+- unsupported addition: 入力にない新事実を追加していないか
+- retention/drop: 重要な過去情報を不必要に消していないか
+- contradiction: previous/currentと矛盾していないか
+- integration/compression: 単純appendではなく統合できているか
+- redundancy/growth: 同じ説明を繰り返して肥大化していないか
+- truncation: max_new_tokensで途中切れしていないか
+- temporal ordering: 出来事の順序を壊していないか
+
+原因帰属を分ける。
+- framesにない事実をSituationが言う -> Situation error
+- Situationの誤りをSummaryが忠実に保持 -> root causeはSituation
+- previous summary/current situationにない事実をSummaryが追加 -> Summary error
+- 入力にある重要事実をSummaryが落とす -> Summary retention error
+
+### 全259 windowを最初から人手精査しない
+
+二段階にする。
+
+1. 全windowをtextual screeningし、怪しいwindowをflagする。
+   - 同時間帯の条件間で大きく内容が食い違う
+   - 場所/人物/服装が急変する
+   - Summaryが急に長文化・反復する
+   - max token hit
+   - 文途中で切れる
+   - Question関連event候補
+2. flagged window + stratified sampleだけsaved frames/videoでvisual verificationする。
+   - beginning / middle / end
+   - max-token hit / non-hit
+   - question-relevant scene
+   - W2/W4/W8で対応する時間帯
+   - S025/W4/S100で対応する時間帯
+
+Codexが画像を直接確認できない環境では、Situationのfactual correctnessを断定せず、`visual verification required` としてflagまでに留める。
