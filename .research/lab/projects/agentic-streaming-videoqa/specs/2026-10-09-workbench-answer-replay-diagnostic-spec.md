@@ -34,7 +34,7 @@ src/longvideoqa_workbench/diagnostics/
 
 1. 元Runの `result.json` をread-onlyで読む。
 2. 元Run保存時と同じAnswer条件でAnswer Agentを1回だけ呼ぶ。
-3. raw outputとvalidation結果を新しいMarkdownへ保存する。
+3. 元の `trace.md` と同じ表示を基準にした新しいMarkdownへreplay結果を投影し、validation失敗時だけraw outputと詳細errorを追加する。
 
 `RunService`、`RunSession`、`VideoQAWorkflow`、元Runの `result.json` / `trace.md` は変更しない。
 
@@ -135,59 +135,120 @@ Actual: "..."
 元Run directory内へ新しいfileとして保存する。
 
 ```text
-answer-replay-YYYY-MM-DD_HH-MM-SS.md
+trace-answer-replay-YYYY-MM-DD_HH-MM-SS.md
 ```
 
-既存fileを上書きしない。
+既存の `trace.md` と元Run artifactは上書きしない。
 
-最低限:
+新しいMarkdownは独自の長いreport形式ではなく、**元の `trace.md` がAnswer replay後に更新されたかのような形式**を正本とする。
+
+基本形:
 
 ```markdown
-# Answer Replay
+# Run Summary
 
-- Source run:
-- Source code version:
-- Replay code version:
-- Original status:
-- Original error:
-- Answer model:
-- Prompt ID:
-- Prompt version:
-- Prompt hash:
-- Generation:
+- Question: ...
+- Ground truth: ...
+- Model answer: ...
+- Correct: ...
+- Total runtime: ...
+- Total inference time (recorded stages + replay Answer): ... s
 
-## Question
+| Window | Range | Situation Agent | Situation time (s) | Summary Agent | Summary time (s) | Window inference time (s) | Answer Agent |
+|---:|---|---|---:|---|---:|---:|---|
+| 1 | ... | ... | ... | ... | ... | ... | — |
+...
+| EOF | — | — | — | — | — | — | ... |
 
+## Replay Metadata
+
+- Source run: ...
+- Source code version: ...
+- Replay code version: ...
+- Answer replay time: ... s
+```
+
+Question、Window表、Situation / Summary本文・時間は元Runと同じprojectionを使う。
+
+replayがvalidation成功した場合は、EOFのAnswer Agentへvalidated Answerを表示する。元Runにground truth / correctが保存済みならそれも通常traceと同様に表示し、保存されていなければ `—` のままとする。ground truth取得のためだけに新しいdatasetアクセスを追加しない。
+
+### 7.1 trace rendererの再利用
+
+同じMarkdown形式を二重実装しない。
+
+必要なら現在の `v3_text_trace(record)` から、`result.json` payloadを受け取るpure rendererを最小抽出し、
+
+- 通常 `trace.md`
+- Answer replay Markdown
+
+の両方から利用する。
+
+通常 `trace.md` の既存出力は変更しない。抽出前後で既存fixture testの文字列が一致することを確認する。
+
+### 7.2 Total runtime
+
+`Total runtime` は現在のtrace contractを維持し、
+
+```text
+status.finished_at - status.started_at
+```
+
+のwall-clockとする。
+
+両timestampが存在しない元Runでは `—` とする。
+
+Window inference timeの和を `Total runtime` と呼ばない。
+
+### 7.3 Total inference time
+
+replay Markdownでは診断補助として、
+
+```text
+sum(all recorded Situation elapsed_seconds)
++ sum(all recorded Summary elapsed_seconds)
++ replay Answer elapsed_seconds
+```
+
+を `Total inference time (recorded stages + replay Answer)` として表示する。
+
+これはmodel generate時間の合計であり、video decode、JPEG生成、Record I/O、ユーザー待機時間等を含まない。
+
+元Runが途中停止している場合も計算可能だが、その場合は動画全体の総推論時間ではなく「保存済みstage分 + replay Answer」の合計であることをラベルで明示する。
+
+### 7.4 validation失敗時だけ追加する診断節
+
+validation成功時は基本trace + Replay Metadataだけでよい。
+
+validation失敗時だけ、末尾へ次を追加する。
+
+```markdown
+## Answer Replay Error
+
+### Raw Answer
 ...
 
-## Choices
-
-1. ...
-2. ...
-
-## Final Summary
-
+### Raw output
 ...
 
-## Raw Answer
-
+### Model info
 ...
 
-## Validation
-
+### Validation
 - Status:
 - Code:
+- Stage:
 - Cause:
 - Expected:
 - Actual:
-- Elapsed:
+- Answer replay time:
 - Generated tokens:
 - Hit max_new_tokens:
+- Error detail:
 ```
 
-replay自体がvalidation失敗してもMarkdownを必ず生成する。
+`Expected` にはvalidationが実際に要求した形式またはchoiceを記載し、artifact復元条件の説明文を入れない。
 
-model load等、ModelResponse取得前に失敗した場合も、取得できた範囲のprovenanceと詳細なerror causeをMarkdownへ残す。
+model load等、ModelResponse取得前に失敗した場合も、新しいMarkdown自体は生成し、取得できたprovenanceと具体的なerror causeを末尾へ残す。
 
 ## 8. CLI
 
@@ -236,6 +297,12 @@ Fake ModelAdapterまたはtest doubleで少なくとも次を確認する。
 - choice-text mismatchでもexpected / actualが残る。
 - model generation前後のfailureでも可能な範囲の原因がMarkdownへ残る。
 - output filenameが既存fileを上書きしない。
+- replay MarkdownのRun SummaryとWindow表が通常traceと同じrenderer結果を基準にする。
+- sourceにstarted_at / finished_atがあれば従来どおりTotal runtimeを表示する。
+- Total inference timeが全recorded Situation / Summary時間とreplay Answer時間の和になる。
+- sourceが未完了ならTotal runtimeを捏造せず `—` とする。
+- validation successでは不要なraw/error節を出さない。
+- validation failure時だけraw Answer / raw output / model info / 詳細validation原因を追加する。
 - existing normal run testsが非回帰。
 
 実Qwen replayは実装成功条件に含めない。
@@ -246,12 +313,15 @@ Fake ModelAdapterまたはtest doubleで少なくとも次を確認する。
 2. 新しいRun mode / Workflow / Sessionを追加しない。
 3. 元Runはread-only。
 4. 元RunのFinal Summaryと保存済みAnswer設定だけでAnswerを再実行する。
-5. validation成否にかかわらずraw Answerを新規Markdownへ残す。
-6. validation failureの原因が期待値と実際値を含めて人間向けに説明される。
-7. current Prompt / current configへ依存しない。
-8. Situation / Summary / video decodeを再実行しない。
-9. 通常RunのAnswer保存契約を変更しない。
-10. 短時間testが成功する。
+5. 新しいMarkdownは通常 `trace.md` と同じRun Summary / Window表を基準にし、replay AnswerをEOFへ反映する。
+6. validation成功時はraw diagnosticを常時表示せず、通常traceに近い簡潔な出力にする。
+7. validation failure時だけraw Answer / raw output / model info / 詳細errorを追加する。
+8. validation failureの原因が期待値と実際値を含めて人間向けに説明される。
+9. `Total runtime` のwall-clock意味を変えず、別にrecorded stage + replay Answerの `Total inference time` を計算する。
+10. current Prompt / current configへ依存しない。
+11. Situation / Summary / video decodeを再実行しない。
+12. 通常RunのAnswer保存契約を変更しない。
+13. 短時間testが成功する。
 
 ## 13. Ambiguity Gate
 
@@ -263,7 +333,7 @@ Fake ModelAdapterまたはtest doubleで少なくとも次を確認する。
 
 - diagnostics packageの `__init__.py` 公開範囲。
 - ModelResponse捕捉用の小さなwrapper/helper名。
-- Markdown rendererを同file内private helperにするかどうか。
+- trace rendererをpure helperとしてどのprivate/public名で抽出するか。
 - CLI argument名の細部。
 
 不要な抽象化を追加せず、既存styleに合わせる。
