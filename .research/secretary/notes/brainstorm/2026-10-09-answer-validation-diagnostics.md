@@ -310,3 +310,19 @@ longvideoqa answer-replay --run <RUN_DIR_OR_ID>
 を追加する。
 
 実装では既存Qwen adapter / AnswerAgent / validationを再利用し、新しいAnswerロジックを複製しない。
+
+
+## 2026-10-09 11:30 JST B-only方針確定
+
+今回はBのみを対象とする。
+
+- 実装中心: `src/longvideoqa_workbench/diagnostics/answer_replay.py`
+- 新しいRun mode / Workflow / Sessionは作らない。
+- 元Runはread-only。
+- Final Summaryと元Run保存時のAnswer Prompt / model / generationからAnswerだけ再実行する。
+- 結果は新しい `answer-replay-YYYY-MM-DD_HH-MM-SS.md` に出力する。
+- validation失敗時は、単なるerror categoryではなく、期待形式・実際出力・不一致内容を丁寧に記述する。
+- 将来Aを実装する場合も、同じ詳細なerror-cause記述方針を維持する。
+
+昇格先spec:
+`.research/lab/projects/agentic-streaming-videoqa/specs/2026-10-09-workbench-answer-replay-diagnostic-spec.md`
