@@ -201,3 +201,112 @@ Answerはtext-onlyなので、動画decodeやSituation / Summaryを再実行す�
 - その他の異常出力
 
 Evidence取得前にvalidatorやPromptを緩和しない。
+
+
+## 2026-10-09 11:15 JST Answer-only replay方針
+
+Answer validation失敗の診断では、元Runを変更せず、保存済みartifactからAnswer Agentだけを再実行する方向を採用候補とする。
+
+### 再利用する元Run情報
+
+元Runの `result.json` から次を読む。
+
+- `question.question`
+- `question.choices`
+- 最終turnの `summary.summary`
+- `config.execution.agents.answer.backend`
+- `config.execution.agents.answer.model_id`
+- `config.execution.agents.answer.generation`
+- `config.prompts` 内のAnswer Prompt snapshot
+  - prompt_id
+  - prompt_hash
+  - prompt_version
+  - body
+
+現在のPromptServiceからPrompt本文を再解決せず、元Run snapshotのbodyを正本として使う。
+
+### replay実行
+
+概念的には次の入力だけでAnswer Agentを1回呼ぶ。
+
+```text
+Question
++ Choices
++ Final Summary
++ original Answer Prompt snapshot
++ original model/backend
++ original generation
+-> Answer Agent
+```
+
+Situation / Summary / video decode / frame samplingは再実行しない。
+
+元Runの `result.json`、`trace.md`、statusは変更しない。
+
+### 新しいMarkdown出力
+
+元Run directory内へtimestamp付きの別fileを作る案を第一候補とする。
+
+```text
+answer-replay-YYYY-MM-DD_HH-MM-SS.md
+```
+
+最低限次を含める。
+
+```markdown
+# Answer Replay
+
+- Source run: ...
+- Source code version: ...
+- Original status: failed
+- Original error: ...
+- Answer model: ...
+- Prompt ID / version / hash: ...
+- Generation: ...
+
+## Question
+...
+
+## Choices
+1. ...
+2. ...
+
+## Final Summary
+...
+
+## Raw Answer
+...
+
+## Validation
+- status: passed / failed
+- code: ...
+- message: ...
+- elapsed_seconds: ...
+- generated_tokens: ...
+- hit_max_new_tokens: ...
+```
+
+validationが失敗してもraw Answerを必ず出力する。
+
+### 再現性の考え方
+
+同じbackend / model_id / prompt snapshot / generation / final summaryを使う。
+現在のAnswer Promptやcurrent default configに依存させない。
+
+temperature=0のgreedy generationであっても、replayを「元Runとbit-exactに同じ出力になる」とは主張せず、同条件でAnswer段階だけを再実行するdiagnosticとして扱う。
+
+### CLI候補
+
+```bash
+longvideoqa answer-replay --run <RUN_DIR_OR_ID>
+```
+
+または既存shell wrapperに
+
+```bash
+./scripts/workbench.sh answer-replay <RUN_ID>
+```
+
+を追加する。
+
+実装では既存Qwen adapter / AnswerAgent / validationを再利用し、新しいAnswerロジックを複製しない。
