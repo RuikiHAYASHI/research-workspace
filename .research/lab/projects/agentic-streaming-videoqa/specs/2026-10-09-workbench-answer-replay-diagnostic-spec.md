@@ -3,7 +3,7 @@ date: 2026-10-09
 last_updated: 2026-10-09
 project: agentic-streaming-videoqa
 type: implementation
-status: draft
+status: approved
 baseline_repository: RuikiHAYASHI/2026_09_hayashi_longvideoqa_workbench
 baseline_ref: main
 baseline_commit: 15063a7a0c7037cb1e484f10973b0bec16b02b98
