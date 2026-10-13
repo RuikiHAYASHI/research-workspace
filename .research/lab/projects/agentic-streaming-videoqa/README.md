@@ -3,7 +3,7 @@ project: agentic-streaming-videoqa
 status: active
 summary: Answer-only replay診断を実装しFake smokeで確認。pytest未実行、実Qwen 3-Agent E2Eは未確認。
 created: 2026-09-10
-last_updated: 2026-10-09
+last_updated: 2026-10-14
 ---
 
 # エージェント型オンラインストリーミングVideoQAの研究
@@ -39,6 +39,8 @@ YouTubeなどのライブ配信を想定し、動画を先頭から逐次的に�
 2026-10-08に、Runtime簡略化後の旧契約testを現行Situation / Summary / Answer + Record v2へ整理し、Fake CLI・HTTP / Browser・saved-run reload・Legacy read-onlyを含む短時間回帰を確認した。LongVideoBench実動画とlocal Qwen3-VLの1件smokeではdecode、Situation、Summaryまで成功したが、EOF Answerが選択肢形式validationに失敗したため、実3-Agent E2Eは未確認のままとする。
 
 2026-10-09に、保存済みFinal SummaryからAnswerだけを再実行し、trace互換Markdownとvalidation failure時の詳細診断を保存する機能をWorkbenchへ実装した（`65af089`）。Fake smokeは成功したが、実行環境にpytestがなくtest suiteは未実行。実Qwen replayも未実施。
+
+2026-10-09のMTG（2026-10-14に遡及記録）では、Situation → Summary → Answerを一度単純なbaselineとして整理し、20秒程度と約3分のLongVideoBench動画による初期実行結果を報告した。3分動画の複数条件ではAnswer出力形式のvalidationが失敗しており、QA精度の不良とは区別する。実行時間はモデル呼出し回数のみでは説明できないため、Agent別・chunk別の時間、token数、出力内容を確認する。累積Summaryの肥大化と古いイベントの脱落を課題候補とし、重要イベントをSummaryと別に記録する小さな試作を検討する。関連研究では「既存手法がイベントをどう保持するか」など一つの問いに絞り、代表論文のRelated Workから比較する。予習Agentは未採択の研究案であり、他研究との差分も未確認。詳細は[2026-10-09 MTG議事録](meetings/2026-10-09-mtg.md)を参照する。
 
 ## マイルストーン
 
@@ -91,3 +93,4 @@ Workbenchは本人だけが必要時に利用するローカル開発用UIであ
 | 2026-10-02 | データセット・動画・QA選択UIを試作。Agent実行は未確認のため、入出力・Prompt・設定・永続化・結果表示の整理を優先する方針を確認。 |
 | 2026-10-08 | Situation / Summary / AnswerのFake回帰とRecord v2を確認。実QwenはSituation / Summary後にAnswer形式validationで失敗し、3-Agent E2Eは未確認。 |
 | 2026-10-09 | Answer-only replay診断をWorkbenchへ実装し、Fake smokeを確認。pytest未実行、実Qwen replay未実施。 |
+| 2026-10-14 | 10/09 MTGを遡及記録。簡略化した3-Agent baseline、長時間推論/Answer形式失敗、Summary情報脱落懸念、イベント別保存、観点を絞った文献調査を整理。 |
