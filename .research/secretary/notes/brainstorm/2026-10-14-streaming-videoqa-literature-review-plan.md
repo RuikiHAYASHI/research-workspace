@@ -128,3 +128,49 @@ tags: [brainstorm, literature-review, streaming-videoqa, memory, agent, anticipa
 - .research/secretary/notes/brainstorm/2026-10-14-memory-literature-review-tree-strategy.md
 - .research/secretary/notes/brainstorm/2026-10-14-anticipation-and-text-memory-literature.md
 - .research/secretary/notes/brainstorm/2026-10-09-summary-memory-degradation-countermeasures.md
+
+
+## 2026-10-14 追記：10/09議事録復元後の調査優先順位の修正
+
+### 新たに確認したAuthority
+- 2026-10-09 MTG議事録（10/14に遡及作成）を確認。指導では「過去のイベントを他の手法はどう保持しているか」など一つの観点を絞って10〜20本程度を調べ、代表論文（StreamAgent等）のRelated Workを手がかりに探索し、他方式との比較を始めることが勧められている。
+- 来週までの重点は「Prompt改善」「Memory / Event / 予習の文献説明」「Summaryと別にEventを記録する小さな試作」の3つ。関連研究調査はそのうち一部であり、全部を並列の文献サーベイトラックに展開する必要はない。
+- 現行baselineはSituation -> Summary -> Answerであり、Summary全文を各chunkで繰返し更新するため古いイベントの脱落が疑われる。ただし情報落ちの原因、実際のQAへの影響は未証明。
+
+### 調査計画の修正（探索の最有力案）
+従来のQ1～Q6のうち、全方向を同時に独立調査する案は**今のMTGの一次要求としては広すぎるため保留**する。研究テーマをどれかに確定させることは引き続き保留。
+
+まず一つの調査問いに焦点を当てる：
+**「Streaming VideoQAでは、過去の出来事（event）を、どんな媒体・単位で保存し、長尺化・要約・圧縮で失わないためにどう管理し、最終QAでどう利用するのか？」**
+
+この問いから、各論文では必要最小限の共通事項を確認する。
+1. 論文名・URL・解決しようとする問題
+2. 記憶の表現: text / visual feature / raw frame / KV / hybrid。形式と実際の保存の構造（frame / event / chunk / chapter）を区別する。
+3. 過去イベントの扱い: append / recurrent summary rewrite / merge-compress / keep-discard / retrieval。何を消すか、誰が判断するか（規則、類似度、Agent、Query）。
+4. 保存した情報をAnswerで利用するか、raw-video再取得するか。
+5. Setting: 未来frame先読みの有無、Questionを知る時点、過去映像再アクセスの可否。直接比較できるか。
+6. 確認できた機能、著者の明示した限界、未評価、未読の区別。初回は論文の図/Abstract程度で空欄を許す。
+
+特に「eventを別枠に保存する既存例」「単一累積text summaryの限界」「Agentがイベントの保存選択を行う既存例」を比較の起点にする。Anticipationは会議で言及された追加関心だが、一次Memory調査から切り離し、**予習により何を記憶するかが変わる研究があるか**の短い周辺調査とする。
+
+### 開始候補と調査順
+- 主軸: StreamAgent (text m_t + KV recall)、OneStreamer (temporal event text summaries)、StreamForest (visual event forest)。いずれも既存brainstormで検討済みの候補で、厳密なMethodを理解したという意味ではない。
+- 広げる: LangRepo / Lando (text memory) や StreamMem / MovieChat (visual/KV) を、主軸の「記憶の残し方」を比較するために必要なときだけ参照。
+- Agentによるkeep/replace/discardに関係するSVMemAgent、未来の質問分布を扱うSAVEMemは周辺として調べる。質問既知/未知の設定差に注意。
+- Related Workをすべて読むのではなく、イベント保存・要約保持・メモリ更新・検索に関わる引用を優先し、1本5〜10分のスクリーニングから始める。
+- 10〜20本は会議で示された調査範囲の目安であり、**1回の深夜作業で網羅または精読せよというノルマではない**。
+
+### 報告の形（候補）
+- 冒頭: 「過去のイベント保持」に絞った理由。現行Summaryが過去情報を失う懸念とイベント別保存案が背景である。
+- 代表例3〜5本について、同じ問いで1行〜数行比較。最低でもtext/visual/KVまたはhybrid、更新・保持の工夫、明らかな設定差。
+- 各手法が何を解決すると主張し、どの結果が実証で、何が未確認か。
+- 次に調べるべき不足点と、先生に確認したい深掘り方向（イベント保存の選択か、保持・劣化か、予習か）。
+- イベント別保存や予習Agentの新規性が確認されたわけではない。MTG後に深掘り優先を判断する。
+
+### 保留・反例・次に決めること
+- 「イベント保持」だけでは予習Agentの設計そのものの比較が十分でない可能性がある。別途、補助的に1〜2本でも予習に近い先行例を確認しておく案。
+- イベント台帳とvisual event forestは形式と機構が違う。イベントの名称が一致しているだけで同一手法とみなさない。
+- 直接比較候補のstreaming protocolが同じとは限らない。Question timing/future/revisitに注意。
+- MTGでのResearch gap発見と今のbaseline実装の改良順序は未決。現時点で一つの研究手法を正式採用しない。
+
+関連: [2026-10-09 MTG](../../lab/projects/agentic-streaming-videoqa/meetings/2026-10-09-mtg.md)
