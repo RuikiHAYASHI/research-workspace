@@ -78,3 +78,22 @@ tags: [brainstorm, research, literature-review, event-memory, streaming]
 ## 未確認
 
 全21本の実装とevaluation harnessを監査したわけではない。特に周辺・中の分類はAbstractに基づく一次判定を含む。イベントが完全に存在しないと断定しない。
+
+
+## 2026-10-14 追記：Memoryの表現形式についての訂正
+
+前段の21件仕分けは **Event Memoryとの関連度** に基づくものであり、text/KV/featureの表現方式別の完全分類ではない。特にStreamAgentをKV Cache中心と表記したことで重要なテキストMemoryを見落としていた。
+
+**原論文（https://arxiv.org/html/2508.01875、§3.1–3.2）に基づく確認:**
+- StreamAgentは各video clipのvisual tokensをテキストcaption C_tへ変換し、テキスト状態 m_t = U(m_(t-1), C_t) を逐次更新する。原論文は m_t を明示的に text memory と記している。
+- 累積テキスト化によって古いfine-grained detailsが失われることを原論文自体が認め、その補完として視覚KV Cacheを別に保持しselective recallする。従って **text + KVの併用** であり、KVだけの論文と分類してはならない。
+- Event Ledgerを独立した文章/JSONレコードで保存することは、上記のテキストmemory更新とは別の設計である。
+
+**MTGの要請（GitHub会議記録）:**
+- 2026-09-11 MTGの原文に「今のここでの会話でのメモリはmarkdownとかのテキスト」「他のAgentのいうメモリもそんなことやっている？」とある。決定事項には「textual、KV cache、feature/vector等を区別して調査」と「text memory最小プロトタイプ」が明記されている。
+- 2026-09-25 MTGには「気になるイベントをテキストとして残すAgent」と「時刻などを含むJSON設計」がある。これは自研究の設計方向であり、先行研究の調査をテキストに限定する指示ではない。
+- ユーザー提示の直近MTG文字起こしでもSummaryをtextとして累積改稿し、重要イベントを別保存する案が出る。ただし形式やAgentの保存ポリシーの最終仕様はまだ決定していない。
+
+**リスト外の直接的なテキスト記憶例:** ProVideLLM (ICCV 2025, https://arxiv.org/abs/2504.13915) はlong-term観測をverbalized text tokensへ圧縮しshort-term visual tokensと併用する。指定されたYang011013の2026-10月時点のModels 21本には掲載されていない。
+
+今後の調査では **memory表現形式（text / KV / visual）** と **記憶更新・選択動作（append / rewrite / merge / retrieve / discard）** と **Agentの意思決定** を別々の性質として捉える。テキストSummaryが失う情報と視覚feature圧縮が失う情報は同じ問題ではない。
