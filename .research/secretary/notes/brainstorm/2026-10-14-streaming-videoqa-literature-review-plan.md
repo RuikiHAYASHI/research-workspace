@@ -174,3 +174,23 @@ tags: [brainstorm, literature-review, streaming-videoqa, memory, agent, anticipa
 - MTGでのResearch gap発見と今のbaseline実装の改良順序は未決。現時点で一つの研究手法を正式採用しない。
 
 関連: [2026-10-09 MTG](../../lab/projects/agentic-streaming-videoqa/meetings/2026-10-09-mtg.md)
+
+
+## 2026-10-14 追加壁打ち：主題は過去映像情報のMemory維持へ
+
+ユーザーは「イベント」に限定するとStreamAgentのような累積Text Memoryが外れ、比較が歪むと指摘。中心問いを「過去の映像情報をどうMemoryとして維持するか」に置き直す。イベント記憶は、その下位で必要に応じて集中調査する候補。現時点では研究方向をイベント保存のみに絞っていない。
+
+公開論文のAbstract・手法説明を検索し、Streaming動画理解/QAで過去情報をイベント単位の明示的Memoryとして保持する候補を7本確認した（網羅数ではなく今回見つけた下限的候補）。
+- StreamForest: https://arxiv.org/abs/2509.24871 — 視覚特徴のevent tree。
+- VideoScaffold: https://arxiv.org/abs/2512.22226 — event segmentationと階層的統合。
+- Event-VStream: https://arxiv.org/abs/2601.15655 — 状態変化ごとのevent embeddingをpersistent bankへ。
+- EventMemAgent: https://arxiv.org/abs/2602.15329 — eventごとのcaption、視覚手掛かり等を保存。
+- OASIS: https://arxiv.org/abs/2604.17052 — 階層的event記憶の要求時検索。
+- KeyRec: https://arxiv.org/abs/2609.32182 — 視覚event bankへのadd/merge/evict。
+- OneStreamer: https://arxiv.org/abs/2610.01762 — 完了したeventのtext summaryと局所caption。
+
+隣接するOnline Video Temporal Grounding（QAではなくイベント時刻特定）で1本: https://arxiv.org/abs/2508.04546 。したがって今回の確認候補は計8本。OfflineのMemoryCard https://arxiv.org/abs/2606.05917 は数えない。実時間処理や質問到着条件が全論文で一致するわけではなく、これらの件数は網羅的な調査結果ではない。
+
+整理の核心：Text/Visual/KVは保存媒体、event/frame/chunkは保存単位、append/rewrite/merge/searchはMemory操作。これらを別々に記録する。StreamAgentは明示的イベント記憶の7本には含めず、text+KVの比較基準として残す。
+
+次は各論文について、Memoryの形式・単位・書込更新・重要情報選択・QA時の読出し・future/Query条件を浅く調査する。Text一体要約方式とEvent方式の違いを確認してから、イベント保持へ範囲を絞るべきか判断する。新TODO、spec、研究コードの変更は行わない。
