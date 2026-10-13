@@ -75,3 +75,11 @@ tags: [brainstorm, literature-review, streaming-videoqa, memory, research-method
 - .research/secretary/notes/brainstorm/2026-09-16-literature-review-depth-guidance.md
 - .research/secretary/notes/brainstorm/2026-10-13-streamagent-centered-literature-review-strategy.md
 - .research/secretary/notes/brainstorm/2026-10-14-anticipation-and-text-memory-literature.md
+
+
+## 2026-10-14 追記：次回MTG前の探索スタイルについてのユーザー意向
+
+- ユーザーは明日のMTGまでは、論文の分類・仕分け・技術的な完全理解を先行させず、自分が選んだ観点（まずText Memory論文、Visual Memory論文）について**広く浅く論文を探す**ことを優先したい。
+- この段階では体系的な分類表や論文間比較を作ることを目標にしない。Abstract・中心図・必要ならConclusion程度を見て、論文名、URL、どんなMemoryを扱うかの短い一言だけ記録する方針を推奨。
+- Text+KV等のハイブリッドなMemoryは厳密な二分をせずそのままメモする。個別論文の深掘り、分類軸の確定、どの方向を研究の主軸にするかはMTG後に決める。
+- 本追記は探索の作業方法の整理であり、研究方向やspecの採択ではない。新規TODO作成や既存README更新も行わない。
