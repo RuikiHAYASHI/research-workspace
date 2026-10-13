@@ -265,3 +265,34 @@ tags: [brainstorm, literature-review, streaming-videoqa, memory, agent, anticipa
 - 決定的な統合判定の数式まで初回から記録すべきかは、比較論点が固まるまで保留。
 - 具体例で論文上の実際の内部状態を再現できると断定しない。
 - 以上は探索段階の説明粒度案。研究実装の承認、spec化、TODO更新、正式な研究方向決定ではない。
+
+
+## 2026-10-14 03時台 JST 追記：Event境界の明示性とTextイベント記憶
+
+### 新しい相談の問い
+- 「StreamForestは類似したframeをeventにするが、もっと意味的にイベントを明示・区切る研究があるか？」
+- 「区切ったeventをTextの説明文として保存し、後のStreaming VideoQAで使う研究があるか？」
+- Memory表現だけでなく、**event boundaryの決定根拠**、**event semanticsを文字化する手法**、**textの長期保存・読出し**の3点を分離。
+
+### 一次ソースで確認できた代表研究
+1. **OpenHOUSE / Open-ended Hierarchical Streaming Video Understanding with Vision Language Models (ICCV 2025)**：公式 https://openaccess.thecvf.com/content/ICCV2025/html/Kang_Open-ended_Hierarchical_Streaming_Video_Understanding_with_Vision_Language_Models_ICCV_2025_paper.html 、arXiv PDF https://arxiv.org/pdf/2509.12145 。VideoQA自体ではなくStreaming action localization＋open-ended caption。Step/Substepの行動境界はonline streaming moduleがactionnessで開始、progress（進行度）の急低下で終了を検知。区切られた区間をVLMが文章に説明し、以前のcaptionはcontext memoryに保存・次のcaption生成にも入力（本文Section 3.3、Figure 4、Table 6）。LLMによる細かな行動→上位Stepのグループ化は、主に学習用階層アノテーション生成段階である。意味のあるEvent境界＋Text生成の最優先事例。
+2. **Event-VStream (arXiv 2026)**： https://arxiv.org/abs/2601.15655 。eventは意味のある視覚・意味変化を含む時間的に一貫した区間。動き、semantic drift、prediction errorからevent transitionを検知し、境界でText generationを起動。長期Memoryの主媒体はevent embeddingであり、「長期Text event台帳」と混同しない。
+3. **VideoScaffold (arXiv 2025)**： https://arxiv.org/abs/2512.22226 。EESの予測embeddingと実際のembeddingのcosine差（予測誤差）が閾値を超えた時に階層別event boundary。HECでVisual latentの階層統合。明示boundaryだがText event memory主体ではない（Method Section 3.2, Figure 2, 3）。
+4. **EventMemAgent (ECCV 2026)**： https://arxiv.org/pdf/2602.15329 。STMのevent境界は新フレームと現行イベントのグレースケール画像ヒストグラムPearson相関による外観変化判定。semantic action境界を必ず保証するものではない。過去eventをLTMへ移す際に「Event Caption」「Visual Anchor」「Vector」「Change Log」を保存。Appendix C.2のcaption promptはsubject/action/object/tool/location/manner/outcomeを1段落で説明するよう明示。境界判定と内容の意味言語化を別モジュールで実行。
+5. **OneStreamer (arXiv 2026)**： https://arxiv.org/abs/2610.01762 、著者 https://github.com/MCG-NJU/OneStreamer 。映像を観測しObserve（局所詳細Caption）とSummary（完了Event要約）を時刻対応のPHCM Text Historyとして追加しrecent visual window外にも残す。eventの厳密なstart/end検知器の存在までは今回確認できていない。Text Memoryの優先的事例。
+6. **OASIS (CVPR 2026)**： https://openaccess.thecvf.com/content/CVPR2026/html/Liang_OASIS_On-Demand_Hierarchical_Event_Memory_for_Streaming_Video_Reasoning_CVPR_2026_paper.html 。イベントノードの初期単位は固定時間区間（medium bufferごと）でMLLMによるText Summary＋Keyframesを作成。意味的に近い隣接ノードをまとめるが、意味的なstart/endを初期に検知して切るものではない。Text+Visual構造化記録・検索の事例。
+7. **Streaming Dense Video Captioning (CVPR 2024)**： https://openaccess.thecvf.com/content/CVPR2024/html/Zhou_Streaming_Dense_Video_Captioning_CVPR_2024_paper.html 。Online videoからtimestamp付きイベントCaptionを順次生成。主たる内部Memoryは到着Tokenのクラスタを固定容量に保つmodule。出力Text CaptionとText長期Memoryは別である。
+8. **Takusen / Asynchronous Temporal Modeling with Two-Agent Framework for Streaming Dense Video Captioning (CVPR 2026)**： https://openaccess.thecvf.com/content/CVPR2026/html/Tang_Asynchronous_Temporal_Modeling_with_Two-Agent_Framework_for_Streaming_Dense_Video_CVPR_2026_paper.html 。低コストOracleがEvent境界を検知してListener LMMへCaption生成を指示。主題はwhen/what to captionで、独立した長期Text event台帳の検証とは区別。
+
+### 比較の判定軸（探索案）
+- Boundary: 固定区間、外観変化、視覚表現変化、次frame予測誤差、学習済みaction start/end、LLM出力のcompleted event。
+- Semantics: eventに行動・目的・状態変化・時間的Step/Substepが付与されるか／外観クラスタにイベントという名前を付けるだけか。
+- Text: event内容を文章生成するのか、**さらに**時刻付Text recordをMemoryへ永続追記し後のQAでretrievalするのか。
+- Evidence: 何を実験で直接評価したか。VideoQA accuracy、event boundary F1、Caption quality、Memory保持率は別指標。
+- 研究設定: Query=t0既知、no future、raw再読込なしのbaselineとの一致を要確認。
+
+### 重要な反例と次の論点
+- 一つの行動中に外観が急変する場合と、似た映像のまま行動の目的が変わる場合は、類似度ベース境界と意味ベース境界がずれる。
+- OpenHOUSEのTextは過去captionとして再利用されるが、無限長VideoQAで古いTextを完全保持できると確認されたわけではない。
+- EventをText化していてもSummary全文を毎回再書換えしているとは限らない。
+- 次の意思決定候補: 境界検出を研究したいのか、各chunkから行動を文章化する方針を優先したいのか、記録後の忘却防止を主題にするのか。いずれも未承認研究案。
