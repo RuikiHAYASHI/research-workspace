@@ -92,3 +92,28 @@ tags: [brainstorm, literature-review, level2, memory, streaming-videoqa]
 **反例/未解決**: どの方式も「古いすべての重要factが必ず残る」ことは未証明。自研究の累積Summaryの劣化原因を、単にevent化すれば解決すると結論しない。OneStreamerのQuery未知と、他論文の途中Queryと、現研究のQuery=t0は別の実験設定。
 
 **次の深掘り候補**: text historyの容量と削除政策、event境界の品質、event LTMの詳細の損失、plan-based retrievalの失敗率、各手法のEnd-to-End streaming計算時間。これらはspecや実装許可ではない。
+
+
+## 2026-10-14 追記：論文間の比較を主にした表示形式
+
+### ユーザーからのフィードバック
+- 長い「手法」の説明よりも、同じ比較項目を揃えて論文間の違いが一目で分かる方が調査目的を見失わない。
+- 論文ごとはモデル図（原図へのリンク）と短い手法説明を残す程度にする。現状のStreamAgent/StreamForest理解は既知のため比較対象の3本はOneStreamer・EventMemAgent・OASIS。
+- 元のLevel2抽出記録は削除せず、**比較表を表示上の正本、各論文の詳細抽出を根拠となる裏付け**とする。これはフォーマット変更であり研究方向の採択ではない。
+
+### 今回採用候補の出力構造
+1. 論文名、正式発表先、公式論文へのURL（学会採択済みはECCV/Springer・CVPR/CVFを優先）。
+2. 論文横断比較表を**最初**に置く。必須列は保存媒体、保存単位、短期Memory、長期Memory、記録契機、更新・圧縮・削除、予算制約、回答時の読出し、Question時点、学習の有無。
+3. 各論文は原著のモデル図（Figure、ページ位置を含むリンク）＋比較に必要な経路を強調した簡略図＋1段落程度の説明を載せる。原著図と自作概念図を区別。
+4. 3本の実験実証と未確認事項を比較表で整理。論文間の数値はモデルや条件が異なるため性能順位に直結させない。
+5. 最後に相違点を一言でまとめる：OneStreamer=観測時に何を記録するか、EventMemAgent=短期映像をどうイベント記録に移管するか、OASIS=蓄積した履歴をどう必要時に探すか。
+
+### 代表論文の正式リンク
+- OneStreamer（現時点arXiv）: https://arxiv.org/abs/2610.01762 ／ 著者公式モデル概要: https://mcg-nju.github.io/OneStreamer/
+- EventMemAgent（ECCV2026正式論文）: https://link.springer.com/chapter/10.1007/978-3-032-37624-4_20 ／ Fig.1: https://arxiv.org/pdf/2602.15329#page=4
+- OASIS（CVPR2026正式論文）: https://openaccess.thecvf.com/content/CVPR2026/html/Liang_OASIS_On-Demand_Hierarchical_Event_Memory_for_Streaming_Video_Reasoning_CVPR_2026_paper.html ／ Fig.3: https://openaccess.thecvf.com/content/CVPR2026/papers/Liang_OASIS_On-Demand_Hierarchical_Event_Memory_for_Streaming_Video_Reasoning_CVPR_2026_paper.pdf#page=4
+
+### 次の判断
+- 比較軸はこれらの10項目で長すぎないか。重要な差分が出ない列は削除し、研究判断に必要となる列だけ後から追加。
+- 発表資料には正規モデル図を載せ、本文説明は1段落、表に比較の本体を置く。論文のFig引用と改変図の区別を維持する。
+- 未決：質問到着時点の違いと過去raw再アクセスを比較表の独立列として必須にするか。研究との直接比較可能性を左右するので候補として残す。
