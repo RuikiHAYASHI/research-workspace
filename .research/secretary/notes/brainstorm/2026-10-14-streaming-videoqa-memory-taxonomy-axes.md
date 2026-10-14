@@ -135,6 +135,6 @@ I4/I5/I6、R2、G3、S2、W3、U1、Q2。
 - 本書はexploratory。論文への正式なラベル付け、TODO登録、研究spec化、コード変更は行っていない。
 
 ## Companyの関連文書
-- [9/11 MTG](../../lab/projects/agentic-streaming-videoqa/meetings/2026-09-11-mtg.md)
-- [10/9 MTG](../../lab/projects/agentic-streaming-videoqa/meetings/2026-10-09-mtg.md)
+- [9/11 MTG](../../../lab/projects/agentic-streaming-videoqa/meetings/2026-09-11-mtg.md)
+- [10/9 MTG](../../../lab/projects/agentic-streaming-videoqa/meetings/2026-10-09-mtg.md)
 - [Memory tree strategy](2026-10-14-memory-literature-review-tree-strategy.md)
