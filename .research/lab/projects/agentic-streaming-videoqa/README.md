@@ -1,7 +1,7 @@
 ---
 project: agentic-streaming-videoqa
 status: active
-summary: Answer-only replay診断を実装しFake smokeで確認。pytest未実行、実Qwen 3-Agent E2Eは未確認。
+summary: 実Qwen 3-Agent E2Eは未確認。Memory保持の問いを軸に関連研究を整理し、調査過程を記録する方針。
 created: 2026-09-10
 last_updated: 2026-10-14
 ---
@@ -42,9 +42,12 @@ YouTubeなどのライブ配信を想定し、動画を先頭から逐次的に�
 
 2026-10-09のMTG（2026-10-14に遡及記録）では、Situation → Summary → Answerを一度単純なbaselineとして整理し、20秒程度と約3分のLongVideoBench動画による初期実行結果を報告した。3分動画の複数条件ではAnswer出力形式のvalidationが失敗しており、QA精度の不良とは区別する。実行時間はモデル呼出し回数のみでは説明できないため、Agent別・chunk別の時間、token数、出力内容を確認する。累積Summaryの肥大化と古いイベントの脱落を課題候補とし、重要イベントをSummaryと別に記録する小さな試作を検討する。関連研究では「既存手法がイベントをどう保持するか」など一つの問いに絞り、代表論文のRelated Workから比較する。予習Agentは未採択の研究案であり、他研究との差分も未確認。詳細は[2026-10-09 MTG議事録](meetings/2026-10-09-mtg.md)を参照する。
 
+2026-10-14のMTGで、StreamAgentやサーベイを順に読む進め方を見直し、研究上の問いを起点に候補論文を分類・比較する方針を確認した。AIとの壁打ちで調査軸を反復して明確化し、読んだ範囲、理解、疑問、判断も記録する。Memory保持に関する候補一覧は作成中だが、横断比較や研究ギャップの確認は未完了。重要イベントの別記録や予習Agentの実装方式は未決定。詳細は[2026-10-14 MTG議事録](meetings/2026-10-14-mtg.md)を参照する。
+
 ## マイルストーン
 
 - [ ] 研究方針を整理する
+- [ ] 研究上の問いを起点に先行研究を比較し、自研究との差分を整理する
 - [x] 動画ストリームを逐次読み込む最小実装を作成する
 - [ ] VideoQAデータセット候補を調査する
 - [x] 逐次動画ローダーの取得順出力・バッファ付きタイムスタンプ順出力を実装する
@@ -94,3 +97,4 @@ Workbenchは本人だけが必要時に利用するローカル開発用UIであ
 | 2026-10-08 | Situation / Summary / AnswerのFake回帰とRecord v2を確認。実QwenはSituation / Summary後にAnswer形式validationで失敗し、3-Agent E2Eは未確認。 |
 | 2026-10-09 | Answer-only replay診断をWorkbenchへ実装し、Fake smokeを確認。pytest未実行、実Qwen replay未実施。 |
 | 2026-10-14 | 10/09 MTGを遡及記録。簡略化した3-Agent baseline、長時間推論/Answer形式失敗、Summary情報脱落懸念、イベント別保存、観点を絞った文献調査を整理。 |
+| 2026-10-14 | MTGで論文を読む前に研究上の問いを明確化し、AIとの壁打ちで候補・比較軸を整理する方針を確認。調査過程も記録する。 |
