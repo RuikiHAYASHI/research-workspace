@@ -78,7 +78,7 @@ tags: [brainstorm, literature-review, memory, taxonomy, classification, streamin
 
 | コード | 小分類 | 定義 | 該当論文 | 本数 |
 | --- | --- | --- | --- | --- |
-| — | 選ばない（既定） | 届いたものをそのまま残す | 下の6本以外のすべて | — |
+| — | 選ばない（既定） | 届いたものをそのまま残す | 下の16本以外のすべて | — |
 | D1 | 質問に関係するもの | 実際の質問に関係する内容を選んで残す | [VideoMultiAgents]★, [Response-G1]?, [QueryStream][新], [ReWind]★[新], [Em-Garde][新], [TraveLER]★[新] | 6 |
 | D2 | 質問に依存しない重要度 | 質問が分からないまま、汎用の物差しで「役立ちそうなもの」を残す | [MuKV], [StreamMem], [Flash-VStream], [SVMemAgent], [Lando et al.]?, [LiveVLM][新], [StreamChat][新]（動きの大きさ）, [SAVEMem][新]（固定の仮の質問5つ）, [R3-Streaming][新], [StreamArena][新] | 10 |
 
