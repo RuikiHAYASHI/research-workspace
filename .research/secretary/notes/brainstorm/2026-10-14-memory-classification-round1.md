@@ -127,10 +127,9 @@ tags: [brainstorm, literature-review, memory, taxonomy, classification, streamin
 | --- | --- | --- |
 | 処理設定 | streaming | [StreamAgent], [OneStreamer], [Lando et al.], [Think While Watching], [StreamForest], [EventMemAgent], [OASIS], [MuKV], [StreamMem], [Flash-VStream]（著者の主張）, [SVMemAgent], [Response-G1] |
 | 処理設定 | offline | [VideoAgent]★, [VideoMultiAgents]★, [VideoLLaMB]★（streaming変種あり） |
-| Query時点 | 開始時から既知 | [VideoMultiAgents]★ |
-| Query時点 | 途中で届く | [StreamAgent], [OneStreamer], [Think While Watching], [StreamForest], [EventMemAgent], [OASIS], [MuKV], [Flash-VStream], [Response-G1] |
-| Query時点 | 事前に不明 | [Lando et al.], [StreamMem], [SVMemAgent], [MuKV] |
-| Query時点 | 動画の終了後 / 未確認 | [VideoAgent]★（動画全体をMemoryにした後）, [VideoLLaMB]★（未確認） |
+| 質問を知る時点 | 知っている（書き込みの最初から） | [VideoMultiAgents]★ |
+| 質問を知る時点 | 途中から知る（質問が届いた後の書き込みだけ使える） | [Response-G1], [Think While Watching], [OneStreamer]?, [StreamAgent]? |
+| 質問を知る時点 | 知らない（質問は読み出しのときだけ使う） | [Lando et al.], [StreamForest], [EventMemAgent], [OASIS], [MuKV], [StreamMem], [Flash-VStream], [SVMemAgent], [VideoAgent]★, [VideoLLaMB]★? |
 | 区切り方 | 固定時間 | [StreamAgent], [Lando et al.], [MuKV], [StreamMem], [VideoAgent]★, [Response-G1] |
 | 区切り方 | 見た目の変化 | [StreamForest], [EventMemAgent], [VideoLLaMB]★ |
 | 区切り方 | 意味の変化 | [VideoMultiAgents]★（方法は未記載） |
@@ -141,7 +140,11 @@ tags: [brainstorm, literature-review, memory, taxonomy, classification, streamin
 | 容量上限 | 一部あり | [EventMemAgent]（短期のみ）, [OASIS]（親の数のみ。子は残る）, [Flash-VStream]（Feature Bankは増える）, [VideoLLaMB]★（過去状態の列は増える） |
 | 容量上限 | なし（際限なく増える、または記述なし） | [StreamAgent]（KV）, [OneStreamer], [Lando et al.], [Think While Watching], [MuKV], [VideoAgent]★, [VideoMultiAgents]★, [Response-G1] |
 
-- Query時点の値は重なりがある（[MuKV]が2か所に入っている）。「書き込み時に質問を知っているか」の3値へ置き換える案を検討中。
+- 「質問を知る時点」は、旧「Query時点」（開始時から既知／途中で届く／事前に不明／動画の終了後）を置き換えた列。旧列は「いつ届くか」と「書いている間に知っているか」を混ぜていて重なりがあったため、後者に絞った。すべて `AI推定`。
+  - [Think While Watching]：質問の後に書くnoteは、質問を含む文脈で生成される。
+  - [OneStreamer]：質問を受け取った後も同じモデルがcaptionを書くので、質問を使える可能性がある（`?`）。
+  - [StreamAgent]：質問を使って次に何を見るかを計画するが、Memoryへの書き込みに質問を使うかは未確認（`?`）。
+  - [OASIS]：映像のMemoryは質問を使わずに作る。過去のQAの要約は質問から作るが、中心ではないため「知らない」とした。
 
 ### 判断主体（書き込み／読み出し）
 
@@ -280,6 +283,7 @@ tags: [brainstorm, literature-review, memory, taxonomy, classification, streamin
 | 2026-10-14 | 提案1〜7をすべて採用し、1〜3の表を新しい分類で並べ直した（A3・C6・C7は欠番、C17・C18を新設）。A4の名前に「イベント」を明記。Query時点「Memory構築後」を「動画の終了後」に改称。容量上限の列を追加。Response-G1の原文を再確認し未確認事項を更新 | ユーザーが提案をすべて採用。A4が分かりにくいとの指摘 |
 | 2026-10-14 | 分類をA〜Gに分けて番号を振り直し、1〜3の表を「1つの分類に1つのコード」で並べ直した（既定はコードなし、複合コードB8・B9・C4・E4・G3、落とした要素は備考へ） | 同じ分類のコードが多く付くのを避けるため、C18まで番号が伸びて分かりにくかったため（ユーザー指示） |
 | 2026-10-14 | 分類の表でofflineの論文に★を付けた。B2・B8・B9の名前を「項目付きテキスト」「テキスト＋KV」に変えた | offlineを一目で区別するため。「記録」がテキスト以外も含むように読めたため（ユーザー指示・質問） |
+| 2026-10-14 | 「Query時点」を「質問を知る時点」（知っている／途中から知る／知らない）に置き換えた | 旧列は「いつ届くか」と「書いている間に知っているか」が混ざり、重なりがあったため（ユーザー採用） |
 
 ## 関連文書
 
