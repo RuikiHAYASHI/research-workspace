@@ -18,7 +18,7 @@ tags: [brainstorm, literature-review, memory, taxonomy, classification, streamin
   - 1つに絞るために落とした要素は、各表の下の「備考」に書いた。
 - 「4. 追加・統合・修正の提案」以降は、提案時点の旧コード（C1〜C16など）で書かれている。新旧の対応は判定基準メモの対応表を参照する。
 - 論文名のリンクは学会公式ページを優先し、無い場合はarXivとした（基準4）。発表先の詳細は付録Aを参照する。
-- 表記：`?` は判定に迷いがあるもの。
+- 表記：`?` は判定に迷いがあるもの。論文名の後ろの `★` はofflineの論文（動画全体を見られる設定）。
 - 記述の区別：「著者の主張」「実験で示されたこと」「私たちの推論（推論と明記）」「未確認」。
 
 ## 1. 分類A：記憶する情報
@@ -26,9 +26,9 @@ tags: [brainstorm, literature-review, memory, taxonomy, classification, streamin
 | コード | 小分類 | 定義 | 該当論文 | 本数 |
 | --- | --- | --- | --- | --- |
 | A0 | 映像そのもの | 映像を保存するだけで、何が映っているかは書かない | [MuKV], [StreamMem], [Flash-VStream], [SVMemAgent] | 4 |
-| A1 | 場面の説明 | 場所・人や物・動作を、文章などでまとめて書く | [StreamAgent], [Lando et al.], [VideoMultiAgents], [Response-G1] | 4 |
-| A2 | 人・物ごとの記録 | 人や物1つにつき1件の記録を持ち、時間を通して追う | [VideoAgent] | 1 |
-| A3a | イベント：区切りに使うだけ | イベントの切れ目で保存単位を分けるが、中身は映像そのもの | [StreamForest], [VideoLLaMB] | 2 |
+| A1 | 場面の説明 | 場所・人や物・動作を、文章などでまとめて書く | [StreamAgent], [Lando et al.], [VideoMultiAgents]★, [Response-G1] | 4 |
+| A2 | 人・物ごとの記録 | 人や物1つにつき1件の記録を持ち、時間を通して追う | [VideoAgent]★ | 1 |
+| A3a | イベント：区切りに使うだけ | イベントの切れ目で保存単位を分けるが、中身は映像そのもの | [StreamForest], [VideoLLaMB]★ | 2 |
 | A3b | イベント：出来事を記録 | イベントごとに「何が起きたか」を書く | [OneStreamer], [Think While Watching], [EventMemAgent], [OASIS] | 4 |
 | A4 | タスクの状態 | 質問への取り組みの途中経過を書く | （中心のコードとしては該当なし。[OASIS]が備考に該当） | 0 |
 
@@ -36,27 +36,27 @@ tags: [brainstorm, literature-review, memory, taxonomy, classification, streamin
 - [StreamAgent]：KV（映像そのもの）も持つ。判定ルール「映像と記述の両方なら記述の側」によりA1。
 - [EventMemAgent]・[OASIS]・[Think While Watching]：代表フレームやKVなど映像も持つ。同じルールでA3b。
 - [OASIS]：過去のQAをまとめた要約（A4）も持つ。中心はイベントの木なのでA3b。
-- [VideoAgent]：2秒ごとのcaption（A1）も持つ。特徴的なのは人・物の表なのでA2。
-- [VideoMultiAgents]：直前のgraphを参照するので、個体を追っている（A2）可能性がある。
+- [VideoAgent]★：2秒ごとのcaption（A1）も持つ。特徴的なのは人・物の表なのでA2。
+- [VideoMultiAgents]★：直前のgraphを参照するので、個体を追っている（A2）可能性がある。
 
 ## 2. 分類B：表現形式
 
 | コード | 小分類 | 定義 | 該当論文 | 本数 |
 | --- | --- | --- | --- | --- |
 | B1 | 文章 | 自由に書いた文 | [OneStreamer], [Lando et al.] | 2 |
-| B2 | 項目付きの記録 | 時刻や内容が欄に分かれている | [VideoAgent] | 1 |
-| B3 | グラフ | 物と関係を点と線で表す | [VideoMultiAgents], [Response-G1] | 2 |
+| B2 | 項目付きテキスト | 時刻や内容が欄に分かれたテキスト（JSON、表） | [VideoAgent]★ | 1 |
+| B3 | グラフ | 物と関係を点と線で表す | [VideoMultiAgents]★, [Response-G1] | 2 |
 | B4 | 画像 | フレームを画像のまま残す | [SVMemAgent] | 1 |
 | B5 | 視覚特徴 | 画像をエンコーダで数値に変換して残す | [StreamForest], [Flash-VStream] | 2 |
 | B6 | KV cache | LLMが過去の入力を読んだときの内部データを残す | [MuKV], [StreamMem] | 2 |
-| B7 | 内部状態 | 決まった大きさの数値を毎回更新して持ち越す | [VideoLLaMB] | 1 |
-| B8 | 記録＋画像（複合） | 項目付きの記録と、その根拠になる画像を組で持つ | [EventMemAgent], [OASIS] | 2 |
-| B9 | 文章・記録＋KV（複合） | 文章や記録と、過去入力のKVを並行して持つ | [StreamAgent], [Think While Watching]? | 2 |
+| B7 | 内部状態 | 決まった大きさの数値を毎回更新して持ち越す | [VideoLLaMB]★ | 1 |
+| B8 | 項目付きテキスト＋画像（複合） | 項目付きテキストと、その根拠になる画像を組で持つ | [EventMemAgent], [OASIS] | 2 |
+| B9 | テキスト＋KV（複合） | 文章または項目付きテキストと、過去入力のKVを並行して持つ | [StreamAgent], [Think While Watching]? | 2 |
 
 備考：
-- 検索の目印にだけ使うembeddingはコードにしない。持っている論文：[StreamAgent], [EventMemAgent], [OASIS], [SVMemAgent], [VideoAgent], [Response-G1]。
-- [VideoAgent]：captionも区間番号付きで表に入るのでB2にまとめた。
-- [VideoMultiAgents]：テキスト担当のAgentが持つcaption（B1）もある。中心はgraphなのでB3。
+- 検索の目印にだけ使うembeddingはコードにしない。持っている論文：[StreamAgent], [EventMemAgent], [OASIS], [SVMemAgent], [VideoAgent]★, [Response-G1]。
+- [VideoAgent]★：captionも区間番号付きで表に入るのでB2にまとめた。
+- [VideoMultiAgents]★：テキスト担当のAgentが持つcaption（B1）もある。中心はgraphなのでB3。
 - [Response-G1]：保存はグラフ、LLMへは文章にして渡す。
 - [Think While Watching]：過去の視覚KVを保持しているかは推定（`?`）。保持していなければB2になる。
 
@@ -67,40 +67,40 @@ tags: [brainstorm, literature-review, memory, taxonomy, classification, streamin
 | コード | 小分類 | 定義 | 該当論文 | 本数 |
 | --- | --- | --- | --- | --- |
 | C1 | 届くたび | フレームが届くたびに書く | [Flash-VStream], [SVMemAgent] | 2 |
-| C2 | 一定間隔 | 数秒ごとなど、決まった間隔で書く | [StreamAgent], [Lando et al.], [Think While Watching], [OASIS], [MuKV], [StreamMem], [VideoAgent], [Response-G1] | 8 |
-| C3 | 切れ目で | 映像が変わった所で区切って書く | [VideoLLaMB], [VideoMultiAgents], [OneStreamer]?（学習したモデルが切れ目で書く） | 3 |
+| C2 | 一定間隔 | 数秒ごとなど、決まった間隔で書く | [StreamAgent], [Lando et al.], [Think While Watching], [OASIS], [MuKV], [StreamMem], [VideoAgent]★, [Response-G1] | 8 |
+| C3 | 切れ目で | 映像が変わった所で区切って書く | [VideoLLaMB]★, [VideoMultiAgents]★, [OneStreamer]?（学習したモデルが切れ目で書く） | 3 |
 | C4 | 短期は届くたび・長期は切れ目で（複合） | 届いたものをまず短期に入れ、切れ目ごとに長期へ移す | [StreamForest], [EventMemAgent] | 2 |
 
 ### 分類D：書き込みの選別
 
 | コード | 小分類 | 定義 | 該当論文 | 本数 |
 | --- | --- | --- | --- | --- |
-| — | 選ばない（既定） | 届いたものをそのまま残す | [StreamAgent], [OneStreamer], [Think While Watching], [StreamForest], [EventMemAgent], [OASIS], [VideoLLaMB], [VideoAgent] | 8 |
-| D1 | 質問に関係するもの | 実際の質問に関係する内容を選んで残す | [VideoMultiAgents], [Response-G1]? | 2 |
+| — | 選ばない（既定） | 届いたものをそのまま残す | [StreamAgent], [OneStreamer], [Think While Watching], [StreamForest], [EventMemAgent], [OASIS], [VideoLLaMB]★, [VideoAgent]★ | 8 |
+| D1 | 質問に関係するもの | 実際の質問に関係する内容を選んで残す | [VideoMultiAgents]★, [Response-G1]? | 2 |
 | D2 | 質問に依存しない重要度 | 質問が分からないまま、汎用の物差しで「役立ちそうなもの」を残す | [MuKV]（注目度）, [StreamMem]（仮の質問）, [Flash-VStream]（頻度）, [SVMemAgent]（学習した方針）, [Lando et al.]?（汎用の質問テンプレート） | 5 |
 
 ### 分類E：更新
 
 | コード | 小分類 | 定義 | 該当論文 | 本数 |
 | --- | --- | --- | --- | --- |
-| — | 追記のみ（既定） | 既存は変えず、新しい記録を足すだけ | [OneStreamer], [Lando et al.], [Think While Watching], [MuKV], [VideoMultiAgents], [Response-G1] | 6 |
+| — | 追記のみ（既定） | 既存は変えず、新しい記録を足すだけ | [OneStreamer], [Lando et al.], [Think While Watching], [MuKV], [VideoMultiAgents]★, [Response-G1] | 6 |
 | E1 | 全体を書き直す | 毎回Memory全体を作り直す（私たちのbaseline） | [StreamAgent]（テキスト側） | 1 |
-| E2 | まとめる・縮める | 似た記録を1つにする、データ量を減らす | [StreamForest], [OASIS], [VideoLLaMB], [VideoAgent] | 4 |
+| E2 | まとめる・縮める | 似た記録を1つにする、データ量を減らす | [StreamForest], [OASIS], [VideoLLaMB]★, [VideoAgent]★ | 4 |
 | E3 | 捨てる・入れ替える | 古い・不要な記録を消す、別の記録と入れ替える | [SVMemAgent] | 1 |
 | E4 | まとめて、溢れたら捨てる（複合） | 縮めたうえで、容量を超えたら捨てる | [EventMemAgent], [StreamMem], [Flash-VStream] | 3 |
 
 備考：
 - [OASIS]：過去のQAの要約は毎回全体を書き直す（E1）。中心はイベントの木なのでE2。
-- [VideoAgent]：同じ物体の記録を統合する（re-ID）ためE2。
+- [VideoAgent]★：同じ物体の記録を統合する（re-ID）ためE2。
 
 ### 分類F：構造
 
 | コード | 小分類 | 定義 | 該当論文 | 本数 |
 | --- | --- | --- | --- | --- |
-| — | 時刻順に並べるだけ（既定） | 記録を時間順に並べるだけ | [Lando et al.], [Think While Watching], [VideoLLaMB], [StreamMem], [SVMemAgent], [VideoMultiAgents], [Response-G1] | 7 |
+| — | 時刻順に並べるだけ（既定） | 記録を時間順に並べるだけ | [Lando et al.], [Think While Watching], [VideoLLaMB]★, [StreamMem], [SVMemAgent], [VideoMultiAgents]★, [Response-G1] | 7 |
 | F1 | 短期と長期に分ける | 直近の詳しい記録と、古い記録の置き場を分ける | [StreamAgent], [StreamForest], [EventMemAgent] | 3 |
 | F2 | 親子の階層 | 粗いまとめ（親）と細かい記録（子）をつなぎ、子も実際に読み出せる | [OASIS] | 1 |
-| F3 | 並列ストア | 同じ時間を、細かさや見方の違う複数のMemoryに同時に保存する | [MuKV], [Flash-VStream], [VideoAgent], [OneStreamer]? | 4 |
+| F3 | 並列ストア | 同じ時間を、細かさや見方の違う複数のMemoryに同時に保存する | [MuKV], [Flash-VStream], [VideoAgent]★, [OneStreamer]? | 4 |
 
 備考：
 - [StreamForest]：「tree」と名乗るが、子を読み出さないためF2ではなくF1。
@@ -111,35 +111,35 @@ tags: [brainstorm, literature-review, memory, taxonomy, classification, streamin
 
 | コード | 小分類 | 定義 | 該当論文 | 本数 |
 | --- | --- | --- | --- | --- |
-| — | 全部渡す（既定） | Memory全体をLLMに入力する | [OneStreamer], [Lando et al.], [Think While Watching], [StreamForest], [VideoLLaMB], [StreamMem], [SVMemAgent], [VideoMultiAgents] | 8 |
+| — | 全部渡す（既定） | Memory全体をLLMに入力する | [OneStreamer], [Lando et al.], [Think While Watching], [StreamForest], [VideoLLaMB]★, [StreamMem], [SVMemAgent], [VideoMultiAgents]★ | 8 |
 | G1 | 検索して一部渡す | 時刻・意味・質問で選んだ記録だけを渡す | [StreamAgent], [MuKV], [Response-G1] | 3 |
 | G2 | 詳細を見直す | 保存済みの画像・特徴をもう一度見る | [Flash-VStream] | 1 |
-| G3 | 検索してから詳細を見直す（複合） | 記録を検索で選び、その保存済み画像・特徴を見直す | [OASIS], [VideoAgent], [EventMemAgent]? | 3 |
+| G3 | 検索してから詳細を見直す（複合） | 記録を検索で選び、その保存済み画像・特徴を見直す | [OASIS], [VideoAgent]★, [EventMemAgent]? | 3 |
 
 備考：
 - [StreamAgent]：テキストの要約は全部渡し、KVは検索して渡す。違いを生むKV側の方式を採ってG1。
 - [OASIS]：最初は粗い情報を全部渡し、答えられないときだけ検索して見直す。
-- [VideoLLaMB]：過去の状態の列からcross-attentionで取り出すが、これは内部の状態更新に使うものでLLMへの入力の選び方ではないため、既定とした。
+- [VideoLLaMB]★：過去の状態の列からcross-attentionで取り出すが、これは内部の状態更新に使うものでLLMへの入力の選び方ではないため、既定とした。
 
 ## 補足：設定・判断主体・容量上限の列（Memoryの小分類ではない）
 
 | 項目 | 値 | 該当論文 |
 | --- | --- | --- |
 | 処理設定 | streaming | [StreamAgent], [OneStreamer], [Lando et al.], [Think While Watching], [StreamForest], [EventMemAgent], [OASIS], [MuKV], [StreamMem], [Flash-VStream]（著者の主張）, [SVMemAgent], [Response-G1] |
-| 処理設定 | offline | [VideoAgent], [VideoMultiAgents], [VideoLLaMB]（streaming変種あり） |
-| Query時点 | 開始時から既知 | [VideoMultiAgents] |
+| 処理設定 | offline | [VideoAgent]★, [VideoMultiAgents]★, [VideoLLaMB]★（streaming変種あり） |
+| Query時点 | 開始時から既知 | [VideoMultiAgents]★ |
 | Query時点 | 途中で届く | [StreamAgent], [OneStreamer], [Think While Watching], [StreamForest], [EventMemAgent], [OASIS], [MuKV], [Flash-VStream], [Response-G1] |
 | Query時点 | 事前に不明 | [Lando et al.], [StreamMem], [SVMemAgent], [MuKV] |
-| Query時点 | 動画の終了後 / 未確認 | [VideoAgent]（動画全体をMemoryにした後）, [VideoLLaMB]（未確認） |
-| 区切り方 | 固定時間 | [StreamAgent], [Lando et al.], [MuKV], [StreamMem], [VideoAgent], [Response-G1] |
-| 区切り方 | 見た目の変化 | [StreamForest], [EventMemAgent], [VideoLLaMB] |
-| 区切り方 | 意味の変化 | [VideoMultiAgents]（方法は未記載） |
+| Query時点 | 動画の終了後 / 未確認 | [VideoAgent]★（動画全体をMemoryにした後）, [VideoLLaMB]★（未確認） |
+| 区切り方 | 固定時間 | [StreamAgent], [Lando et al.], [MuKV], [StreamMem], [VideoAgent]★, [Response-G1] |
+| 区切り方 | 見た目の変化 | [StreamForest], [EventMemAgent], [VideoLLaMB]★ |
+| 区切り方 | 意味の変化 | [VideoMultiAgents]★（方法は未記載） |
 | 区切り方 | 学習したモデルの判断 | [OneStreamer] |
 | 区切り方 | 複合・その他 | [OASIS]（固定窓＋後から意味でマージ）, [Think While Watching]（質問の到着時刻＋固定） |
 | 区切り方 | なし | [Flash-VStream], [SVMemAgent] |
 | 容量上限 | あり | [StreamForest], [StreamMem], [SVMemAgent] |
-| 容量上限 | 一部あり | [EventMemAgent]（短期のみ）, [OASIS]（親の数のみ。子は残る）, [Flash-VStream]（Feature Bankは増える）, [VideoLLaMB]（過去状態の列は増える） |
-| 容量上限 | なし（際限なく増える、または記述なし） | [StreamAgent]（KV）, [OneStreamer], [Lando et al.], [Think While Watching], [MuKV], [VideoAgent], [VideoMultiAgents], [Response-G1] |
+| 容量上限 | 一部あり | [EventMemAgent]（短期のみ）, [OASIS]（親の数のみ。子は残る）, [Flash-VStream]（Feature Bankは増える）, [VideoLLaMB]★（過去状態の列は増える） |
+| 容量上限 | なし（際限なく増える、または記述なし） | [StreamAgent]（KV）, [OneStreamer], [Lando et al.], [Think While Watching], [MuKV], [VideoAgent]★, [VideoMultiAgents]★, [Response-G1] |
 
 - Query時点の値は重なりがある（[MuKV]が2か所に入っている）。「書き込み時に質問を知っているか」の3値へ置き換える案を検討中。
 
@@ -149,9 +149,9 @@ tags: [brainstorm, literature-review, memory, taxonomy, classification, streamin
 
 | 判断主体 | 書き込み | 読み出し |
 | --- | --- | --- |
-| 規則（固定の手順・閾値） | [StreamAgent], [Lando et al.], [StreamForest], [EventMemAgent], [OASIS], [MuKV], [StreamMem], [Flash-VStream], [VideoAgent], [VideoMultiAgents], [Response-G1] | [StreamAgent], [OneStreamer], [Lando et al.], [Think While Watching], [StreamForest], [MuKV], [StreamMem], [Flash-VStream], [SVMemAgent], [Response-G1] |
-| 学習モジュール（専用の小さなネットワーク） | [VideoLLaMB], [SVMemAgent] | [VideoLLaMB]（内部の状態更新） |
-| LLM・Agent（推論やツール呼び出し） | — | [EventMemAgent], [OASIS]（答えられないときだけ検索）, [VideoAgent], [VideoMultiAgents]（ツールの呼び出しのみ） |
+| 規則（固定の手順・閾値） | [StreamAgent], [Lando et al.], [StreamForest], [EventMemAgent], [OASIS], [MuKV], [StreamMem], [Flash-VStream], [VideoAgent]★, [VideoMultiAgents]★, [Response-G1] | [StreamAgent], [OneStreamer], [Lando et al.], [Think While Watching], [StreamForest], [MuKV], [StreamMem], [Flash-VStream], [SVMemAgent], [Response-G1] |
+| 学習モジュール（専用の小さなネットワーク） | [VideoLLaMB]★, [SVMemAgent] | [VideoLLaMB]★（内部の状態更新） |
+| LLM・Agent（推論やツール呼び出し） | — | [EventMemAgent], [OASIS]（答えられないときだけ検索）, [VideoAgent]★, [VideoMultiAgents]★（ツールの呼び出しのみ） |
 | モデル自身の生成（回答と同じモデルが記録を出力） | [OneStreamer], [Think While Watching] | — |
 
 - この15本では、書き込みをLLM・Agentが推論で決める論文はなかった（未確認）。
@@ -279,6 +279,7 @@ tags: [brainstorm, literature-review, memory, taxonomy, classification, streamin
 | 2026-10-14 | 定義を短い平易な文に書き直した。提案4（判断主体の列）と提案6（A5の質問誘導をC5へ移動）を採用し、該当論文を移した。判断主体の表を追加した | 定義が分かりにくかったため。提案4・6はユーザーが採用 |
 | 2026-10-14 | 提案1〜7をすべて採用し、1〜3の表を新しい分類で並べ直した（A3・C6・C7は欠番、C17・C18を新設）。A4の名前に「イベント」を明記。Query時点「Memory構築後」を「動画の終了後」に改称。容量上限の列を追加。Response-G1の原文を再確認し未確認事項を更新 | ユーザーが提案をすべて採用。A4が分かりにくいとの指摘 |
 | 2026-10-14 | 分類をA〜Gに分けて番号を振り直し、1〜3の表を「1つの分類に1つのコード」で並べ直した（既定はコードなし、複合コードB8・B9・C4・E4・G3、落とした要素は備考へ） | 同じ分類のコードが多く付くのを避けるため、C18まで番号が伸びて分かりにくかったため（ユーザー指示） |
+| 2026-10-14 | 分類の表でofflineの論文に★を付けた。B2・B8・B9の名前を「項目付きテキスト」「テキスト＋KV」に変えた | offlineを一目で区別するため。「記録」がテキスト以外も含むように読めたため（ユーザー指示・質問） |
 
 ## 関連文書
 
