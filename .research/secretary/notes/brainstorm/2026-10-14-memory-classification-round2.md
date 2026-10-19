@@ -20,7 +20,6 @@ tags: [brainstorm, literature-review, memory, taxonomy, classification, streamin
   - 論文名の後ろの `★` はofflineの論文（動画全体を見られる設定）。
   - `?` は判定に迷いがあるもの。
   - `—` は既定の方式（コードなし）。
-  - `[新]` は2回目で追加した論文。
 - 根拠の確かさ：2回目の論文は、ほとんどが本文の要約・抜粋を経由した読み取り（`原文（要約経由）`）。Mementoは公式PDFを直接読んだ。CogStreamとQueryStreamは公式コードも確認した。QueryStreamは本文を読めず、要旨とコードのみ。
 - 記述の区別：「著者の主張」「実験で示されたこと」「私たちの推論（推論と明記）」「未確認」。
 
@@ -28,12 +27,12 @@ tags: [brainstorm, literature-review, memory, taxonomy, classification, streamin
 
 | コード | 小分類 | 定義 | 該当論文 | 本数 |
 | --- | --- | --- | --- | --- |
-| A0 | 映像そのもの | 映像を保存するだけで、何が映っているかは書かない | [MuKV], [StreamMem], [Flash-VStream], [SVMemAgent], [LiveVLM][新], [StreamChat][新], [VideoStreaming][新], [ReKV][新], [SAVEMem][新], [MovieChat][新], [MA-LMM][新], [StreamMind][新], [R3-Streaming][新], [Memento][新], [QueryStream][新], [ReWind]★[新], [video-SALMONN S][新], [ProtoKV][新] | 18 |
-| A1 | 場面の説明 | 場所・人や物・動作を、文章などでまとめて書く | [StreamAgent], [Lando et al.], [VideoMultiAgents]★, [Response-G1], [Lando Edge][新], [Watch-Think-Interact][新], [ThinkStream][新], [StreamingVLM][新] | 8 |
-| A2 | 人・物ごとの記録 | 人や物1つにつき1件の記録を持ち、時間を通して追う | [VideoAgent]★, [M3-Agent][新] | 2 |
-| A3a | イベント：区切りに使うだけ | イベントの切れ目で保存単位を分けるが、中身は映像そのもの | [StreamForest], [VideoLLaMB]★, [MEMO][新] | 3 |
-| A3b | イベント：出来事を記録 | イベントごとに「何が起きたか」を書く | [OneStreamer], [Think While Watching], [EventMemAgent], [OASIS], [ProVideLLM][新], [OmAgent]★[新], [StreamArena][新] | 7 |
-| A4 | タスクの状態 | 質問への取り組みの途中経過を書く | [CogStream][新]（過去のQA）, [TraveLER]★[新]（下位の質問と回答、不足情報）, [Em-Garde][新]?（質問から作った監視リスト） | 2〜3 |
+| A0 | 映像そのもの | 映像を保存するだけで、何が映っているかは書かない | [MuKV], [StreamMem], [Flash-VStream], [SVMemAgent], [LiveVLM], [StreamChat], [VideoStreaming], [ReKV], [SAVEMem], [MovieChat], [MA-LMM], [StreamMind], [R3-Streaming], [Memento], [QueryStream], [ReWind]★, [video-SALMONN S], [ProtoKV] | 18 |
+| A1 | 場面の説明 | 場所・人や物・動作を、文章などでまとめて書く | [StreamAgent], [Lando et al.], [VideoMultiAgents]★, [Response-G1], [Lando Edge], [Watch-Think-Interact], [ThinkStream], [StreamingVLM] | 8 |
+| A2 | 人・物ごとの記録 | 人や物1つにつき1件の記録を持ち、時間を通して追う | [VideoAgent]★, [M3-Agent] | 2 |
+| A3a | イベント：区切りに使うだけ | イベントの切れ目で保存単位を分けるが、中身は映像そのもの | [StreamForest], [VideoLLaMB]★, [MEMO] | 3 |
+| A3b | イベント：出来事を記録 | イベントごとに「何が起きたか」を書く | [OneStreamer], [Think While Watching], [EventMemAgent], [OASIS], [ProVideLLM], [OmAgent]★, [StreamArena] | 7 |
+| A4 | タスクの状態 | 質問への取り組みの途中経過を書く | [CogStream]（過去のQA）, [TraveLER]★（下位の質問と回答、不足情報）, [Em-Garde]?（質問から作った監視リスト） | 2〜3 |
 
 備考：
 - [StreamingVLM]：古い映像は捨て、モデル自身が書いた実況テキストのKVだけが長く残るためA1。
@@ -46,14 +45,14 @@ tags: [brainstorm, literature-review, memory, taxonomy, classification, streamin
 
 | コード | 小分類 | 定義 | 該当論文 | 本数 |
 | --- | --- | --- | --- | --- |
-| B1 | 文章 | 自由に書いた文 | [OneStreamer], [Lando et al.], [ProVideLLM][新], [Lando Edge][新], [CogStream][新], [Em-Garde][新] | 6 |
-| B2 | 項目付きテキスト | 時刻や内容が欄に分かれたテキスト | [VideoAgent]★, [Watch-Think-Interact][新], [OmAgent]★[新], [TraveLER]★[新] | 4 |
-| B3 | グラフ | 物と関係を点と線で表す | [VideoMultiAgents]★, [Response-G1], [M3-Agent][新] | 3 |
-| B4 | 画像 | フレームを画像のまま残す | [SVMemAgent], [MEMO][新] | 2 |
-| B5 | 視覚特徴 | 画像をエンコーダで数値に変換して残す | [StreamForest], [Flash-VStream], [StreamChat][新], [SAVEMem][新]?, [MovieChat][新], [MA-LMM][新], [StreamMind][新], [R3-Streaming][新]?, [Memento][新], [QueryStream][新], [ReWind]★[新] | 11 |
-| B6 | KV cache | LLMが過去の入力を読んだときの内部データを残す | [MuKV], [StreamMem], [StreamingVLM][新], [LiveVLM][新], [ReKV][新], [ThinkStream][新], [ProtoKV][新] | 7 |
-| B7 | 内部状態 | 決まった大きさの数値を毎回更新して持ち越す | [VideoLLaMB]★, [VideoStreaming][新], [video-SALMONN S][新] | 3 |
-| B8 | 項目付きテキスト＋画像（複合） | 項目付きテキストと、その根拠になる画像を組で持つ | [EventMemAgent], [OASIS], [StreamArena][新] | 3 |
+| B1 | 文章 | 自由に書いた文 | [OneStreamer], [Lando et al.], [ProVideLLM], [Lando Edge], [CogStream], [Em-Garde] | 6 |
+| B2 | 項目付きテキスト | 時刻や内容が欄に分かれたテキスト | [VideoAgent]★, [Watch-Think-Interact], [OmAgent]★, [TraveLER]★ | 4 |
+| B3 | グラフ | 物と関係を点と線で表す | [VideoMultiAgents]★, [Response-G1], [M3-Agent] | 3 |
+| B4 | 画像 | フレームを画像のまま残す | [SVMemAgent], [MEMO] | 2 |
+| B5 | 視覚特徴 | 画像をエンコーダで数値に変換して残す | [StreamForest], [Flash-VStream], [StreamChat], [SAVEMem]?, [MovieChat], [MA-LMM], [StreamMind], [R3-Streaming]?, [Memento], [QueryStream], [ReWind]★ | 11 |
+| B6 | KV cache | LLMが過去の入力を読んだときの内部データを残す | [MuKV], [StreamMem], [StreamingVLM], [LiveVLM], [ReKV], [ThinkStream], [ProtoKV] | 7 |
+| B7 | 内部状態 | 決まった大きさの数値を毎回更新して持ち越す | [VideoLLaMB]★, [VideoStreaming], [video-SALMONN S] | 3 |
+| B8 | 項目付きテキスト＋画像（複合） | 項目付きテキストと、その根拠になる画像を組で持つ | [EventMemAgent], [OASIS], [StreamArena] | 3 |
 | B9 | テキスト＋KV（複合） | 文章または項目付きテキストと、過去入力のKVを並行して持つ | [StreamAgent], [Think While Watching]? | 2 |
 
 備考：
@@ -68,59 +67,59 @@ tags: [brainstorm, literature-review, memory, taxonomy, classification, streamin
 
 | コード | 小分類 | 定義 | 該当論文 | 本数 |
 | --- | --- | --- | --- | --- |
-| C1 | 届くたび | フレームが届くたびに書く | [Flash-VStream], [SVMemAgent], [StreamingVLM][新], [LiveVLM][新], [ReKV][新], [SAVEMem][新], [MA-LMM][新], [StreamMind][新], [R3-Streaming][新], [Memento][新], [QueryStream][新], [ReWind]★[新], [ProtoKV][新] | 13 |
-| C2 | 一定間隔 | 数秒ごとなど、決まった間隔で書く | [StreamAgent], [Lando et al.], [Think While Watching], [OASIS], [MuKV], [StreamMem], [VideoAgent]★, [Response-G1], [Lando Edge][新], [Watch-Think-Interact][新]?, [ThinkStream][新], [StreamChat][新], [VideoStreaming][新], [MovieChat][新], [StreamArena][新], [M3-Agent][新], [video-SALMONN S][新] | 17 |
-| C3 | 切れ目で | 映像が変わった所で区切って書く | [VideoLLaMB]★, [VideoMultiAgents]★, [OneStreamer]?, [MEMO][新], [OmAgent]★[新] | 5 |
-| C4 | 短期は届くたび・長期は切れ目で（複合） | 届いたものをまず短期に入れ、切れ目ごとに長期へ移す | [StreamForest], [EventMemAgent], [ProVideLLM][新] | 3 |
-| （該当なし） | — | C1〜C4のどれにも当たらない | [CogStream][新]（回答のたびにQAを追記）, [Em-Garde][新]（質問が届いたときに1回）, [TraveLER]★[新]（Agentが選んだフレームを見たとき） | 3 |
+| C1 | 届くたび | フレームが届くたびに書く | [Flash-VStream], [SVMemAgent], [StreamingVLM], [LiveVLM], [ReKV], [SAVEMem], [MA-LMM], [StreamMind], [R3-Streaming], [Memento], [QueryStream], [ReWind]★, [ProtoKV] | 13 |
+| C2 | 一定間隔 | 数秒ごとなど、決まった間隔で書く | [StreamAgent], [Lando et al.], [Think While Watching], [OASIS], [MuKV], [StreamMem], [VideoAgent]★, [Response-G1], [Lando Edge], [Watch-Think-Interact]?, [ThinkStream], [StreamChat], [VideoStreaming], [MovieChat], [StreamArena], [M3-Agent], [video-SALMONN S] | 17 |
+| C3 | 切れ目で | 映像が変わった所で区切って書く | [VideoLLaMB]★, [VideoMultiAgents]★, [OneStreamer]?, [MEMO], [OmAgent]★ | 5 |
+| C4 | 短期は届くたび・長期は切れ目で（複合） | 届いたものをまず短期に入れ、切れ目ごとに長期へ移す | [StreamForest], [EventMemAgent], [ProVideLLM] | 3 |
+| （該当なし） | — | C1〜C4のどれにも当たらない | [CogStream]（回答のたびにQAを追記）, [Em-Garde]（質問が届いたときに1回）, [TraveLER]★（Agentが選んだフレームを見たとき） | 3 |
 
 ### 分類D：書き込みの選別
 
 | コード | 小分類 | 定義 | 該当論文 | 本数 |
 | --- | --- | --- | --- | --- |
 | — | 選ばない（既定） | 届いたものをそのまま残す | 下の16本以外のすべて | — |
-| D1 | 質問に関係するもの | 実際の質問に関係する内容を選んで残す | [VideoMultiAgents]★, [Response-G1]?, [QueryStream][新], [ReWind]★[新], [Em-Garde][新], [TraveLER]★[新] | 6 |
-| D2 | 質問に依存しない重要度 | 質問が分からないまま、汎用の物差しで「役立ちそうなもの」を残す | [MuKV], [StreamMem], [Flash-VStream], [SVMemAgent], [Lando et al.]?, [LiveVLM][新], [StreamChat][新]（動きの大きさ）, [SAVEMem][新]（固定の仮の質問5つ）, [R3-Streaming][新], [StreamArena][新] | 10 |
+| D1 | 質問に関係するもの | 実際の質問に関係する内容を選んで残す | [VideoMultiAgents]★, [Response-G1]?, [QueryStream], [ReWind]★, [Em-Garde], [TraveLER]★ | 6 |
+| D2 | 質問に依存しない重要度 | 質問が分からないまま、汎用の物差しで「役立ちそうなもの」を残す | [MuKV], [StreamMem], [Flash-VStream], [SVMemAgent], [Lando et al.]?, [LiveVLM], [StreamChat]（動きの大きさ）, [SAVEMem]（固定の仮の質問5つ）, [R3-Streaming], [StreamArena] | 10 |
 
 ### 分類E：更新
 
 | コード | 小分類 | 定義 | 該当論文 | 本数 |
 | --- | --- | --- | --- | --- |
-| — | 追記のみ（既定） | 既存は変えず、新しい記録を足すだけ | [OneStreamer], [Lando et al.], [Think While Watching], [MuKV], [VideoMultiAgents]★, [Response-G1], [Lando Edge][新], [MEMO][新], [VideoStreaming][新], [ReKV][新], [OmAgent]★[新], [CogStream][新], [StreamMind][新], [Em-Garde][新], [QueryStream][新], [ReWind]★[新] | 16 |
-| E1 | 全体を書き直す | 毎回Memory全体を作り直す（私たちのbaseline） | [StreamAgent]（テキスト側）, [Watch-Think-Interact][新]?, [video-SALMONN S][新]（状態の更新） | 3 |
-| E2 | まとめる・縮める | 似た記録を1つにする、データ量を減らす | [StreamForest], [OASIS], [VideoLLaMB]★, [VideoAgent]★, [StreamChat][新], [MovieChat][新], [MA-LMM][新], [StreamArena][新], [Memento][新], [M3-Agent][新], [TraveLER]★[新] | 11 |
-| E3 | 捨てる・入れ替える | 古い・不要な記録を消す、別の記録と入れ替える | [SVMemAgent], [ProVideLLM][新], [ThinkStream][新], [StreamingVLM][新], [LiveVLM][新], [SAVEMem][新], [R3-Streaming][新]? | 7 |
-| E4 | まとめて、溢れたら捨てる（複合） | 縮めたうえで、容量を超えたら捨てる | [EventMemAgent], [StreamMem], [Flash-VStream], [ProtoKV][新] | 4 |
+| — | 追記のみ（既定） | 既存は変えず、新しい記録を足すだけ | [OneStreamer], [Lando et al.], [Think While Watching], [MuKV], [VideoMultiAgents]★, [Response-G1], [Lando Edge], [MEMO], [VideoStreaming], [ReKV], [OmAgent]★, [CogStream], [StreamMind], [Em-Garde], [QueryStream], [ReWind]★ | 16 |
+| E1 | 全体を書き直す | 毎回Memory全体を作り直す（私たちのbaseline） | [StreamAgent]（テキスト側）, [Watch-Think-Interact]?, [video-SALMONN S]（状態の更新） | 3 |
+| E2 | まとめる・縮める | 似た記録を1つにする、データ量を減らす | [StreamForest], [OASIS], [VideoLLaMB]★, [VideoAgent]★, [StreamChat], [MovieChat], [MA-LMM], [StreamArena], [Memento], [M3-Agent], [TraveLER]★ | 11 |
+| E3 | 捨てる・入れ替える | 古い・不要な記録を消す、別の記録と入れ替える | [SVMemAgent], [ProVideLLM], [ThinkStream], [StreamingVLM], [LiveVLM], [SAVEMem], [R3-Streaming]? | 7 |
+| E4 | まとめて、溢れたら捨てる（複合） | 縮めたうえで、容量を超えたら捨てる | [EventMemAgent], [StreamMem], [Flash-VStream], [ProtoKV] | 4 |
 
 ### 分類F：構造
 
 | コード | 小分類 | 定義 | 該当論文 | 本数 |
 | --- | --- | --- | --- | --- |
 | — | 時刻順に並べるだけ（既定） | 記録を時間順に並べるだけ | 下の20本以外のすべて | — |
-| F1 | 短期と長期に分ける | 直近の詳しい記録と、古い記録の置き場を分ける | [StreamAgent], [StreamForest], [EventMemAgent], [ProVideLLM][新], [ThinkStream][新], [LiveVLM][新], [SAVEMem][新]（「hierarchy」と名乗るが、層を順に流れるだけ）, [MovieChat][新], [R3-Streaming][新], [video-SALMONN S][新], [ProtoKV][新] | 11 |
-| F2 | 親子の階層 | 粗いまとめ（親）と細かい記録（子）をつなぎ、子も実際に読み出せる | [OASIS], [StreamChat][新], [StreamArena][新] | 3 |
-| F3 | 並列ストア | 同じ時間を、細かさや見方の違う複数のMemoryに同時に保存する | [MuKV], [Flash-VStream], [VideoAgent]★, [OneStreamer]?, [Watch-Think-Interact][新]（テキストMemoryと元映像の保管庫）, [ReWind]★[新]（圧縮Memoryと高解像度特徴） | 6 |
+| F1 | 短期と長期に分ける | 直近の詳しい記録と、古い記録の置き場を分ける | [StreamAgent], [StreamForest], [EventMemAgent], [ProVideLLM], [ThinkStream], [LiveVLM], [SAVEMem]（「hierarchy」と名乗るが、層を順に流れるだけ）, [MovieChat], [R3-Streaming], [video-SALMONN S], [ProtoKV] | 11 |
+| F2 | 親子の階層 | 粗いまとめ（親）と細かい記録（子）をつなぎ、子も実際に読み出せる | [OASIS], [StreamChat], [StreamArena] | 3 |
+| F3 | 並列ストア | 同じ時間を、細かさや見方の違う複数のMemoryに同時に保存する | [MuKV], [Flash-VStream], [VideoAgent]★, [OneStreamer]?, [Watch-Think-Interact]（テキストMemoryと元映像の保管庫）, [ReWind]★（圧縮Memoryと高解像度特徴） | 6 |
 
 ### 分類G：読み出し
 
 | コード | 小分類 | 定義 | 該当論文 | 本数 |
 | --- | --- | --- | --- | --- |
 | — | 全部渡す（既定） | Memory全体をLLMに入力する | 下の21本以外のすべて | — |
-| G1 | 検索して一部渡す | 時刻・意味・質問で選んだ記録だけを渡す | [StreamAgent], [MuKV], [Response-G1], [MEMO][新], [LiveVLM][新], [StreamChat][新], [VideoStreaming][新], [ReKV][新], [SAVEMem][新], [OmAgent]★[新], [CogStream][新], [Memento][新], [M3-Agent][新], [video-SALMONN S][新] | 14 |
-| G2 | 詳細を見直す | 保存済みの画像・特徴をもう一度見る | [Flash-VStream], [Watch-Think-Interact][新] | 2 |
-| G3 | 検索してから詳細を見直す（複合） | 記録を検索で選び、その保存済み画像・特徴を見直す | [OASIS], [VideoAgent]★, [EventMemAgent]?, [StreamArena][新], [ReWind]★[新] | 5 |
+| G1 | 検索して一部渡す | 時刻・意味・質問で選んだ記録だけを渡す | [StreamAgent], [MuKV], [Response-G1], [MEMO], [LiveVLM], [StreamChat], [VideoStreaming], [ReKV], [SAVEMem], [OmAgent]★, [CogStream], [Memento], [M3-Agent], [video-SALMONN S] | 14 |
+| G2 | 詳細を見直す | 保存済みの画像・特徴をもう一度見る | [Flash-VStream], [Watch-Think-Interact] | 2 |
+| G3 | 検索してから詳細を見直す（複合） | 記録を検索で選び、その保存済み画像・特徴を見直す | [OASIS], [VideoAgent]★, [EventMemAgent]?, [StreamArena], [ReWind]★ | 5 |
 
 ## 4. 質問を知る時点・区切り方
 
 | 項目 | 値 | 該当論文 |
 | --- | --- | --- |
-| 質問を知る時点 | 知っている | [VideoMultiAgents]★, [ProVideLLM][新]（固定のタスク指示）, [Em-Garde][新], [QueryStream][新], [ReWind]★[新], [TraveLER]★[新] |
-| 質問を知る時点 | 途中から知る | [Response-G1], [Think While Watching], [OneStreamer]?, [StreamAgent]?, [Watch-Think-Interact][新]?, [ThinkStream][新] |
+| 質問を知る時点 | 知っている | [VideoMultiAgents]★, [ProVideLLM]（固定のタスク指示）, [Em-Garde], [QueryStream], [ReWind]★, [TraveLER]★ |
+| 質問を知る時点 | 途中から知る | [Response-G1], [Think While Watching], [OneStreamer]?, [StreamAgent]?, [Watch-Think-Interact]?, [ThinkStream] |
 | 質問を知る時点 | 知らない | 上記と下記以外のすべて（[OmAgent]★, [VideoAgent]★, [VideoLLaMB]★?を含む） |
-| 質問を知る時点 | 未確認 | [MA-LMM][新] |
-| 区切り方 | 見た目の変化 | [StreamForest], [EventMemAgent], [VideoLLaMB]★, [MEMO][新], [OmAgent]★[新], [CogStream][新]（読み出しのたびにクラスタリング） |
-| 区切り方 | 意味の変化 | [VideoMultiAgents]★（方法は未記載）, [StreamArena][新]（LLMが境界を予測し、時間の上限と組み合わせる） |
-| 区切り方 | 学習したモデルの判断 | [OneStreamer], [ProVideLLM][新]（行動の予測が変わったとき） |
+| 質問を知る時点 | 未確認 | [MA-LMM] |
+| 区切り方 | 見た目の変化 | [StreamForest], [EventMemAgent], [VideoLLaMB]★, [MEMO], [OmAgent]★, [CogStream]（読み出しのたびにクラスタリング） |
+| 区切り方 | 意味の変化 | [VideoMultiAgents]★（方法は未記載）, [StreamArena]（LLMが境界を予測し、時間の上限と組み合わせる） |
+| 区切り方 | 学習したモデルの判断 | [OneStreamer], [ProVideLLM]（行動の予測が変わったとき） |
 | 区切り方 | 固定時間・なし・その他 | 上記以外 |
 
 ## 5. Memoryの定義外（分類表に入れない）
@@ -141,13 +140,13 @@ offlineで、1つの質問の推論の中でだけ一時的な表現を作り、
 
 | # | 提案 | 種類 | 判定条件 | 根拠論文 |
 | --- | --- | --- | --- | --- |
-| P1 | C4を「短期は届くたび・長期へは**切れ目または溢れたとき**に移す」に広げる | 定義の拡張 | 「容量が溢れたら次の層へ移す」タイミングが複数の論文にあり、C1〜C4に収まらない | [MovieChat][新], [SAVEMem][新], [ProtoKV][新]（今はC1・C2に入れている） |
-| P2 | Cに「対話のたび（質問・回答が届いたとき）」を新設 | 追加 | 既存コードに当たらない論文が2本 | [CogStream][新], [Em-Garde][新]（[TraveLER]★は単独例として備考） |
-| P3 | A4を「タスク由来の情報（過去のQA・仮説・監視対象）」に広げる | 定義の拡張 | 質問から作った監視リストがA0〜A3bのどれにも当たらない（1本） | [Em-Garde][新] |
-| P4 | B9に「モデルが生成したテキストをKVの形で持つ」場合を含める | 定義の明確化 | 生成テキストのKVを長期のMemoryにする論文が2本 | [StreamingVLM][新], [ThinkStream][新] |
-| P5 | B7を「決まった大きさの状態（memory token・推論時に更新される重み・状態のスナップショット列）」と明記する | 定義の明確化 | B7に入れた3本で状態の持ち方が異なる | [VideoLLaMB]★, [VideoStreaming][新], [video-SALMONN S][新] |
-| P6 | D1を「質問を使って、残すもの**または残し方（圧縮の仕方）**を決める」に広げる | 定義の拡張 | 選ぶのではなく、質問を条件に圧縮する論文がある | [ReWind]★[新]、未分類の候補VideoDetective |
-| P7 | E1を「テキストに限らず、Memory全体を毎回作り直す（状態の更新を含む）」と明記する | 定義の明確化 | 状態を毎回更新する論文をE1に入れた | [video-SALMONN S][新] |
+| P1 | C4を「短期は届くたび・長期へは**切れ目または溢れたとき**に移す」に広げる | 定義の拡張 | 「容量が溢れたら次の層へ移す」タイミングが複数の論文にあり、C1〜C4に収まらない | [MovieChat], [SAVEMem], [ProtoKV]（今はC1・C2に入れている） |
+| P2 | Cに「対話のたび（質問・回答が届いたとき）」を新設 | 追加 | 既存コードに当たらない論文が2本 | [CogStream], [Em-Garde]（[TraveLER]★は単独例として備考） |
+| P3 | A4を「タスク由来の情報（過去のQA・仮説・監視対象）」に広げる | 定義の拡張 | 質問から作った監視リストがA0〜A3bのどれにも当たらない（1本） | [Em-Garde] |
+| P4 | B9に「モデルが生成したテキストをKVの形で持つ」場合を含める | 定義の明確化 | 生成テキストのKVを長期のMemoryにする論文が2本 | [StreamingVLM], [ThinkStream] |
+| P5 | B7を「決まった大きさの状態（memory token・推論時に更新される重み・状態のスナップショット列）」と明記する | 定義の明確化 | B7に入れた3本で状態の持ち方が異なる | [VideoLLaMB]★, [VideoStreaming], [video-SALMONN S] |
+| P6 | D1を「質問を使って、残すもの**または残し方（圧縮の仕方）**を決める」に広げる | 定義の拡張 | 選ぶのではなく、質問を条件に圧縮する論文がある | [ReWind]★、未分類の候補[VideoDetective] |
+| P7 | E1を「テキストに限らず、Memory全体を毎回作り直す（状態の更新を含む）」と明記する | 定義の明確化 | 状態を毎回更新する論文をE1に入れた | [video-SALMONN S] |
 
 - **小分類の新設は2回目で1件（P2）だけ**だった。他は定義の拡張・明確化。新しい論文を入れても新しい小分類がほとんど出なくなったので、判定基準メモの「止める条件」にほぼ達したと考える（推論）。
 - 1回目で該当が1本だけだった小分類は、すべて2本以上になった（A2、B2、B4、B7、E1、E3、F2、G2）。
@@ -178,11 +177,11 @@ offlineで、1つの質問の推論の中でだけ一時的な表現を作り、
 
 | 論文 | 内容 | 備考 |
 | --- | --- | --- |
-| VideoDetective（arXiv 2512.17229） | 質問をMemory tokenの直前に置き、質問を意識して圧縮する | 「質問を知っている」設定の候補。暫定 B6 / C2 / D1 |
-| Eyes Wide Open / VideoLLM-EyeWO（arXiv 2510.14560） | 質問が届いた後、モデル自身が圧縮率と高解像度の要求を決める | 「途中から知る」。arXivのコメントにNeurIPS 2025採録とある |
-| PReM（arXiv 2609.23601）、Beyond Retrieval（arXiv 2609.04131） | 一定サイズの再帰状態、固定長の潜在Memory | B7候補。未読 |
-| ObjectStream（arXiv 2607.28312） | 物体の潜在表現を起点にしたMemory | A2候補。未読 |
-| Video Streaming Thinking（arXiv 2603.12262）、LifelongMemory、Vinci2（arXiv 2607.11523） | E1の探索中に見つかった論文。実際は追記・統合で、書き直しではなかった | — |
+| [VideoDetective]（arXiv 2512.17229） | 質問をMemory tokenの直前に置き、質問を意識して圧縮する | 「質問を知っている」設定の候補。暫定 B6 / C2 / D1 |
+| [Eyes Wide Open] / VideoLLM-EyeWO（arXiv 2510.14560） | 質問が届いた後、モデル自身が圧縮率と高解像度の要求を決める | 「途中から知る」。NeurIPS 2025（公式ページで確認） |
+| [PReM]（arXiv 2609.23601）、[Beyond Retrieval]（arXiv 2609.04131） | 一定サイズの再帰状態、固定長の潜在Memory | B7候補。未読 |
+| [ObjectStream]（arXiv 2607.28312） | 物体の潜在表現を起点にしたMemory | A2候補。未読 |
+| [Video Streaming Thinking]（arXiv 2603.12262）、[LifelongMemory]（arXiv 2312.05269）、[Vinci2]（arXiv 2607.11523） | E1の探索中に見つかった論文。実際は追記・統合で、書き直しではなかった | — |
 
 ## 付録A：2回目の論文の発表先
 
@@ -254,6 +253,7 @@ offlineで、1つの質問の推論の中でだけ一時的な表現を作り、
 | 日時 | 変更 | 理由 |
 | --- | --- | --- |
 | 2026-10-14 | 初版作成：2回目の29本（分類26本、定義外3本）を調べ、1回目の15本と合わせて41本を分類A〜Gの表に並べた | ユーザー指示（全論文を探索して2回目の当てはめ） |
+| 2026-10-15 | `[新]` の表記を削除。「9. 2回目では分類しなかった候補」の8本にURLを追加（Eyes Wide OpenはNeurIPS 2025の公式ページ、他は公式ページで確認できないためarXiv） | ユーザー指示 |
 
 ## 関連文書
 
@@ -304,3 +304,11 @@ offlineで、1つの質問の推論の中でだけ一時的な表現を作り、
 [VideoTree]: https://openaccess.thecvf.com/content/CVPR2025/html/Wang_VideoTree_Adaptive_Tree-based_Video_Representation_for_LLM_Reasoning_on_Long_CVPR_2025_paper.html
 [VideoAgent-Wang]: https://www.ecva.net/papers/eccv_2024/papers_ECCV/html/10325_ECCV_2024_paper.php
 [VideoINSTA]: https://aclanthology.org/2024.findings-emnlp.384/
+[VideoDetective]: https://arxiv.org/abs/2512.17229
+[Eyes Wide Open]: https://proceedings.neurips.cc/paper_files/paper/2025/hash/141304a37d59ec7f116f3535f1b74bde-Abstract-Conference.html
+[PReM]: https://arxiv.org/abs/2609.23601
+[Beyond Retrieval]: https://arxiv.org/abs/2609.04131
+[ObjectStream]: https://arxiv.org/abs/2607.28312
+[Video Streaming Thinking]: https://arxiv.org/abs/2603.12262
+[LifelongMemory]: https://arxiv.org/abs/2312.05269
+[Vinci2]: https://arxiv.org/abs/2607.11523
