@@ -1,0 +1,69 @@
+{
+  "description": "notion-lab で確認なしに書き込んでよいページ。ここにないページへの書き込みは毎回確認する（~/.claude/hooks/notion-lab-guard.py）。",
+  "pages": [
+    {
+      "id": "3186a9cc5869805881b1ed2cb8cbc439",
+      "note": "2026-2028 林流生 MTG議事録（本体）"
+    },
+    {
+      "id": "3de6a9cc586980e99b46f0c6ab35ced7",
+      "note": "Ego4D ダウンロード手順"
+    },
+    {
+      "id": "3df6a9cc5869804388f6ce52de42ebbe",
+      "note": "（無題の子ページ）"
+    },
+    {
+      "id": "3ce6a9cc586980d09d99fd99d0555111",
+      "note": "2026/09/02 Awesome Streaming Video Understanding"
+    },
+    {
+      "id": "3b46a9cc5869804bb278ed00f0dd6499",
+      "note": "2026/08/03 MIRU2026 石川林ポスター発表"
+    },
+    {
+      "id": "3b46a9cc5869804182dfced8f6ab370c",
+      "note": "2026/08/03 MIRU2026 林ポスター発表"
+    },
+    {
+      "id": "3976a9cc586980b4b1caec0cb0c5f668",
+      "note": "輪講資料作成ページ"
+    },
+    {
+      "id": "3926a9cc586980b28b77f5deb906f9c4",
+      "note": "2026/7/3までの研究内容(林流生)"
+    },
+    {
+      "id": "38e6a9cc586980faab58db2ec37dfafa",
+      "note": "VideoITGまとめ"
+    },
+    {
+      "id": "3926a9cc5869805c94b8f811f0a30aa0",
+      "note": "Learning from One Continuous Video Streamまとめ"
+    },
+    {
+      "id": "3726a9cc586980e3b67ad1e4ce4e4771",
+      "note": "実験概要"
+    },
+    {
+      "id": "3656a9cc586980af8754ea2a787c483c",
+      "note": "（無題の子ページ）"
+    },
+    {
+      "id": "34c6a9cc586980b1bf9aec175b8bb3ca",
+      "note": "サブタスクごとの質問の違いについてのまとめ"
+    },
+    {
+      "id": "33a6a9cc586980899292e829ef044e2d",
+      "note": "サブタスクについてのまとめ"
+    },
+    {
+      "id": "3186a9cc586981c685e9c6538d9dfdcb",
+      "note": "2026/03/08_ViTについての調査"
+    },
+    {
+      "id": "3fd6a9cc5869815f9f83f5fac297a301",
+      "note": "自動追加（3186a9cc5869805881b1ed2cb8cbc439 の下に作成）"
+    }
+  ]
+}
