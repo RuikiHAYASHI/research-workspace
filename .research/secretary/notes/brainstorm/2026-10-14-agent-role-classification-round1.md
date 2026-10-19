@@ -289,6 +289,7 @@ tags: [brainstorm, literature-review, agent, taxonomy, classification, task, str
 
 ## 関連文書
 
+- [Agentの役割の分類：2回目（分類Aの再編）](2026-10-17-agent-role-classification-round2.md)
 - [Memory分類の判定基準](2026-10-14-memory-retention-classification-criteria.md)
 - [Memory分類の1回目当てはめ](2026-10-14-memory-classification-round1.md)
 - [Memory分類の2回目当てはめ](2026-10-14-memory-classification-round2.md)
