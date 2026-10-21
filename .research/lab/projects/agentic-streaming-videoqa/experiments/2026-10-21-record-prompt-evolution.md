@@ -2453,3 +2453,123 @@ AIの考え: いちばん有望なのは **B（ショットの説明文＋出来
 
 - 第20節は「分け方を選んだ理由」ではなく「今の分け方の狙い（仮説）」として読む。
 - v5（6種類）はこのまま既定にしておき、22.5の実験の結果で、6種類を続けるか、案A・Bに変えるかを決める（林と相談）。
+
+## 23. v6系: EVENTだけを書くプロンプトを一から作る（2026-10-21）
+
+### きっかけ（林）
+
+- 「イベントをタイムスタンプ付きで記述するAgentを作ってと言われているのに、イベント以外も記述させている」。2026-10-19 MTGの決定は「予習した観点でイベントをファイル（Markdown、タイムスタンプ付き）に記録」で、v3〜v5はそこから外れて場面の目録になっていた（第22節）。
+- 「どのベンチマークでも網羅的にできるようにしたい」。v3〜v5はLongVideoBenchのタスクに寄っていた。
+- v5は直さず、EVENTだけを書く版を **v6として一から** 作る（v3〜v5はtxtで保存しており再現でき、比較用に残す）。
+
+### v6の設計（決定の詳細は [イベントの定義](../../../../secretary/notes/brainstorm/2026-10-21-event-definition.md)、先行研究は [イベント書き起こしの出力形式](../../../../secretary/notes/brainstorm/2026-10-21-event-transcription-prior-work-formats.md)）
+
+- **イベント＝変化**（GEBD, ICCV 2021 にならう）: 動作の始まり・終わり・切り替わり（繰り返しの各回も）、物の扱いの始まり・終わり、人・動物・物が見えるようになる・いなくなる、場所や見え方の切り替わり（カット、カメラの向き、明るさや色の大きな変化）。変化のないところには何も書かない。
+- 記録の段階は細かい動作。大きなまとまりは集約で作る。
+- 付けてよい情報は、イベントに関わるものについての短い情報を一塊だけ。関わらない物は書かない。
+- 背景の人の出来事も、何をしているかがはっきり見えるときだけ書く。
+- 特定のベンチマークの質問の形を前提にしない（予習は、質問の例だけを渡す別の枠にする予定。v6系ではまだ入れない）。
+- **区間は40秒・8枚**（5秒に1枚）。林の指示「実行時間をできる限り半分に」。
+- 終了条件（林）: イベントを、重複・無駄なく、しっかり記録できていることが確認できるまで。無駄な情報の付加も解消する。無理そうなら止めて相談。
+- 確認の仕方: 同じ3本（Vlog `66dwcQ1Y048`、料理 `NexB4vj8_54`、ニュース `BtaVRhoLpC0`）で、自動の指標と、区間の8枚の画像と記録の目視の見比べ。試行の本文・スクリプトは新リポジトリの `experiments/2026-10-21-event-prompt-v6/`。
+
+## 24. v6a（2026-10-21）
+
+<details><summary>v6a の本文（全文）</summary>
+
+```text
+You are transcribing the events of a video into a time-stamped log. This log is the only record of the video that will be kept. Later, someone who cannot watch the video will read it to answer questions about what happened.
+
+You are given one window of the video. Each image above is shown right after its label, such as "frame 1 (120.0 s):". The frames of this window are:
+{{chunk.frame_manifest}}
+
+Refer to frames by their numbers: F1 is frame 1, F2 is frame 2, and so on.
+
+What an event is:
+An event is a change. Go through the frames in order and write one event each time one of these happens:
+1. A person, animal, or object starts an action, stops it, or switches to another action (for example, a man stops talking and holds up a phone). Each repetition of the same action is a new event.
+2. Someone starts or stops handling an object (picks it up, puts it down, hands it over, turns it on).
+3. A person, animal, or object comes into view or leaves the view.
+4. The place or the view changes: a cut to a different place, the camera turning to a new view, or a large change of light or color.
+At F1 you cannot see what came before, so start by writing what each visible person or animal is doing at F1.
+If nothing changes between frames, write nothing for those frames.
+
+How to write an event:
+- One event per line. Write who does what: name people and animals by how they look, such as "man in a black T-shirt", and use the same name every time.
+- You may add one short detail about something that takes part in the event, such as what is shown on a phone screen or what the new place looks like. Do not describe things that do not take part in the event.
+- For a change of place, name the new place with at most two features, such as "white room with a blue sofa".
+- Write events of people in the background too, but only when you can clearly see what they do. Write the main people first.
+- Write only what you can see. Do not guess hidden actions, reasons, or feelings.
+- An action that continues over several frames is one event, from its first frame to its last frame.
+- Never write the same event twice. When every change in the frames is written, stop.
+
+Output format:
+Each line is: - [Ffirst-Flast] EVENT: description
+[F3-F5] means the event is seen from frame 3 to frame 5. Use [F4-F4] for a single frame.
+
+Example (from a different video with 8 frames):
+- [F1-F3] EVENT: woman in a red apron talks to the camera in a kitchen with white tiles
+- [F4-F4] EVENT: woman in a red apron picks up a brown egg
+- [F5-F5] EVENT: woman in a red apron cracks the egg into a glass bowl
+- [F6-F6] EVENT: view cuts to a close-up of a frying pan on a gas stove
+- [F7-F8] EVENT: beaten egg is poured into the frying pan
+- [F8-F8] EVENT: boy in a yellow T-shirt comes into view from the right
+
+Now write the events of this window.
+```
+
+</details>
+
+### 結果（3本、40秒・8枚、自動集計）
+
+| 動画 | 全体の時間(秒) | 区間 | 上限到達 | 行数 | 行/区間 | 語数の平均 | 語数の最大 | 区間内の重複 | 1行に複数の文 | EVENT以外 | 時刻不一致 | 解析不可 |
+|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| `66dwcQ1Y048_0` | 100 | 5 | 0 | 33 | 6.6 | 17.1 | 34 | 1 | 0 | 0 | 0 | 0 |
+| `NexB4vj8_54_0` | 95 | 6 | 0 | 45 | 7.5 | 12.0 | 20 | 0 | 2 | 0 | 0 | 0 |
+| `BtaVRhoLpC0_0` | 68 | 5 | 0 | 29 | 5.8 | 12.3 | 22 | 6 | 0 | 0 | 0 | 0 |
+
+### なぜこの形か
+
+v5からの差分ではなく、一から書いた（上の「v6の設計」をそのまま本文にした）。v4までで分かった入力の工夫（画像の直前のラベル、frame番号での範囲）だけは引き継いだ。
+
+### 目視の確認
+
+- 速さ: Vlog 100秒・料理 95秒・ニュース 68秒（v5は 480・248・263秒）。上限到達・EVENT以外の行・時刻不一致・解析不可は0。
+- Vlog 区間4（120〜155秒、8枚とも違う場面）: 8枚の画像と記録がほぼ正確に対応した。場面ごとに1行で、関わる情報だけ。
+
+```text
+- [F1-F1] EVENT: aerial view shows a street lined with palm trees, with cars driving on it
+- [F2-F2] EVENT: blue screen with white text that reads "We can be so much more..."
+- [F3-F4] EVENT: man in a black T-shirt with "SEEK" written on it smiles and looks at the camera against a black and white spiral wall
+- [F5-F5] EVENT: person in red shirt holds a smartphone displaying a video call with someone in the background
+- [F6-F6] EVENT: hand holds a smartphone displaying a social media post with colorful sticky notes and text "Made my mom a basket of reasons I love her"
+- [F7-F7] EVENT: man and woman embrace in an airport terminal under an overpass, with cars and buses visible in the background
+- [F8-F8] EVENT: man in a black T-shirt with "SEEK DISCOMFORT" written on it speaks to the camera against a black and white spiral wall
+```
+
+- 料理 区間2（40〜75秒）: 画像と対応（ヨーグルトを注ぐ → ベーキングパウダーの器に手を伸ばす → 入れる → ミキサーで混ぜる → 止める）。
+
+### 問題点
+
+1. **続いている動作を別の行に分ける**（ニュースの区間内の重複6）。ニュース 区間2:
+
+```text
+- [F6-F6] EVENT: man in a dark suit speaks outside a building
+- [F7-F7] EVENT: man in a dark suit speaks outside a building
+- [F8-F8] EVENT: man in a dark suit speaks outside a building
+```
+   料理 区間3でも `electric mixer continues to whip the mixture…`、`hand in black glove continues to fold the mixture…` を新しい行として書いた（本来は前の行の範囲を延ばす）。
+
+2. **付ける情報が一塊を超える**（無駄な情報）:
+
+```text
+- [F1-F1] EVENT: three men stand side by side, holding hands, with signs in front of them that read "He is my roommate and best friend," "These are My Brothers," and "He's my roommate and best friend"
+- [F5-F6] EVENT: view cuts to a blue screen with "Subscribe (please)" text, two video thumbnails, and social media icons for Instagram, Twitter, and Snapchat with the handle "@YesTheory"
+```
+
+3. 小さな問題: 画面の文字の時刻のずれ。料理 区間2で「350g yogurt」はF2の画面に出ているのに、F5の行に「5g baking powder」と一緒に書いた。
+
+### 次の版の目的
+
+- 続いている動作は、前の行の範囲を延ばして1行にする（「continues to」で新しい行を書かない）。誤りと正しい例を1組見せる。
+- 付ける情報は一塊（1つ）まで。複数の物・文字・アイコンを並べない。誤りと正しい例を1組見せる。
