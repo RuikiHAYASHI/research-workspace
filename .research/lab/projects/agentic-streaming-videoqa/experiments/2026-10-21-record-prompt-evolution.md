@@ -14,6 +14,7 @@ tags: [prompt, event-log, recording-agent, qwen3-vl, longvideobench, prompt-engi
 - モデルはすべて `Qwen/Qwen3-VL-4B-Instruct`、temperature 0（貪欲生成）、GPU 1台（RTX A4000）。区間は20秒・8枚（約2.5秒に1枚）。
 - 関連: [タスク一覧と記録プロンプトの設計の壁打ち](../../../../secretary/notes/brainstorm/2026-10-19-longvideobench-task-table-without-subtitles.md)、[v3](../../../../secretary/notes/brainstorm/2026-10-20-event-log-prompt-v3.md)、[v4](../../../../secretary/notes/brainstorm/2026-10-20-event-log-prompt-v4.md)、[v5](../../../../secretary/notes/brainstorm/2026-10-21-event-log-prompt-v5.md)、[Workbench spec](../specs/2026-10-20-pre-study-record-workbench-spec.md)。
 - 新リポジトリ: `RuikiHAYASHI/2026_10_hayashi_pre_study_agent_system_workbench`（本文は `prompts/record/image/v{3,4,5}/prompt.en.txt`）。
+- 実行結果と試行の記録: 新リポジトリの `experiments/2026-10-20-record-prompt-trials/`（Run 4件、試行のJSONと動画ごとのMarkdown、試した案の本文、スクリプト。commit `8cd5c76`）。
 
 ## 全体の流れ（一覧）
 
