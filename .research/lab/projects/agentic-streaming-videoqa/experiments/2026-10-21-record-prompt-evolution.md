@@ -2925,3 +2925,126 @@ v6cで、ニュースの「話す」が3行に分かれたのは実際のカッ�
 
 - 同じ人が同じことを同じ場所で続けているなら、カメラが寄る・引く・角度が変わるだけでは区切らない（1行にまとめる）。場所が変わったときだけ「view cuts to 新しい場所」。誤りと正しい例をこれに合わせて差し替える。
 - 長い文字は数語だけ写す。
+
+## 28. v6e（2026-10-21）
+
+<details><summary>v6e の本文（全文）</summary>
+
+```text
+You are transcribing the events of a video into a time-stamped log. This log is the only record of the video that will be kept. Later, someone who cannot watch the video will read it to answer questions about what happened.
+
+You are given one window of the video. Each image above is shown right after its label, such as "frame 1 (120.0 s):". The frames of this window are:
+{{chunk.frame_manifest}}
+
+Refer to frames by their numbers: F1 is frame 1, F2 is frame 2, and so on.
+
+What an event is:
+An event is a change. Go through the frames in order and write one event each time one of these happens:
+1. A person, animal, or object starts an action, stops it, or switches to another action (for example, a man stops talking and holds up a phone). Each repetition of the same action is a new event.
+2. Someone starts or stops handling an object (picks it up, puts it down, hands it over, turns it on).
+3. A person, animal, or object comes into view or leaves the view.
+4. The place or the view changes: a cut to a different place, the camera turning to a new view, or a large change of light or color.
+At F1 you cannot see what came before, so start by writing what each visible person or animal is doing at F1.
+
+How to find the events:
+1. Compare each frame with the frame before it, and note the frames where something changes. These are the boundaries.
+2. Between two boundaries nothing changes, so write one line that covers all those frames, from the first to the last.
+3. If the next frame shows the same person doing the same thing in the same place, there is no boundary there: the line just gets longer. This is true even when the camera only moves closer, farther, or to another angle. A change of the person's facial expression or new subtitle text is not a boundary either.
+4. Every line must say what changed at its first frame, so that it is different from the line before it. When the place changes, start the line with "view cuts to" and name the new place.
+
+How to write an event:
+- One event per line. Write who does what: name people and animals by how they look, such as "man in a black T-shirt", and use the same name every time. If you are not sure whether a person is a man or a woman, write "person".
+- You may add one short detail about something that takes part in the event, such as what is shown on a phone screen or what the new place looks like. Add only one short detail: copy at most a few words of a long text, and do not list several objects, texts, signs, or icons. Do not describe things that do not take part in the event.
+- For a change of place, name the new place with at most two features, such as "white room with a blue sofa".
+- Write events of people in the background too, but only when you can clearly see what they do. Write the main people first.
+- Write only what you can see. Do not guess hidden actions, reasons, or feelings.
+- An action that continues over several frames is one event: write it once, with the range from its first frame to its last frame. Never write "continues", "still", or "again" for an action that has not stopped.
+- Never write the same event twice. When every change in the frames is written, stop.
+
+Do not write lines like these:
+- Wrong (one action split into several lines):
+  - [F6-F6] EVENT: man in a dark suit speaks outside a building
+  - [F7-F8] EVENT: man in a dark suit continues to speak outside a building
+  Right: - [F6-F8] EVENT: man in a dark suit speaks outside a building
+- Wrong (the same line repeated; the camera only moved closer):
+  - [F1-F2] EVENT: woman in a dark suit speaks outside a building
+  - [F3-F4] EVENT: woman in a dark suit speaks outside a building
+  Right: - [F1-F4] EVENT: woman in a dark suit speaks outside a building
+- Wrong (a list of details): - [F5-F5] EVENT: view cuts to a blue screen with "Subscribe" text, two video thumbnails, and icons for Instagram, Twitter, and Snapchat
+  Right: - [F5-F5] EVENT: view cuts to a blue screen with the text "Subscribe"
+
+Output format:
+Each line is: - [Ffirst-Flast] EVENT: description
+[F3-F5] means the event is seen from frame 3 to frame 5. Use [F4-F4] for a single frame.
+
+Example (from a different video with 8 frames):
+- [F1-F3] EVENT: woman in a red apron talks to the camera in a kitchen with white tiles
+- [F4-F4] EVENT: woman in a red apron picks up a brown egg
+- [F5-F5] EVENT: woman in a red apron cracks the egg into a glass bowl
+- [F6-F6] EVENT: view cuts to a close-up of a frying pan on a gas stove
+- [F7-F8] EVENT: beaten egg is poured into the frying pan
+- [F8-F8] EVENT: boy in a yellow T-shirt comes into view from the right
+
+Now write the events of this window.
+```
+
+</details>
+
+### 差分（v6d → v6e）
+
+```diff
+--- v6d
++++ v6e
+@@ -19,2 +19,2 @@
+-3. If the next frame shows the same person doing the same thing from the same view, there is no boundary there: the line just gets longer. A small camera movement, a change of the person's facial expression, or new subtitle text is not a boundary.
+-4. Every line must say what changed at its first frame. If the view changes (for example, a cut to a close-up or to another place) while the same person keeps doing the same thing, start the line with "view cuts to" and say what the new view shows, so that the line is different from the line before it.
++3. If the next frame shows the same person doing the same thing in the same place, there is no boundary there: the line just gets longer. This is true even when the camera only moves closer, farther, or to another angle. A change of the person's facial expression or new subtitle text is not a boundary either.
++4. Every line must say what changed at its first frame, so that it is different from the line before it. When the place changes, start the line with "view cuts to" and name the new place.
+@@ -24 +24 @@
+-- You may add one short detail about something that takes part in the event, such as what is shown on a phone screen or what the new place looks like. Add only one detail: do not list several objects, texts, signs, or icons. Do not describe things that do not take part in the event.
++- You may add one short detail about something that takes part in the event, such as what is shown on a phone screen or what the new place looks like. Add only one short detail: copy at most a few words of a long text, and do not list several objects, texts, signs, or icons. Do not describe things that do not take part in the event.
+@@ -36 +36 @@
+-- Wrong (lines that look the same after a cut):
++- Wrong (the same line repeated; the camera only moved closer):
+@@ -39,3 +39 @@
+-  Right:
+-  - [F1-F2] EVENT: woman in a dark suit speaks outside a building
+-  - [F3-F4] EVENT: view cuts to a side view of the woman in a dark suit, speaking in front of a gray wall
++  Right: - [F1-F4] EVENT: woman in a dark suit speaks outside a building
+```
+
+### 結果（3本、40秒・8枚、自動集計）
+
+| 動画 | 全体の時間(秒) | 区間 | 上限到達 | 行数 | 行/区間 | 語数の平均 | 語数の最大 | 区間内の重複 | 1行に複数の文 | EVENT以外 | 時刻不一致 | 解析不可 |
+|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| `66dwcQ1Y048_0` | 91 | 5 | 0 | 31 | 6.2 | 16.2 | 24 | 1 | 0 | 0 | 0 | 0 |
+| `NexB4vj8_54_0` | 83 | 6 | 0 | 37 | 6.2 | 12.3 | 19 | 0 | 1 | 0 | 0 | 0 |
+| `BtaVRhoLpC0_0` | 48 | 5 | 0 | 19 | 3.8 | 10.6 | 14 | 2 | 0 | 0 | 0 | 0 |
+
+### なぜこの変更か
+
+v6dで規則と例を足しても、ニュースで同じ人が話し続けたまま寄り・引き・角度だけが変わるカットで、同じ文が3行並んだ。林のイベントの定義（風景が変わったらイベント）に照らし、同じ人・同じ場所・同じ動作でカメラだけが変わるカットは区切らないことにした。場所が変わったときだけ「view cuts to」。長い文字は数語だけ写す。
+
+### 目視の確認（全区間を読んだ）
+
+- ニュース 区間4は、v6dまで3行に分かれた「本棚の前で話す女性」が1行になった: `[F1-F7] EVENT: woman with glasses and a turtleneck speaks in front of bookshelves`。
+- 料理は全工程を重複なく追えた（卵を割る → 黄身を取り出す → 砂糖を入れる → 混ぜる → ヨーグルト → ベーキングパウダー → 泡立てる → 混ぜ合わせる → 型に流す → オーブン → 型から出す → 粉砂糖 → 切る → 皿に載せる → フォークで刺す）。
+- 1行の語数の最大は24語以下（v6dは32語）。看板の長い文章は `… signs, including one that reads "HERE'S TO STRONG WOMEN"` と数語になった。
+
+### 問題点
+
+1. ニュース 区間3（寄り・角度のカットが2回ある区間）だけは、同じ文が3行のまま。性別も man のまま:
+
+```text
+- [F1-F2] EVENT: man in a dark suit speaks outside a building
+- [F3-F4] EVENT: man in a dark suit speaks outside a building
+- [F5-F7] EVENT: man in a dark suit speaks outside a building
+```
+2. 変化ではなく状態だけを書いた行: `[F4-F4] EVENT: three egg yolks are in glass bowl`、`[F6-F6] EVENT: person in black gloves holds bowl with sugar and egg yolks`、`[F5-F5] EVENT: two glass bowls are shown side by side; …`。
+3. 「Subscribe」の画面でアイコンを並べる行が1つ残った（`… two video thumbnails, and icons for Instagram, Twitter, and Snapchat`）。料理で `continues cutting` が1件（ただし切る動作の次の回なら、定義上は新しいイベントでよい）。
+
+### 次の版の目的
+
+- 書く前に直前の行と比べ、同じことを書こうとしていたら新しい行にせず、直前の行の範囲を延ばす（自己チェックの手順）。
+- 変化を含まず、見た目だけを書く行を書かない（例を2つ示す）。
+- これでニュース 区間3の同じ文が直らなければ、プロンプトだけでは難しいと判断し、林に相談する。
