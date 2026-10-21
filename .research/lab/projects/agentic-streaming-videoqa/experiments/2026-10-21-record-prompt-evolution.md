@@ -2573,3 +2573,115 @@ v5からの差分ではなく、一から書いた（上の「v6の設計」を�
 
 - 続いている動作は、前の行の範囲を延ばして1行にする（「continues to」で新しい行を書かない）。誤りと正しい例を1組見せる。
 - 付ける情報は一塊（1つ）まで。複数の物・文字・アイコンを並べない。誤りと正しい例を1組見せる。
+
+## 25. v6b（2026-10-21）
+
+<details><summary>v6b の本文（全文）</summary>
+
+```text
+You are transcribing the events of a video into a time-stamped log. This log is the only record of the video that will be kept. Later, someone who cannot watch the video will read it to answer questions about what happened.
+
+You are given one window of the video. Each image above is shown right after its label, such as "frame 1 (120.0 s):". The frames of this window are:
+{{chunk.frame_manifest}}
+
+Refer to frames by their numbers: F1 is frame 1, F2 is frame 2, and so on.
+
+What an event is:
+An event is a change. Go through the frames in order and write one event each time one of these happens:
+1. A person, animal, or object starts an action, stops it, or switches to another action (for example, a man stops talking and holds up a phone). Each repetition of the same action is a new event.
+2. Someone starts or stops handling an object (picks it up, puts it down, hands it over, turns it on).
+3. A person, animal, or object comes into view or leaves the view.
+4. The place or the view changes: a cut to a different place, the camera turning to a new view, or a large change of light or color.
+At F1 you cannot see what came before, so start by writing what each visible person or animal is doing at F1.
+If nothing changes between frames, write nothing for those frames.
+
+How to write an event:
+- One event per line. Write who does what: name people and animals by how they look, such as "man in a black T-shirt", and use the same name every time.
+- You may add one short detail about something that takes part in the event, such as what is shown on a phone screen or what the new place looks like. Add only one detail: do not list several objects, texts, signs, or icons. Do not describe things that do not take part in the event.
+- For a change of place, name the new place with at most two features, such as "white room with a blue sofa".
+- Write events of people in the background too, but only when you can clearly see what they do. Write the main people first.
+- Write only what you can see. Do not guess hidden actions, reasons, or feelings.
+- An action that continues over several frames is one event: write it once, with the range from its first frame to its last frame. Do not write a new line for an action that is still going on, and do not write "continues to".
+- Never write the same event twice. When every change in the frames is written, stop.
+
+Do not write lines like these:
+- Wrong (one action split into several lines):
+  - [F6-F6] EVENT: man in a dark suit speaks outside a building
+  - [F7-F7] EVENT: man in a dark suit continues to speak outside a building
+  Right: - [F6-F8] EVENT: man in a dark suit speaks outside a building
+- Wrong (a list of details): - [F5-F5] EVENT: view cuts to a blue screen with "Subscribe" text, two video thumbnails, and icons for Instagram, Twitter, and Snapchat
+  Right: - [F5-F5] EVENT: view cuts to a blue screen with the text "Subscribe"
+
+Output format:
+Each line is: - [Ffirst-Flast] EVENT: description
+[F3-F5] means the event is seen from frame 3 to frame 5. Use [F4-F4] for a single frame.
+
+Example (from a different video with 8 frames):
+- [F1-F3] EVENT: woman in a red apron talks to the camera in a kitchen with white tiles
+- [F4-F4] EVENT: woman in a red apron picks up a brown egg
+- [F5-F5] EVENT: woman in a red apron cracks the egg into a glass bowl
+- [F6-F6] EVENT: view cuts to a close-up of a frying pan on a gas stove
+- [F7-F8] EVENT: beaten egg is poured into the frying pan
+- [F8-F8] EVENT: boy in a yellow T-shirt comes into view from the right
+
+Now write the events of this window.
+```
+
+</details>
+
+### 差分（v6a → v6b）
+
+```diff
+--- v6a
++++ v6b
+@@ -19 +19 @@
+-- You may add one short detail about something that takes part in the event, such as what is shown on a phone screen or what the new place looks like. Do not describe things that do not take part in the event.
++- You may add one short detail about something that takes part in the event, such as what is shown on a phone screen or what the new place looks like. Add only one detail: do not list several objects, texts, signs, or icons. Do not describe things that do not take part in the event.
+@@ -23 +23 @@
+-- An action that continues over several frames is one event, from its first frame to its last frame.
++- An action that continues over several frames is one event: write it once, with the range from its first frame to its last frame. Do not write a new line for an action that is still going on, and do not write "continues to".
+@@ -24,0 +25,8 @@
++
++Do not write lines like these:
++- Wrong (one action split into several lines):
++  - [F6-F6] EVENT: man in a dark suit speaks outside a building
++  - [F7-F7] EVENT: man in a dark suit continues to speak outside a building
++  Right: - [F6-F8] EVENT: man in a dark suit speaks outside a building
++- Wrong (a list of details): - [F5-F5] EVENT: view cuts to a blue screen with "Subscribe" text, two video thumbnails, and icons for Instagram, Twitter, and Snapchat
++  Right: - [F5-F5] EVENT: view cuts to a blue screen with the text "Subscribe"
+```
+
+### 結果（3本、40秒・8枚、自動集計）
+
+| 動画 | 全体の時間(秒) | 区間 | 上限到達 | 行数 | 行/区間 | 語数の平均 | 語数の最大 | 区間内の重複 | 1行に複数の文 | EVENT以外 | 時刻不一致 | 解析不可 |
+|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| `66dwcQ1Y048_0` | 90 | 5 | 0 | 32 | 6.4 | 15.3 | 24 | 1 | 1 | 0 | 0 | 0 |
+| `NexB4vj8_54_0` | 86 | 6 | 0 | 41 | 6.8 | 12.1 | 21 | 0 | 1 | 0 | 0 | 0 |
+| `BtaVRhoLpC0_0` | 61 | 5 | 0 | 26 | 5.2 | 12.4 | 22 | 4 | 0 | 0 | 0 | 0 |
+
+### なぜこの変更か
+
+v6aの問題1（続く動作を別の行に分ける）と問題2（付ける情報が一塊を超える）への対策。続く動作は範囲で1回だけ書き「continues to」を書かない、付ける情報は1つだけ、と明示し、誤りと正しい例を1組ずつ示した。
+
+### 目視の確認
+
+- 付ける情報は一塊に収まった。v6aで看板3枚の文字を全部並べたVlog 区間2の行は `three men stand side by side, holding hands, with signs in front of them` になった。
+- ニュース 区間2で、v6aは人物を「man」と書いたが、v6bは「woman」と書いた。画像（字幕にも "her"）で確認すると女性で、v6bが正しい。
+
+### 問題点
+
+1. **続く動作の分割がまだ残る**（ニュースの区間内の重複4）。ニュース 区間3:
+
+```text
+- [F1-F2] EVENT: man in a dark suit speaks outside a building
+- [F3-F4] EVENT: man in a dark suit speaks outside a building
+- [F5-F7] EVENT: man in a dark suit speaks outside a building
+```
+   区間4も「woman with glasses and a turtleneck speaks in front of bookshelves」を同じように3行に分けた。料理とニュースで「continues to」が2件残った（`person in black gloves continues to cut cake with serrated knife`、`Rina Gonoi continues to speak outside a building`）。
+   - なお、Vlog 区間1の重複（同じ男性がF2とF6で話す）は、別の場面を挟んだ再登場なので正しい記録で、指標の「区間内の重複」はこれも数えている。
+
+2. 人物の名前: 画面の字幕にある実名（Rina Gonoi）を使う行と、見た目で呼ぶ行が混ざった。v6には「実名は画面に書かれているときだけ」の規則がない。
+
+### 次の版の目的
+
+GEBDの「区切りで決める」をそのまま手順にする: まず変化のあるframe（区切り）を見つけ、区切りと区切りの間を1行で書く。同じ人が同じことをしていれば区切りはなく、行の範囲が延びるだけ。小さなカメラの動き・表情の変化・字幕の文字の変化は区切りにしない（ニュースで字幕が毎回変わるのが分割の原因と考えた）。「continues / still / again」を禁止する。
