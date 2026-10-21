@@ -2685,3 +2685,118 @@ v6aの問題1（続く動作を別の行に分ける）と問題2（付ける情
 ### 次の版の目的
 
 GEBDの「区切りで決める」をそのまま手順にする: まず変化のあるframe（区切り）を見つけ、区切りと区切りの間を1行で書く。同じ人が同じことをしていれば区切りはなく、行の範囲が延びるだけ。小さなカメラの動き・表情の変化・字幕の文字の変化は区切りにしない（ニュースで字幕が毎回変わるのが分割の原因と考えた）。「continues / still / again」を禁止する。
+
+## 26. v6c（2026-10-21）
+
+<details><summary>v6c の本文（全文）</summary>
+
+```text
+You are transcribing the events of a video into a time-stamped log. This log is the only record of the video that will be kept. Later, someone who cannot watch the video will read it to answer questions about what happened.
+
+You are given one window of the video. Each image above is shown right after its label, such as "frame 1 (120.0 s):". The frames of this window are:
+{{chunk.frame_manifest}}
+
+Refer to frames by their numbers: F1 is frame 1, F2 is frame 2, and so on.
+
+What an event is:
+An event is a change. Go through the frames in order and write one event each time one of these happens:
+1. A person, animal, or object starts an action, stops it, or switches to another action (for example, a man stops talking and holds up a phone). Each repetition of the same action is a new event.
+2. Someone starts or stops handling an object (picks it up, puts it down, hands it over, turns it on).
+3. A person, animal, or object comes into view or leaves the view.
+4. The place or the view changes: a cut to a different place, the camera turning to a new view, or a large change of light or color.
+At F1 you cannot see what came before, so start by writing what each visible person or animal is doing at F1.
+
+How to find the events:
+1. Compare each frame with the frame before it, and note the frames where something changes. These are the boundaries.
+2. Between two boundaries nothing changes, so write one line that covers all those frames, from the first to the last.
+3. If the next frame shows the same person doing the same thing, there is no boundary there: the line just gets longer. A small camera movement, a change of the person's facial expression, or new subtitle text is not a boundary.
+
+How to write an event:
+- One event per line. Write who does what: name people and animals by how they look, such as "man in a black T-shirt", and use the same name every time.
+- You may add one short detail about something that takes part in the event, such as what is shown on a phone screen or what the new place looks like. Add only one detail: do not list several objects, texts, signs, or icons. Do not describe things that do not take part in the event.
+- For a change of place, name the new place with at most two features, such as "white room with a blue sofa".
+- Write events of people in the background too, but only when you can clearly see what they do. Write the main people first.
+- Write only what you can see. Do not guess hidden actions, reasons, or feelings.
+- An action that continues over several frames is one event: write it once, with the range from its first frame to its last frame. Never write "continues", "still", or "again" for an action that has not stopped.
+- Never write the same event twice. When every change in the frames is written, stop.
+
+Do not write lines like these:
+- Wrong (one action split into several lines):
+  - [F6-F6] EVENT: man in a dark suit speaks outside a building
+  - [F7-F8] EVENT: man in a dark suit continues to speak outside a building
+  Right: - [F6-F8] EVENT: man in a dark suit speaks outside a building
+- Wrong (a list of details): - [F5-F5] EVENT: view cuts to a blue screen with "Subscribe" text, two video thumbnails, and icons for Instagram, Twitter, and Snapchat
+  Right: - [F5-F5] EVENT: view cuts to a blue screen with the text "Subscribe"
+
+Output format:
+Each line is: - [Ffirst-Flast] EVENT: description
+[F3-F5] means the event is seen from frame 3 to frame 5. Use [F4-F4] for a single frame.
+
+Example (from a different video with 8 frames):
+- [F1-F3] EVENT: woman in a red apron talks to the camera in a kitchen with white tiles
+- [F4-F4] EVENT: woman in a red apron picks up a brown egg
+- [F5-F5] EVENT: woman in a red apron cracks the egg into a glass bowl
+- [F6-F6] EVENT: view cuts to a close-up of a frying pan on a gas stove
+- [F7-F8] EVENT: beaten egg is poured into the frying pan
+- [F8-F8] EVENT: boy in a yellow T-shirt comes into view from the right
+
+Now write the events of this window.
+```
+
+</details>
+
+### 差分（v6b → v6c）
+
+```diff
+--- v6b
++++ v6c
+@@ -15 +15,5 @@
+-If nothing changes between frames, write nothing for those frames.
++
++How to find the events:
++1. Compare each frame with the frame before it, and note the frames where something changes. These are the boundaries.
++2. Between two boundaries nothing changes, so write one line that covers all those frames, from the first to the last.
++3. If the next frame shows the same person doing the same thing, there is no boundary there: the line just gets longer. A small camera movement, a change of the person's facial expression, or new subtitle text is not a boundary.
+@@ -23 +27 @@
+-- An action that continues over several frames is one event: write it once, with the range from its first frame to its last frame. Do not write a new line for an action that is still going on, and do not write "continues to".
++- An action that continues over several frames is one event: write it once, with the range from its first frame to its last frame. Never write "continues", "still", or "again" for an action that has not stopped.
+@@ -29 +33 @@
+-  - [F7-F7] EVENT: man in a dark suit continues to speak outside a building
++  - [F7-F8] EVENT: man in a dark suit continues to speak outside a building
+```
+
+### 結果（3本、40秒・8枚、自動集計）
+
+| 動画 | 全体の時間(秒) | 区間 | 上限到達 | 行数 | 行/区間 | 語数の平均 | 語数の最大 | 区間内の重複 | 1行に複数の文 | EVENT以外 | 時刻不一致 | 解析不可 |
+|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| `66dwcQ1Y048_0` | 106 | 5 | 0 | 31 | 6.2 | 17.6 | 32 | 1 | 0 | 0 | 0 | 0 |
+| `NexB4vj8_54_0` | 103 | 6 | 0 | 39 | 6.5 | 13.1 | 23 | 0 | 1 | 0 | 0 | 0 |
+| `BtaVRhoLpC0_0` | 60 | 5 | 0 | 21 | 4.2 | 11.5 | 22 | 3 | 0 | 0 | 0 | 0 |
+
+### なぜこの変更か
+
+v6bでもニュースで同じ「建物の外で話す」が [F1-F2] [F3-F4] [F5-F7] に分かれたので、GEBDの「区切りで決める」をそのまま手順にした（前のframeと比べて変化のあるframeを見つけ、区切りの間を1行で書く。小さなカメラの動き・表情・字幕の文字の変化は区切りにしない）。
+
+### 目視の確認
+
+- 料理 区間2は、v6bと同じく画像と対応（ヨーグルトを注ぐ → 白い粉の器へカット → 入れる → 文字の表示 → ミキサー → 持ち上げる）。
+- Vlog 区間4は、v6aと同じく8枚と対応。付ける情報も短くなった（`person holds a smartphone displaying a social media post with colorful sticky notes`）。
+- ニュース 区間3では、また3行に分かれた。**画像で確認すると、F1〜F2（中くらいの大きさ）→ F3〜F4（別の場所から横向き）→ F5〜F7（顔のアップ）と、実際にカットが2回あった。分割は正しい区切りだった。**
+
+```text
+- [F1-F2] EVENT: man in a dark suit speaks outside a building
+- [F3-F4] EVENT: man in a dark suit speaks outside a building
+- [F5-F7] EVENT: man in a dark suit speaks outside a building
+- [F8-F8] EVENT: view cuts to a woman in a beige turtleneck and glasses in front of bookshelves
+```
+
+### 問題点
+
+1. **区切ったのに、何が切り替わったかが書かれず、同じ文が並ぶ。** 読む側には重複にしか見えず、カットの情報（アップになった、別の場所から撮った）が失われる。v6a・v6bで「続く動作の分割」と見ていたもののうち、ニュースの分は、この「同じ文の区切り」だった可能性が高い。
+2. **性別の判断がぶれる。** この人物は女性（字幕も "her"）だが、v6cは「man」、v6bは「woman」と書いた。
+3. 小さな問題: 料理で `person in black gloves continues to cut the cake with a serrated knife` が1件残った。
+
+### 次の版の目的
+
+- 各行は、その行の最初のframeで何が変わったかを書く。同じ人が同じことを続けたまま見え方が変わったときは「view cuts to」で始め、新しい見え方を書く（前の行と同じ文にしない）。誤りと正しい例を1組見せる。
+- 性別がはっきりしないときは「person」と書く。
