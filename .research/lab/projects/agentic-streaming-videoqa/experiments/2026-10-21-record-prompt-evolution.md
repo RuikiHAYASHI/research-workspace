@@ -14,6 +14,7 @@ tags: [prompt, event-log, recording-agent, qwen3-vl, longvideobench, prompt-engi
 - モデルはすべて `Qwen/Qwen3-VL-4B-Instruct`、temperature 0（貪欲生成）、GPU 1台（RTX A4000）。区間は20秒・8枚（約2.5秒に1枚）。
 - 関連: [タスク一覧と記録プロンプトの設計の壁打ち](../../../../secretary/notes/brainstorm/2026-10-19-longvideobench-task-table-without-subtitles.md)、[v3](../../../../secretary/notes/brainstorm/2026-10-20-event-log-prompt-v3.md)、[v4](../../../../secretary/notes/brainstorm/2026-10-20-event-log-prompt-v4.md)、[v5](../../../../secretary/notes/brainstorm/2026-10-21-event-log-prompt-v5.md)、[Workbench spec](../specs/2026-10-20-pre-study-record-workbench-spec.md)。
 - 新リポジトリ: `RuikiHAYASHI/2026_10_hayashi_pre_study_agent_system_workbench`（本文は `prompts/record/image/v{3,4,5}/prompt.en.txt`）。
+- **全版の本文（2026-10-22〜）**: 新リポジトリの `prompts/history/`（`record/` に v0〜v6h と動画入力版、`old-workbench-65af089/` に旧Workbenchの一式、`README.md` に版の一覧と本ノートの節）。試行の本文は `experiments/*/prompts/` からここへ移した（branch `exp/qwen-video-input-timestamps`、commit `b0f6fe7`）。
 - 実行結果と試行の記録: 新リポジトリの `experiments/2026-10-20-record-prompt-trials/`（Run 4件、試行のJSONと動画ごとのMarkdown、試した案の本文、スクリプト。commit `8cd5c76`）。
 
 ## 全体の流れ（一覧）
@@ -38,6 +39,13 @@ tags: [prompt, event-log, recording-agent, qwen3-vl, longvideobench, prompt-engi
 | v5e | 10/21 | 試行 | 3本＋2本 | OBJECT 5行まで、上限40に戻す | 3本は良好。追加の2本で文字の多い画面が暴走 |
 | v5f | 10/21 | 試行 | 3本 | 「何もない」行の言い換え | ループ再発で悪化 |
 | v5g → **v5** | 10/21 | 確定 | 3本＋2本 | 文字の多い画面はタイトルだけ | 3本で最良。スマホの色一覧はまだ暴走 |
+| v6a | 10/21 | 試行 | 3本（40秒） | EVENTだけを一から（GEBDのイベント＝変化） | v5の約1/3〜1/5の時間。続く動作を別の行に分ける |
+| v6b〜v6d | 10/21 | 試行 | 3本（40秒） | 続く動作は1行、付ける情報は1つ、区切りを先に決める、何が変わったか | 第25〜27節 |
+| v6e | 10/21 | 試行 | 3本（40秒） | 寄り・引き・角度だけのカットは区切らない | v6系の到達点（第28節） |
+| v6f | 10/21 | 試行 | 3本（40秒） | 直前の行との自己チェック、状態だけの行の禁止 | 効かず、v6eとほぼ同じ |
+| v6e（20秒） | 10/21 | 試行 | 3本（20秒） | 区間を20秒・8枚に戻す（林の指示） | 時間と行数が約2倍。集約の入力にした |
+| v6g | 10/21 | 試行 | 3本（20秒） | 人を3つの特徴で呼ぶ、性別に自信がなければ person、例の呼び方も3つに | 暴走なし。呼び方は詳しくなったが、似た3人を区別できない |
+| v6h | 10/21 | 試行 | 3本（20秒） | 髪型とひげの形、似た人は違う特徴を書く、コンマを使わない呼び方の例 | 第32節 |
 
 ## 0. 旧Workbenchのプロンプト（出発点）
 
@@ -3175,3 +3183,165 @@ v6eの残り（ニュースの1区間で寄り・角度のカットを挟んだ�
 ### 次の版の目的
 
 プロンプトだけでの改善は頭打ち（v6c〜v6fで同じ出力が続いた）。林に相談する（2026-10-21）。
+
+## 30. 区間を20秒・8枚に戻す（v6e のまま、2026-10-21）
+
+### きっかけ（林）
+
+- 「処理時間が減ったので20秒8フレームでやってください」。v6eはv5より速くなった（40秒・8枚で 91 / 83 / 48秒）。
+- この記録を、集約（段A・段B）の入力にする。集約の作業ログは [段A・段Bの結果](2026-10-21-event-aggregation-stage-a-b.md) にある。
+- 実行と結果は、新リポジトリの `experiments/2026-10-21-event-aggregation/` にある。結果 `trials/v6e-20s.json` は git で追跡しない。
+
+### 結果（3本、20秒・8枚、自動集計）
+
+| 動画 | 全体の時間(秒) | 区間 | 上限到達 | 行数 | 語数の平均 | 区間内の重複 | 時刻不一致 | 解析不可 |
+|---|--:|--:|--:|--:|--:|--:|--:|--:|
+| `66dwcQ1Y048_0` | 177 | 10 | 0 | 59 | 15.0 | 1 | 0 | 0 |
+| `NexB4vj8_54_0` | 166 | 12 | 0 | 65 | 13.0 | 1 | 0 | 0 |
+| `BtaVRhoLpC0_0` | 76 | 10 | 0 | 27 | 11.8 | 3 | 0 | 0 |
+
+- 40秒と比べると、時間も行数も約2倍。v5（480 / 248 / 263秒）よりはずっと速い。
+
+### 問題点（集約の段Bで分かったこと）
+
+- 人の呼び方が薄い（`man in a dark suit`、`man in a black T-shirt`）。区間をまたいで同じ人にIDを振ると、別人を同じIDにしてしまう。
+  - Vlogでは、案内役のIDに別人の「黒いTシャツの男性」が3行混ざった。
+  - プロンプトの例の呼び方が、どれも服1つだけ（`man in a dark suit`、`woman in a red apron`）。ニュースの出力が例とまったく同じ `man in a dark suit` になっていたので、例を真似している可能性が高い（推測）。
+
+### 次の版の目的
+
+- 人の呼び方を詳しくする。ただし、付け足すのは主語の呼び方だけにして、物の情報は今のまま（v5の暴走を繰り返さない）。
+
+## 31. v6g（2026-10-21）
+
+### きっかけ（林）
+
+- 「EVENT出力エージェントにもうちょい頑張ってもらって、人物や物の詳しい情報を加えてあげてもいい」。
+- 終了条件（林）: 暴走がなく、かなりうまく動作している（IDの入れ替えなどがない）状態になるまで検討を重ねる。
+
+### 差分（v6e → v6g）
+
+```diff
+--- v6e
++++ v6g
+-- One event per line. Write who does what: name people and animals by how they look, such as "man in a black T-shirt", and use the same name every time. If you are not sure whether a person is a man or a woman, write "person".
++- One event per line. Write who does what.
++- Name each person by three features that stay the same during the whole video, so that the same person can be found again in other parts of the video:
++  1. the upper clothing, with its color and type (for example, "black T-shirt", "red plaid shirt", "dark gray suit");
++  2. the hair or face (for example, "short brown hair", "long blond hair", "bald", "glasses", "beard");
++  3. one more thing that is easy to recognize (for example, text written on the clothing, a hat, a necklace, black gloves, a backpack).
++  Example: "man in a black T-shirt with "SEEK" text, short brown hair". Write a feature only when you can see it; if you cannot see a feature, write the features you can see. Use the same three features every time the person appears.
++- Write "man" or "woman" only when it is clear. If you are not sure, write "person". Never call the same person "man" in one line and "woman" in another.
++- Name animals in the same way (color, size, one distinctive feature). Things that are not people or animals do not need these features.
+```
+
+あわせて、誤りの例・正しい例・出力例の呼び方を、すべて3つの特徴の形に直した（例: `man in a navy suit with gray hair and glasses`、`woman in a red apron with long black hair tied back and silver earrings`）。誤りの例を1組足した: 「1つの特徴だけの呼び方（多くの人が同じ）」 `man in a white shirt` → `man in a white shirt with short black hair and a blue backpack`。
+
+### なぜこの変更か
+
+- 段Bで、珍しい手がかり（服の文字 `"SEEK DISCOMFORT"`、黒い手袋）がある人は正しく1つのIDになった。服1つだけの呼び方では、別人を同じIDにした。
+- 先行研究も、区間をまたいだ人の照合を、モデルの呼び方だけに任せていない。MemLife は服・髪・眼鏡を補助に書かせ、TaskMem は顔のIDを与える（[出力形式の調査](../../../../secretary/notes/brainstorm/2026-10-21-event-transcription-prior-work-formats.md)）。
+
+### 結果（3本、20秒・8枚、自動集計）
+
+| 動画 | 全体の時間(秒) | 上限到達 | 行数 | 語数の平均 | 語数の最大 | 区間内の重複 | 時刻不一致 | 解析不可 |
+|---|--:|--:|--:|--:|--:|--:|--:|--:|
+| `66dwcQ1Y048_0` | 189（v6e 177） | 0 | 59 | 22.7（15.0） | 40 | 1 | 0 | 0 |
+| `NexB4vj8_54_0` | 175（166） | 0 | 64 | 14.2（13.0） | 29 | 1 | 0 | 0 |
+| `BtaVRhoLpC0_0` | 102（76） | 0 | 27 | 18.6（11.8） | 40 | 2 | 0 | 0 |
+
+IDの評価（目で作った正解と比べた。段Bの方法ごと。方法の説明は [段A・段Bの結果](2026-10-21-event-aggregation-stage-a-b.md) 第7節）:
+
+| 段Bの方法 | 入力 | Vlog 入れ替え / 誤ったIDの行 / 分かれ | 料理 | ニュース |
+|---|---|---|---|---|
+| v1（語の集合） | v6e | 3 / 4 / 0 | 0 / 0 / 0 | 0 / 0 / 2 |
+| v1（語の集合） | v6g | 2 / 10 / 2 | 0 / 0 / 0 | 0 / 0 / 2 |
+| v3（欄ごと、色の系統） | v6e | 0 / 0 / 2 | 0 / 0 / 0 | 0 / 0 / 3 |
+| v3（欄ごと、色の系統） | v6g | 1 / 2 / 3 | 0 / 0 / 0 | 0 / 0 / 1 |
+
+### 目視の確認
+
+- 暴走なし（上限到達0、ループなし）。語数は平均で約1.5倍、時間は 7%・5%・34% 増えた。
+- 呼び方はほぼ3つの特徴になった（例: `man in a black T-shirt with "SEEK DISCOMFORT" text and short blond hair`）。
+- 性別のぶれ: ニュースで、Gonoiを `person in a dark gray suit with short brown hair` と書く行が出た（personの規則は効いた）。ただし `man in a navy suit` と書く区間も残った。
+- 物の情報は増えなかった（付け足すのは主語だけ、という意図どおり）。
+
+### 問題点
+
+1. **似た3人を区別できない。** ベッドの男性・台所の男性・字幕「money」の男性は別人（拡大した画像で確認）。3人とも `man in a black T-shirt with a beard and dark hair` とほぼ同じ文で書かれた。画像では髪型（波打つ・後ろに流す・巻き毛）とひげの濃さが違う。
+2. **例のコンマ**: 例を `…"SEEK" text, short brown hair` とコンマで区切ったため、モデルもコンマで書いた。段Bの主語の取り出しがコンマで止まり、髪の情報が落ちた（段B v5で、コンマの後に見た目の語が続く場合は止めないように直した）。
+3. 着替えた人（滑走路でタキシードを着た案内役、昔の映像でフリースを着たGonoi）は、服で照合する限り同じIDにできない。受け入れる限界として扱う。
+
+### 次の版の目的
+
+- 髪型とひげの形を書かせる。似た人どうしは違う特徴を書かせる。
+- 例をコンマのない形（`with … and …`）にする。
+
+## 32. v6h（2026-10-21）
+
+### 差分（v6g → v6h）
+
+```diff
+--- v6g
++++ v6h
+-  2. the hair or face (for example, "short brown hair", "long blond hair", "bald", "glasses", "beard");
++  2. the hair: its color, length, and style (for example, "short wavy brown hair", "long straight blond hair", "slicked-back black hair", "curly black hair", "bald"), and the face when it has glasses or facial hair (say "stubble", "short beard", or "full beard");
+-  Example: "man in a black T-shirt with "SEEK" text, short brown hair". Write a feature only when …
++  Example: "man in a black T-shirt with "SEEK" text and short wavy brown hair". Write the features right after "man", "woman", or "person", joined by "with" and "and", before the action. Write a feature only when …
++  Two different people can wear similar clothes. When two people look alike, write the feature that makes them different (for example, "stubble" for one and "full beard" for the other).
+-  Right: - [F2-F2] EVENT: man in a white shirt with short black hair and a blue backpack runs across a street
++  Right: - [F2-F2] EVENT: man in a white shirt with short curly black hair and a blue backpack runs across a street
+```
+
+### なぜこの変更か
+
+- v6gの似た3人（ベッド・台所・字幕「money」の男性）は、画像では髪型（波打つ・後ろに流す・巻き毛）と、ひげの濃さが違う。それを書かせれば、段Bで区別できると考えた。
+- 例のコンマをやめた（第31節の問題点2）。
+
+### 結果（3本、20秒・8枚、自動集計）
+
+| 動画 | 全体の時間(秒) | 上限到達 | 行数 | 語数の平均 | 語数の最大 | 区間内の重複 | 時刻不一致 | 解析不可 |
+|---|--:|--:|--:|--:|--:|--:|--:|--:|
+| `66dwcQ1Y048_0` | 189（v6g 189） | 0 | 59 | 23.3（22.7） | 38 | 2 | 0 | 0 |
+| `NexB4vj8_54_0` | 159（175） | 0 | 65 | 15.3（14.2） | 32 | 0 | 0 | 0 |
+| `BtaVRhoLpC0_0` | 96（102） | 0 | 27 | 21.7（18.6） | 51 | 2 | 0 | 0 |
+
+### 目視の確認と問題点
+
+- 暴走なし。
+- **髪型の指示はほとんど守られなかった。** ほとんどの人が同じ型の `short dark hair` で書かれた。似た3人は3人とも `man in a black T-shirt with short dark hair and a beard` になり、区別できなかった。屋上の男性だけが `stubble` と書かれた。
+- 一部では書かれた（ニュースの `short wavy brown hair`、`short bob haircut`、Vlogの `long straight black hair`）。
+- 段B v5（そのときの方法）では、Vlogの入れ替えが 1 → 4 に増えた。同じ型の呼び方が増え、別人どうしが一致しやすくなった。
+- 段Bを変えたあと（段B v8、集約の作業ログ 第7.7〜7.11節）は、v6g・v6hともに入れ替え0で、差はほとんどない。
+
+### 判断（AIの考え）
+
+- 4Bのモデルに、プロンプトで「似た人を書き分けさせる」のは難しい。各区間を独立に書くので、別の区間に似た人がいることをモデルは知らない。
+- IDの入れ替えは、段Bの規則（ありふれた手がかりだけでは、別の人やカットをまたいでつながない）で防ぐ方が確実だった。
+- **記録の既定の候補は v6g とする。** v6hは語数が多いぶん得がない。v6gを、前に暴走した2本でも確かめる（第33節）。
+
+## 33. v6g を、前に暴走した2本で確かめる（2026-10-21）
+
+v5で暴走した2本（第18節）に v6g を当てた: `gtX_oRpLClY`（日常Vlog、スマホの設定画面）と `22iOyzE8Ec0`（理系解説）。
+
+| 動画 | 全体の時間(秒) | 区間 | 上限到達 | 行数 | 語数の平均 | 語数の最大 | 区間内の重複 | 解析不可 |
+|---|--:|--:|--:|--:|--:|--:|--:|--:|
+| `gtX_oRpLClY_0` | 201（v5 569） | 12 | 0 | 80（v5 495） | 16.0 | 25 | 2 | 0 |
+| `22iOyzE8Ec0_0` | 158（v5 278） | 12 | 0 | 46（v5 155） | 23.4 | 36 | 1 | 0 |
+
+- **暴走なし。** v5で色の名前を297行書き続けた設定画面も、v6gでは操作の1行（`selects "Pastel Orange" as the background color on the smartphone screen`）になった。
+- 理系解説では、画面の文字を長めに写す行が少し残る（`text overlay: "WHEN THAT SALTY, IONIC WATER FLOWS…"`）。ループではない。
+- **新しい問題: 区間ごとに、同じ人の服の推測が変わる。** スマホの動画は最初から最後まで同じ1人の手（黄色と白のしま模様の袖）だが、区間ごとに次のように書いた。
+  - `yellow and white striped sleeve`
+  - `white and yellow sleeveless top with a gold bracelet`
+  - `yellow long-sleeved shirt with a wristband`
+  - `white sweater with yellow trim`
+  - 袖しか写らないので、服の種類を区間ごとに推測している。区間は前の区間を見ずに独立して書くので、呼び方がそろわない。
+  - 段Bでは9個のIDに分かれた（入れ替えはない。集約の作業ログ 第7.12節）。
+
+### 判断（AIの考え）
+
+- 記録の既定は v6g でよい（暴走なし、入れ替えは段Bで防げる）。
+- 呼び方を区間の間でそろえるには、プロンプトの規則だけでは足りない。各区間が独立だからである。前の区間で出た人の一覧（IDと呼び方）を渡す、という設計の変更が必要になる。
+  - 先行研究では、前の区間の文章を渡すと悪くなるという報告がある（Lando、MemLife）。一方で、人物のIDや一覧を外から与える方式もある（TaskMem、MemLife、Imprint。[出力形式の調査](../../../../secretary/notes/brainstorm/2026-10-21-event-transcription-prior-work-formats.md)）。
+  - 進めるかどうかは林と相談する。
