@@ -81,6 +81,7 @@ YouTubeなどのライブ配信を想定し、動画を先頭から逐次的に�
 - [ ] LongVideoBenchのタスク（question type）を整理し、同じ手法で扱えるタスクを複数選ぶ
 - [ ] 予習Agent → イベントのMarkdown記録 → 集約 → 分割統治で回答する構成の第1版をQwen3-VLで実装する
 - [ ] 予習 → イベント記録 → 集約の方向性でスライドを作る
+- [ ] 回答Agentに集約した記録を渡す形（箇条書き・表・JSON）を、LongVideoBenchの正答率で比べる（回答Agentができてから。[メモ](../../../secretary/notes/brainstorm/2026-10-22-record-input-format-for-answer-agent.md)）
 
 ## Workbench個人利用の起動・終了運用（2026-09-29ユーザー指示）
 
