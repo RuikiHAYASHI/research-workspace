@@ -90,7 +90,7 @@ GPUS=0,1,2,3 repro/run.sh <bench> full   # 全問（run-id: repro-full）。止�
 |---|---|---|---|---|---|---|
 | ODV-Bench | 1・6,348 | 1,190 本 OK | 通った（11/03 01:44〜01:51） | 完了（11/03 01:52〜03:51、約2時間） | **71.36**（公式の採点、選択肢を読めなかった予測 0） | 71.3 / 57.6 |
 | ViSpeak | 6・700 | 700 本 OK | キュー待ち | キュー待ち | 採点保留 | — |
-| OVO-Timing | 1・172 | 172 本 OK | キュー待ち | キュー待ち | — | — |
+| OVO-Timing | 1・172 | 172 本 OK | 通った（11/03 03:52〜03:55） | 完了（11/03 03:55〜05:12、約1時間20分） | **42.9**（平均 F1、±2 秒。CRR 25.2・REC 63.1・SSR 40.5。公式の採点） | 41.6 / 29.4 |
 | ProactiveVideoQA | 4・1,427（EGO 326・TV 500・VAD 101・WEB 500） | 1,377 本 OK | キュー待ち | キュー待ち | 採点保留 | — |
 
 ## 6. 時系列
@@ -122,3 +122,4 @@ GPUS=0,1,2,3 repro/run.sh <bench> full   # 全問（run-id: repro-full）。止�
 - 判定 LLM は Qwen3-235B-A22B（DashScope、温度 0、`configs/judge.json`）。学習コード（PSTL）は公開されておらず、再現できるのは評価まで
 - 11/03 03:51 ODV-Bench の full が終わった。正答率 71.36（`Eval/judge_outputs/OneStreamer-4B/odvbench/repro-full/paper/odvbench/metrics.json`）で、論文の 71.3 とほぼ一致。2 択の Distance Prediction（正答率 64.7）は「近づいている」に、Risk Prediction（51.3）は「危険あり」に大きく偏っている（詳しくは報告ページ）。03:52 キューが OVO-Timing の smoke を開始。報告ページを更新（repro `bae1976`）
 - 11/03 04:04 データのダウンロードがすべて終わった。OVBench の展開と確認が済み、zip を削除。StreamingBench は置き方が決められないため未展開。OVO-Timing の smoke が通り、03:55 から full
+- 11/03 05:12 OVO-Timing の full が終わった。平均 F1 42.9（`Eval/judge_outputs/OneStreamer-4B/ovo_timing/repro-full/paper/ovo_timing/metrics.json`）で、論文の 41.6 より 1.3 高い（サンプリングで応答を作るので多少は揺れうる）。どのタスクも再現率が適合率より高く、応答を多めに出している。CRR では最初の応答が正解より 2 秒以上早いのが 48 問中 29 問。公式の採点は応答の時刻だけを見て中身を見ない（`ovo_timing.py` の `_f1_stats`）。05:12 キューが ViSpeak の smoke を開始し、05:13 から full。報告ページに OVO-Timing のタイムラインと具体例 18 問を追加（repro `1a0b440`）
