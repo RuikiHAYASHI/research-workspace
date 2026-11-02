@@ -88,7 +88,7 @@ GPUS=0,1,2,3 repro/run.sh <bench> full   # 全問（run-id: repro-full）。止�
 
 | ベンチ | ジョブ・問題数（dry-run） | 動画の確認 | smoke | full | 再現の値 | 論文の値 |
 |---|---|---|---|---|---|---|
-| ODV-Bench | 1・6,348 | 1,190 本 OK | 通った（11/03 01:44〜01:51） | 実行中（11/03 01:52〜、4 GPU で約4時間の見込み） | — | 71.3 / 57.6 |
+| ODV-Bench | 1・6,348 | 1,190 本 OK | 通った（11/03 01:44〜01:51） | 完了（11/03 01:52〜03:51、約2時間） | **71.36**（公式の採点、選択肢を読めなかった予測 0） | 71.3 / 57.6 |
 | ViSpeak | 6・700 | 700 本 OK | キュー待ち | キュー待ち | 採点保留 | — |
 | OVO-Timing | 1・172 | 172 本 OK | キュー待ち | キュー待ち | — | — |
 | ProactiveVideoQA | 4・1,427（EGO 326・TV 500・VAD 101・WEB 500） | 1,377 本 OK | キュー待ち | キュー待ち | 採点保留 | — |
@@ -120,3 +120,4 @@ GPUS=0,1,2,3 repro/run.sh <bench> full   # 全問（run-id: repro-full）。止�
 - OVO-Timing だけ温度 0.7・top_p 0.8・top_k 20 のサンプリング（seed 42）。論文には書かれていない
 - ViSpeak の採点は、公式ドキュメントでは「±2 秒」だが、コードは [正解の時刻, +2 秒] で、早すぎる応答を正解にしない（`Proactive_Eval/ViSpeak-Bench/src/vispeak/scoring.py`）
 - 判定 LLM は Qwen3-235B-A22B（DashScope、温度 0、`configs/judge.json`）。学習コード（PSTL）は公開されておらず、再現できるのは評価まで
+- 11/03 03:51 ODV-Bench の full が終わった。正答率 71.36（）で、論文の 71.3 とほぼ一致。2 択の Distance Prediction（正答率 64.7）は「近づいている」に、Risk Prediction（51.3）は「危険あり」に大きく偏っている（詳しくは報告ページ）。03:52 キューが OVO-Timing の smoke を開始。報告ページを更新（repro `bae1976`）
