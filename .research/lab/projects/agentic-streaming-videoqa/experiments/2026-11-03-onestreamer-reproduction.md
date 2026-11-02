@@ -103,3 +103,20 @@ GPUS=0,1,2,3 repro/run.sh <bench> full   # 全問（run-id: repro-full）。止�
 - 11/03 02:33 第1弾のダウンロード（OVBench まで）が終わった。02:36 OVO-Bench の展開が終わり、OVO-Timing の dry-run と動画の確認が済んだ。tar を削除
 - 11/03 02:4x OVBench の展開を開始。ODV-Bench の full は 02:48 時点で 3,161 / 6,348 問（エラーなし）
 - 11/03 02:48 `repro/queue.sh` で、ODV-Bench の full が終わったら OVO-Timing → ViSpeak → ProactiveVideoQA を順に smoke → full で回すキューを開始（tmux `os-queue1`、ログ `Eval/outputs/_launcher_logs/queue1.log`）
+
+## 7. 報告ページと論文解説スライド（2026-11-03 林の依頼）
+
+- 報告ページ（HTML の Artifact、非公開）: https://claude.ai/artifact/NE8jaHtDzUGo1k7cFsaxQ9
+  - ベンチごとに、再現の値と論文の値、サブタスクごとの正答率、選択肢ごとの予測と正解の割合、具体例（サブタスクごとに正解 2・不正解 2、入力区間の画像 8 枚と最大 30 秒の動画、AI の考察）を載せる
+  - 生成: `repro/report/build_report.py`、例の固定: `repro/report/selection.json`、考察: `repro/report/notes.json`（AI が画像を見て書いたもの。未検証）
+  - 林の指示（11/03 03:xx）: トークン節約のため、更新はベンチが1つ終わるごとに行う。うまくいった例・いかなかった例を複数残す
+- 論文解説スライド（Slides の Artifact、74 枚、Appendix A〜F と公式コードとの対応を含む）: https://claude.ai/artifact/71xwDrvZMduRQkKHxxvakv
+  - 別のエージェントが作成。表の多いスライドは文字がはみ出している可能性あり（描画は未確認）
+
+### スライド作成のときに公式コードで確かめたこと（再現に関わるもの。AI が読んだ結果）
+
+- 記憶づくり（OVO-Bench・StreamingBench）は 4fps・1 秒ごとの更新で、文脈は 128 枚 = 32 秒に切り詰める。32 秒より古い映像と自分の記録は、記憶づくりの最中は見えない（`src/onestreamer/caption_video.py`）
+- 回答は「記憶 + 直近 16 枚（1fps、元の解像度）」、記憶が 12,000 token を超えたときだけ選別する（`src/onestreamer/memory.py`）
+- OVO-Timing だけ温度 0.7・top_p 0.8・top_k 20 のサンプリング（seed 42）。論文には書かれていない
+- ViSpeak の採点は、公式ドキュメントでは「±2 秒」だが、コードは [正解の時刻, +2 秒] で、早すぎる応答を正解にしない（`Proactive_Eval/ViSpeak-Bench/src/vispeak/scoring.py`）
+- 判定 LLM は Qwen3-235B-A22B（DashScope、温度 0、`configs/judge.json`）。学習コード（PSTL）は公開されておらず、再現できるのは評価まで
