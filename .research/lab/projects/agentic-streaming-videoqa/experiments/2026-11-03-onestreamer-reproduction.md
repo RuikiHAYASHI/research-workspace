@@ -57,9 +57,9 @@ RuikiHAYASHI/2026_11_hayashi_onestreamer (private, 林が 11/03 に空で作成)
 | ViSpeak-Bench | `fushh7/ViSpeak-Bench@4357ec8` | zip の中の `ViSpeak-Bench/` を `data/` に展開（ルート直下にタスクのフォルダ） | 700 本すべて開けた。zip 削除済み |
 | OVOBench | `JoeLeelyf/OVO-Bench@fec29e3` | tar のまま `chunked_videos/`（3,035本）・`src_videos/`（645本）に展開 | OVO-Timing の 172 本（すべて chunked_videos）が開けた。展開の大きさが tar と一致し、tar 削除済み（chunked の tar は 143 にもある）。QA 用の TSV は未入手 |
 | ProactiveVideoQA | `wangyueqian/ProactiveVideoQA@7f59bce` | `<EGO/TV/VAD/WEB>/anno.json`（HF からコピー）と、`videos.zip` を各フォルダに展開した `videos/` | 1,377 本すべて開けた。zip の件数と一致し、zip 削除済み |
-| OmniMMI | `bigai-nlco/OmniMMI@7024889` | 5タスクの JSON と `videos/` だけを落とす | ダウンロード中 |
-| StreamingBench | `mjuicem/StreamingBench@48872fa` | — | ダウンロード待ち（`StreamingBench.tsv` がないので回せない） |
-| OVBench | `MCG-NJU/OVBench@4d9ddfa` | 公式は `OVBench/<注釈の video_id>` を探す。フレーム画像の zip（AVA・ArgoVerse・BDD・Charades・HACS・LaSOT・YFCC100M）はトップのフォルダがないので `OVBench/<名前>/` へ。`coin/`→`COIN/`、`HiREST/`→`hirest/` に名前だけ変えた（注釈の大文字・小文字に合わせる）。`AVA_RAW/` は `OVBench_new/AVA_RAW/`（`extract_ovbench.sh`） | 展開中。New AVA の JSON がないので回せない |
+| OmniMMI | `bigai-nlco/OmniMMI@7024889` | 5タスクの JSON と `videos/` だけを落とした（`--include`） | 9 ジョブ・2,200 問、921 本すべて開けた |
+| StreamingBench | `mjuicem/StreamingBench@48872fa` | zip のまま `_archives/` に置く。中は `sample_N/video.mp4` で、カテゴリ間で名前が重なる可能性があり、置き方は `StreamingBench.tsv` の `video` 列を見ないと決められない | ダウンロード済み・未展開（TSV がないので回せない） |
+| OVBench | `MCG-NJU/OVBench@4d9ddfa` | 公式は `OVBench/<注釈の video_id>` を探す。フレーム画像の zip（AVA・ArgoVerse・BDD・Charades・HACS・LaSOT・YFCC100M）はトップのフォルダがないので `OVBench/<名前>/` へ。`coin/`→`COIN/`、`HiREST/`→`hirest/` に名前だけ変えた（注釈の大文字・小文字に合わせる）。`AVA_RAW/` は `OVBench_new/AVA_RAW/`（`extract_ovbench.sh`） | 展開済み。New AVA 以外の 5,694 行が指す動画・画像フォルダはすべてあった。zip の件数と展開した件数が一致し、zip 削除済み。New AVA の JSON がないので回せない |
 
 ### 計画（spec）と違ったこと
 
@@ -121,3 +121,4 @@ GPUS=0,1,2,3 repro/run.sh <bench> full   # 全問（run-id: repro-full）。止�
 - ViSpeak の採点は、公式ドキュメントでは「±2 秒」だが、コードは [正解の時刻, +2 秒] で、早すぎる応答を正解にしない（`Proactive_Eval/ViSpeak-Bench/src/vispeak/scoring.py`）
 - 判定 LLM は Qwen3-235B-A22B（DashScope、温度 0、`configs/judge.json`）。学習コード（PSTL）は公開されておらず、再現できるのは評価まで
 - 11/03 03:51 ODV-Bench の full が終わった。正答率 71.36（`Eval/judge_outputs/OneStreamer-4B/odvbench/repro-full/paper/odvbench/metrics.json`）で、論文の 71.3 とほぼ一致。2 択の Distance Prediction（正答率 64.7）は「近づいている」に、Risk Prediction（51.3）は「危険あり」に大きく偏っている（詳しくは報告ページ）。03:52 キューが OVO-Timing の smoke を開始。報告ページを更新（repro `bae1976`）
+- 11/03 04:04 データのダウンロードがすべて終わった。OVBench の展開と確認が済み、zip を削除。StreamingBench は置き方が決められないため未展開。OVO-Timing の smoke が通り、03:55 から full
