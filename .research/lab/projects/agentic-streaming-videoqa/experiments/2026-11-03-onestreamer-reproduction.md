@@ -23,7 +23,8 @@ RuikiHAYASHI/2026_11_hayashi_onestreamer (private, 林が 11/03 に空で作成)
    ├─ main          = 338e5fe（公式そのまま。触らない）
    └─ repro/table1  = 338e5fe + 再現用の commit
         ├─ 37ad913  repro: paths.json と models.json を 139 のデータ・重みの場所に向ける
-        └─ d198406  repro: GPU 枚数を指定して公式の評価キューを呼ぶ起動スクリプトを追加（repro/run.sh）
+        ├─ d198406  repro: GPU 枚数を指定して公式の評価キューを呼ぶ起動スクリプトを追加（repro/run.sh）
+        └─ 86ab953  repro: ベンチを順に smoke → full で回すキューを追加（repro/queue.sh）
 ```
 
 - 139 の作業場所: `/mnt/HDD18TB/hayashi/2026_11_hayashi_onestreamer`（ブランチ `repro/table1`）
@@ -54,18 +55,19 @@ RuikiHAYASHI/2026_11_hayashi_onestreamer (private, 林が 11/03 に空で作成)
 |---|---|---|---|
 | ODVBench | `MCG-NJU/ODV-Bench@5dcf37c` | zip ごとに `TOI_Recognition/`・`TR_Analysis/`・`TS_Retrieval/` へ展開（zip の中にタスク名のフォルダがないため） | 注釈の 1,190 本すべてあり、OpenCV で開けた。zip 削除済み |
 | ViSpeak-Bench | `fushh7/ViSpeak-Bench@4357ec8` | zip の中の `ViSpeak-Bench/` を `data/` に展開（ルート直下にタスクのフォルダ） | 700 本すべて開けた。zip 削除済み |
-| OVOBench | `JoeLeelyf/OVO-Bench@fec29e3` | `chunked_videos/`・`src_videos/` に展開 | 展開中 |
-| ProactiveVideoQA | `wangyueqian/ProactiveVideoQA@7f59bce` | `<EGO/TV/VAD/WEB>/anno.json` と `videos/` | 展開中 |
+| OVOBench | `JoeLeelyf/OVO-Bench@fec29e3` | tar のまま `chunked_videos/`（3,035本）・`src_videos/`（645本）に展開 | OVO-Timing の 172 本（すべて chunked_videos）が開けた。展開の大きさが tar と一致し、tar 削除済み（chunked の tar は 143 にもある）。QA 用の TSV は未入手 |
+| ProactiveVideoQA | `wangyueqian/ProactiveVideoQA@7f59bce` | `<EGO/TV/VAD/WEB>/anno.json`（HF からコピー）と、`videos.zip` を各フォルダに展開した `videos/` | 1,377 本すべて開けた。zip の件数と一致し、zip 削除済み |
 | OmniMMI | `bigai-nlco/OmniMMI@7024889` | 5タスクの JSON と `videos/` だけを落とす | ダウンロード中 |
 | StreamingBench | `mjuicem/StreamingBench@48872fa` | — | ダウンロード待ち（`StreamingBench.tsv` がないので回せない） |
-| OVBench | `MCG-NJU/OVBench@4d9ddfa` | — | ダウンロード待ち（New AVA の JSON がないので回せない） |
+| OVBench | `MCG-NJU/OVBench@4d9ddfa` | 公式は `OVBench/<注釈の video_id>` を探す。フレーム画像の zip（AVA・ArgoVerse・BDD・Charades・HACS・LaSOT・YFCC100M）はトップのフォルダがないので `OVBench/<名前>/` へ。`coin/`→`COIN/`、`HiREST/`→`hirest/` に名前だけ変えた（注釈の大文字・小文字に合わせる）。`AVA_RAW/` は `OVBench_new/AVA_RAW/`（`extract_ovbench.sh`） | 展開中。New AVA の JSON がないので回せない |
 
 ### 計画（spec）と違ったこと
 
 1. **OmniMMI の動画は `clips/` ではなく `videos/`**。公式は `OmniMMI/videos/<video>` を読み、5タスクの注釈が参照する 921 本はすべて HF の `videos/` にあった（`clips/` にあるのは 2 本だけ）
 2. **OVBench は TSV が要らなくても今は回せない**。公式の `ovbench_new.py` は `OVBench_new/ovbench_ava_raw_bbox1000.json` がないと `FileNotFoundError` で止まる（New AVA 以外の行も含めて）
 3. **公式の入口 `run_eval_8gpu.sh` は GPU 8 枚が必須**（`--require-eight`）。139 は 4 枚なので、同じ `eval_queue.py` を `--gpus 0,1,2,3` で呼ぶ（`repro/run.sh`）。GPU 枚数で変わるのは問題を GPU に割り振る分け方（shard）だけで、各問題の入力・設定・seed は同じ（AI の読み: `recipes.partitions` は問題の一覧を負荷で分けるだけ）。ただし、バッチや並びが違うことによる GPU の数値のわずかな差は否定できない
-4. OVO-Timing の動画は、公式のコードがまず `chunked_videos/<id>.mp4`（`<id>_<k>.mp4`）を探し、なければ `OVOBench/<注釈の video>` を探す。tar を展開すると `src_videos/...` になり、後者の場所には入らない。chunked だけで足りるかを dry-run で確かめる（後述）
+4. **OVO-Timing に src_videos は要らなかった**。公式のコードはまず `chunked_videos/<id>.mp4`（`<id>_<k>.mp4`）を探し、なければ `OVOBench/<注釈の video>` を探す。dry-run では 172 問すべてが `chunked_videos/` に見つかった。OVO-Timing は 1,640 件の注釈のうち Forward の3タスク（REC 82・CRR 48・SSR 42）だけを使う
+5. **OVO-Timing だけはサンプリングで答えを作る**（公式の `recipes.protocol`: `temperature=0.7, top_p=0.8, top_k=20, seed=42`）。ほかのベンチは貪欲デコード（`temperature=0`）。seed は固定だが、GPU の割り振りが公式（8枚）と違うと乱数の進み方が変わる可能性がある（AI の考え。未確認）
 
 ## 4. 実行の手順
 
@@ -87,7 +89,9 @@ GPUS=0,1,2,3 repro/run.sh <bench> full   # 全問（run-id: repro-full）。止�
 | ベンチ | ジョブ・問題数（dry-run） | 動画の確認 | smoke | full | 再現の値 | 論文の値 |
 |---|---|---|---|---|---|---|
 | ODV-Bench | 1・6,348 | 1,190 本 OK | 通った（11/03 01:44〜01:51） | 実行中（11/03 01:52〜、4 GPU で約4時間の見込み） | — | 71.3 / 57.6 |
-| ViSpeak | 6・700 | 700 本 OK | 未 | 未 | 採点保留 | — |
+| ViSpeak | 6・700 | 700 本 OK | キュー待ち | キュー待ち | 採点保留 | — |
+| OVO-Timing | 1・172 | 172 本 OK | キュー待ち | キュー待ち | — | — |
+| ProactiveVideoQA | 4・1,427（EGO 326・TV 500・VAD 101・WEB 500） | 1,377 本 OK | キュー待ち | キュー待ち | 採点保留 | — |
 
 ## 6. 時系列
 
@@ -95,3 +99,7 @@ GPUS=0,1,2,3 repro/run.sh <bench> full   # 全問（run-id: repro-full）。止�
 - 11/03 01:12 林の非公開リポジトリへ push（`main`, `repro/table1`）、`37ad913`
 - 11/03 01:28 評価環境ができた。ODV-Bench の dry-run と動画の確認が通り、zip を削除。`d198406`（`repro/run.sh`）を push。ViSpeak も同様
 - 11/03 01:4x 林から GPU 0〜3 の許可。01:44 ODV-Bench の smoke（1問）を開始し、01:51 に推論〜採点まで通った（重みの読み込みに約1分半。予測は不正解だが 1 問なので意味はない）。01:52 full を開始
+- 11/03 02:31 ProactiveVideoQA の展開・dry-run・動画の確認が済み、zip を削除
+- 11/03 02:33 第1弾のダウンロード（OVBench まで）が終わった。02:36 OVO-Bench の展開が終わり、OVO-Timing の dry-run と動画の確認が済んだ。tar を削除
+- 11/03 02:4x OVBench の展開を開始。ODV-Bench の full は 02:48 時点で 3,161 / 6,348 問（エラーなし）
+- 11/03 02:48 `repro/queue.sh` で、ODV-Bench の full が終わったら OVO-Timing → ViSpeak → ProactiveVideoQA を順に smoke → full で回すキューを開始（tmux `os-queue1`、ログ `Eval/outputs/_launcher_logs/queue1.log`）
