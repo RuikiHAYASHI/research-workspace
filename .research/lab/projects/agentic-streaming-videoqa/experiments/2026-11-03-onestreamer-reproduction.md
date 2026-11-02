@@ -9,7 +9,7 @@ tags: [onestreamer, reproduction, odv-bench, ovo-bench, vispeak]
 # OneStreamer-4B の再現（実行ログ、2026-11-03〜）
 
 - 計画: [再現計画](../specs/2026-11-02-onestreamer-reproduction-plan-spec.md)
-- 書いた人: AI（Claude）。林は 2026-11-03 の夜に「GPU 0〜3 を使って再現性のある実験をし、GitHub の流れなどをしっかり記録して」と依頼した。条件と結果のまとめは林が 11/04 以降に行う
+- 書いた人: AI（Claude）。林は 2026-11-03 01:4x に「GPU 0〜3 を使って再現性のある実験をし、GitHub の流れなどをしっかり記録して」と依頼した。条件と結果のまとめは林が 11/04 以降に行う
 - 数値はすべて機械の出力（`judge_outputs/.../metrics.json`）から写したもの。AI の解釈は「AI の考え」と書く
 
 ## 1. GitHub とコードの流れ
@@ -35,7 +35,7 @@ RuikiHAYASHI/2026_11_hayashi_onestreamer (private, 林が 11/03 に空で作成)
 
 ## 2. 環境（139）
 
-- GPU: RTX A6000 48GB × 4（林の許可で 0〜3 を使う、2026-11-03 夜）。ドライバ 615.71.09、カーネル 7.0.0-38
+- GPU: RTX A6000 48GB × 4（林の許可で 0〜3 を使う、2026-11-03 01:4x）。ドライバ 615.71.09、カーネル 7.0.0-38
 - Python 環境: `/mnt/HDD18TB/hayashi/envs/onestreamer-eval`（139 に conda がないため uv で Python 3.10.9 を用意し、中は公式 `Eval/README.md` と同じ pip の手順）
   - 作り方: `/mnt/HDD18TB/hayashi/envs/setup_onestreamer_eval.sh`、ログ: 同 `setup_onestreamer_eval.log`、全パッケージ: 同 `onestreamer-eval.freeze.txt`
   - torch 2.6.0+cu124、torchvision 0.21.0+cu124、cuDNN 9.1（90100）、flash-attn 2.7.4.post1、Transformers 4.57.6、OpenCV 4.13.0.92（`--no-deps`）、NumPy 1.26.4、Decord 0.6.0、PyAV 14.2.0、qwen-vl-utils 0.0.14、accelerate 1.12.0 — 公式 `Eval/docs/environment.md` の値とすべて一致
@@ -86,12 +86,12 @@ GPUS=0,1,2,3 repro/run.sh <bench> full   # 全問（run-id: repro-full）。止�
 
 | ベンチ | ジョブ・問題数（dry-run） | 動画の確認 | smoke | full | 再現の値 | 論文の値 |
 |---|---|---|---|---|---|---|
-| ODV-Bench | 1・6,348 | 1,190 本 OK | 通った（11/03 02:0x） | 実行中（11/03 02:1x〜、4 GPU で約4時間の見込み） | — | 71.3 / 57.6 |
+| ODV-Bench | 1・6,348 | 1,190 本 OK | 通った（11/03 01:44〜01:51） | 実行中（11/03 01:52〜、4 GPU で約4時間の見込み） | — | 71.3 / 57.6 |
 | ViSpeak | 6・700 | 700 本 OK | 未 | 未 | 採点保留 | — |
 
 ## 6. 時系列
 
 - 11/03 00:52 第1弾のダウンロード開始（ODV → OVO → OVBench）。01:19 第2弾（ViSpeak → ProactiveVideoQA → OmniMMI → StreamingBench）を並行で開始
-- 11/03 01:1x 林の非公開リポジトリへ push（`main`, `repro/table1`）、`37ad913`
-- 11/03 01:2x 評価環境ができた。ODV-Bench の dry-run と動画の確認が通り、zip を削除。`d198406`（`repro/run.sh`）を push。ViSpeak も同様
-- 11/03 夜 林から GPU 0〜3 の許可。ODV-Bench の smoke（1問）が推論〜採点まで通った（予測は不正解だが 1 問なので意味はない）。続けて full を開始
+- 11/03 01:12 林の非公開リポジトリへ push（`main`, `repro/table1`）、`37ad913`
+- 11/03 01:28 評価環境ができた。ODV-Bench の dry-run と動画の確認が通り、zip を削除。`d198406`（`repro/run.sh`）を push。ViSpeak も同様
+- 11/03 01:4x 林から GPU 0〜3 の許可。01:44 ODV-Bench の smoke（1問）を開始し、01:51 に推論〜採点まで通った（重みの読み込みに約1分半。予測は不正解だが 1 問なので意味はない）。01:52 full を開始
