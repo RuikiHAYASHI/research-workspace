@@ -93,8 +93,8 @@ GPUS=0,1,2,3 repro/run.sh <bench> full   # 全問（run-id: repro-full）。止�
 | OVO-Timing | 1・172 | 172 本 OK | 通った（11/03 03:52〜03:55） | 完了（11/03 03:55〜05:12、約1時間20分） | **42.9**（平均 F1、±2 秒。CRR 25.2・REC 63.1・SSR 40.5。公式の採点） | 41.6 / 29.4 |
 | ProactiveVideoQA | 4・1,427（EGO 326・TV 500・VAD 101・WEB 500） | 1,377 本 OK | 通った（11/03 05:25〜05:42） | 一時停止（11/03 05:42〜10:41、EGO 76/326 まで。judge が要るので、林の指示で作り直した 3 ベンチのあとに resume） | judge は回さない（§8.2） | 48.7 / 34.3（judge の点） |
 | OmniMMI | 9・2,200（PA 200 と、AP・SI・MD・SG を ASR あり・なしで） | 921 本 OK | 作り直した 3 ベンチのあと | — | PA だけローカルで採点。ほかは judge で、回さない（§8.2） | 36.6 / 29.4（5 タスクの平均） |
-| OVO-Bench（QA） | 2・3,035（memory・recent16） | 3,035 本 OK | **作り直した注釈**で、ProactiveVideoQA のあと（§8.1） | — | — | 72.1 / 58.8（Real-Time 81.4・Backward 77.9・Forward 56.9） |
-| StreamingBench Real-Time | 1・2,500 | 展開中（499 本） | **作り直した注釈**で、OVO-Bench のあと（§8.1） | — | — | 86.9 / 81.8 |
+| OVO-Bench（QA） | 2・3,035（memory・recent16） | 3,035 本 OK | **作り直した注釈**で、StreamingBench のあと。Backward（631）→ Real-Time（837）→ Forward（1,567）の順に分けて回す（§8.1） | — | — | 72.1 / 58.8（Real-Time 81.4・Backward 77.9・Forward 56.9） |
+| StreamingBench Real-Time | 1・2,500 | 499 本を展開済み（11/03 10:49） | **作り直した注釈**で、いちばん先（11/03 11:05 から smoke）（§8.1） | — | — | 86.9 / 81.8 |
 | OVBench | 1・6,810（New AVA 以外 5,414・New AVA 1,396） | 5,414 問ぶん OK・AVA_RAW 64 本 | New AVA だけ**作り直した注釈**で、StreamingBench のあと（§8.1） | — | — | 66.8 / 55.4 |
 
 ## 6. 時系列
@@ -177,3 +177,4 @@ GPUS=0,1,2,3 repro/run.sh <bench> full   # 全問（run-id: repro-full）。止�
 → API の料金そのものは数百円程度で小さい。採点を回すかどうかで効くのは、費用よりも、アカウント・API キーの用意と、外部のサービスへデータを送ってよいかの判断。新しいアカウントには無料枠がある（シンガポールで、有効化から 90 日。量は未確認）。
 - 11/03 10:40 林の指示（ProactiveVideoQA も judge が要るので、作り直した注釈の実験を先に）で、ProactiveVideoQA の full を EGO 76/326 で止めた（残っていたワーカー 4 つも止めた）。tmux `os-queue3` を作り直し、OVO-Bench → StreamingBench → OVBench（`recon-*`）→ ProactiveVideoQA（resume）→ OmniMMI の順にした（`54bc9c8`）。10:42 OVO-Bench の smoke を開始
 - 11/03 11:00 林の判断: OVBench は記憶の仕組みを使わず（公式の `worker.py` で VLMEvalKit の普通の動画 QA の実行部に回る。区間の画像をまとめて入れて 1 回答える）、オフラインの動画 QA を解いているのに近いので後回しでよい。今のキューの順番（OVO-Bench → StreamingBench → OVBench → ProactiveVideoQA → OmniMMI）のままで、記憶を使う 2 ベンチが先になる。見込み（粗い）: OVO-Bench 約 2.6 日（動画の合計 178 時間 × 約 1.4 倍 ÷ GPU 4 枚 + recent16 約 4 時間）、StreamingBench 約 1 日、OVBench 約 6〜10 時間
+- 11/03 11:05 林の指示で順番を組み替えた: StreamingBench を先に（記憶を使うベンチのうち早く終わる、約 1 日）。OVO-Bench は Backward → Real-Time → Forward の順に分けて回す。公式の `--sample-ids` で問題を絞り（`repro/run.sh` に `SAMPLE_IDS_FILE` を追加）、run-id は `recon-bwd`・`recon-rt`・`recon-fwd`（問題の一覧は `repro/reconstruct/ovobench_{backward,realtime,forward}_ids.txt`、631・837・1,567 問）。3 つの結果は、あとで公式の集計関数（`onestreamer.metrics.aggregate`）にまとめて渡して全体の値を出す。そのあと OVBench → ProactiveVideoQA（resume）→ OmniMMI（`0d62111`）。10:49 から回していた OVO-Bench の全問（`recon-full`）は 9 問済んだところで止めた（使わない）。dry-run: Backward 631/3035（2 設定）、StreamingBench 2,500/2,500
