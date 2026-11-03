@@ -128,7 +128,7 @@ GPUS=0,1,2,3 repro/run.sh <bench> full   # 全問（run-id: repro-full）。止�
 - 11/03 04:04 データのダウンロードがすべて終わった。OVBench の展開と確認が済み、zip を削除。StreamingBench は置き方が決められないため未展開。OVO-Timing の smoke が通り、03:55 から full
 - 11/03 05:12 OVO-Timing の full が終わった。平均 F1 42.9（`Eval/judge_outputs/OneStreamer-4B/ovo_timing/repro-full/paper/ovo_timing/metrics.json`）で、論文の 41.6 より 1.3 高い（サンプリングで応答を作るので多少は揺れうる）。どのタスクも再現率が適合率より高く、応答を多めに出している。CRR では最初の応答が正解より 2 秒以上早いのが 48 問中 29 問。公式の採点は応答の時刻だけを見て中身を見ない（`ovo_timing.py` の `_f1_stats`）。05:12 キューが ViSpeak の smoke を開始し、05:13 から full。報告ページに OVO-Timing のタイムラインと具体例 18 問を追加（repro `1a0b440`）
 - 11/03 05:25 ViSpeak の full が終わった（全 800 問）。中身の採点（judge）は保留。時刻の判定だけ公式の関数で数えると 6 タスク平均 74.9%（Gesture 98.5・Termination 99.0・Wake-Up 89.0・Interruption 78.0・Anomaly 45.0・Humor 40.0）。Anomaly と Humor は最後まで応答しない問題が多い（52/200、55/100）。Wake-Up の外れ 11 問はすべて 1 秒目の早すぎる応答。05:25 キューが ProactiveVideoQA の smoke を開始。報告ページに ViSpeak の節を追加（repro `b75b97e`）
-- 11/03 10:20〜10:45 林の方針（judge で費用がかかるものより、注釈を作り直して回せるものを優先）で、OVO-Bench・StreamingBench・OVBench（New AVA）の注釈を元の公開注釈から作り直した（§8.1）。ブランチ `repro/reconstructed`（worktree `/mnt/HDD18TB/hayashi/2026_11_hayashi_onestreamer_recon`、`e7801e0`・`6da4035`・`a34bfe7`）。dry-run は OVO-Bench 3,035/3,035（2 設定）・OVBench 6,810/6,810 が通った。tmux `os-queue3`（`repro/reconstruct/queue_recon.sh`）が、ProactiveVideoQA の full が終わったら OmniMMI を止め、OVO-Bench → StreamingBench → OVBench（run-id `recon-*`）→ OmniMMI の順に回す
+- 11/03 10:20〜10:35 林の方針（judge で費用がかかるものより、注釈を作り直して回せるものを優先）で、OVO-Bench・StreamingBench・OVBench（New AVA）の注釈を元の公開注釈から作り直した（§8.1）。ブランチ `repro/reconstructed`（worktree `/mnt/HDD18TB/hayashi/2026_11_hayashi_onestreamer_recon`、`e7801e0`・`6da4035`・`a34bfe7`）。dry-run は OVO-Bench 3,035/3,035（2 設定）・OVBench 6,810/6,810 が通った。tmux `os-queue3`（`repro/reconstruct/queue_recon.sh`）が、ProactiveVideoQA の full が終わったら OmniMMI を止め、OVO-Bench → StreamingBench → OVBench（run-id `recon-*`）→ OmniMMI の順に回す
 
 ## 8. 注釈を作り直したベンチと、judge を回さないベンチ（2026-11-03、林への報告用）
 
@@ -156,7 +156,7 @@ GPUS=0,1,2,3 repro/run.sh <bench> full   # 全問（run-id: repro-full）。止�
 3. 139 で同じ判定 LLM を動かすのは難しい。Qwen3-235B-A22B は BF16 で約 470GB、FP8 でも約 235GB で、139 の GPU（48GB × 4 = 192GB）に載らない。量子化したり小さいモデルにしたりすると、判定の条件が論文と変わる（AI の見積もり。重みの大きさは 235B パラメータからの計算）
 4. API の判定は、提供されるモデルの版が変わると点が変わりうるので、推論より再現性が弱い（公式のコードは、成功した判定をキャッシュするので、一度採点すれば同じ点を出し直せる）
 
-**具体的な費用（見積もり）**: 公式の採点コード（`run_script/score.py`）が作る問い合わせを、API を呼ばずにそのまま作って数えた（スクリプト: scratchpad の `judge_est/estimate.py`。トークン数は Qwen3 系のトークナイザで数えた）。出力は上限（ProactiveVideoQA 32・OmniMMI 128・ViSpeak 256 token/件）まで出ると仮定した上限値。単価はシンガポール（国際）リージョンの非思考モードで、入力 5.137 元・出力 20.55 元 / 100 万 token（約 $0.70・$2.80。Alibaba Cloud ヘルプセンターの qwen3-235b-a22b のページの値を検索結果から引用。公式ページを直接開いての確認はできなかった）。公式の設定の北京リージョンの単価は確認できていない
+**具体的な費用（見積もり）**: 公式の採点コード（`run_script/score.py`）が作る問い合わせを、API を呼ばずにそのまま作って数えた（スクリプト: `repro/estimate_judge_cost.py`、ブランチ `repro/reconstructed` の `3465124`。トークン数は Qwen3 系のトークナイザで数えた）。出力は上限（ProactiveVideoQA 32・OmniMMI 128・ViSpeak 256 token/件）まで出ると仮定した上限値。単価はシンガポール（国際）リージョンの非思考モードで、入力 5.137 元・出力 20.55 元 / 100 万 token（約 $0.70・$2.80。Alibaba Cloud ヘルプセンターの qwen3-235b-a22b のページの値を検索結果から引用。公式ページを直接開いての確認はできなかった）。公式の設定の北京リージョンの単価は確認できていない
 
 | ベンチ | 問い合わせ数 | 入力 token | 出力 token（上限） | 費用（上限） | 数え方 |
 |---|---|---|---|---|---|
