@@ -91,7 +91,7 @@ GPUS=0,1,2,3 repro/run.sh <bench> full   # 全問（run-id: repro-full）。止�
 | ODV-Bench | 1・6,348 | 1,190 本 OK | 通った（11/03 01:44〜01:51） | 完了（11/03 01:52〜03:51、約2時間） | **71.36**（公式の採点、選択肢を読めなかった予測 0） | 71.3 / 57.6 |
 | ViSpeak | 6・800 問（動画 700 本） | 700 本 OK | 通った（11/03 05:12〜05:13） | 完了（11/03 05:13〜05:25、約12分） | judge（0〜5 点）は保留。公式の `response_is_in_time` での時刻の判定は 6 タスク平均 74.9%（点の上限 3.75） | 2.87 / 2.41（judge の点） |
 | OVO-Timing | 1・172 | 172 本 OK | 通った（11/03 03:52〜03:55） | 完了（11/03 03:55〜05:12、約1時間20分） | **42.9**（平均 F1、±2 秒。CRR 25.2・REC 63.1・SSR 40.5。公式の採点） | 41.6 / 29.4 |
-| ProactiveVideoQA | 4・1,427（EGO 326・TV 500・VAD 101・WEB 500） | 1,377 本 OK | 通った（11/03 05:25〜05:42） | 実行中（11/03 05:42〜。10:14 時点で EGO 70/326。終わりは 11/04 朝の見込み） | judge は回さない（§8.2） | 48.7 / 34.3（judge の点） |
+| ProactiveVideoQA | 4・1,427（EGO 326・TV 500・VAD 101・WEB 500） | 1,377 本 OK | 通った（11/03 05:25〜05:42） | 一時停止（11/03 05:42〜10:41、EGO 76/326 まで。judge が要るので、林の指示で作り直した 3 ベンチのあとに resume） | judge は回さない（§8.2） | 48.7 / 34.3（judge の点） |
 | OmniMMI | 9・2,200（PA 200 と、AP・SI・MD・SG を ASR あり・なしで） | 921 本 OK | 作り直した 3 ベンチのあと | — | PA だけローカルで採点。ほかは judge で、回さない（§8.2） | 36.6 / 29.4（5 タスクの平均） |
 | OVO-Bench（QA） | 2・3,035（memory・recent16） | 3,035 本 OK | **作り直した注釈**で、ProactiveVideoQA のあと（§8.1） | — | — | 72.1 / 58.8（Real-Time 81.4・Backward 77.9・Forward 56.9） |
 | StreamingBench Real-Time | 1・2,500 | 展開中（499 本） | **作り直した注釈**で、OVO-Bench のあと（§8.1） | — | — | 86.9 / 81.8 |
@@ -144,6 +144,15 @@ GPUS=0,1,2,3 repro/run.sh <bench> full   # 全問（run-id: repro-full）。止�
 | StreamingBench Real-Time | TSV 全体 2,500 問。元は StreamingBench 公式 GitHub の `src/data/questions_real.json`（`THUNLP-MT/StreamingBench@8929923`、499 本・2,500 問）。区間は公式の評価コード（`src/benchmark/StreamingBench.py`）と同じ [0, time_stamp]。動画は HF の zip（Real-Time の 10 個）から `real/sample_N/video.mp4` に展開し、`videos/sample_N_real.mp4` のリンクを張った | ・問題の数（2,500）とタスクの内訳が StreamingBench の Real-Time と一致<br>・論文の指標も「Real-Time」で、同じ部分集合 | ・区間の始まり。OneStreamer のコードは「動画と start の組ごとに記憶を共有する」ので、公式の TSV が start = 0 以外を使っていたら、記憶の中身が変わる<br>・選択肢の書き方の細かい違い | **小〜中**。問題の集合は同じ。区間の取り方だけが不確か |
 | OVBench | New AVA の JSON だけ（1,396 問・64 本）。元は同梱の `ovbench_split_with_fps_..._bbox1000.json` の中にある `AVA_frame_4fps_new/<id>` の問題で、質問・選択肢・箱（BBox1000）はそのまま、`middle_frame_timestamp` にその問題の end（元動画の絶対秒）を入れた。入力の区間（直前 120 秒・2fps・最大 64 枚・900 秒より前に戻らない）は公式のコードが計算する。New AVA 以外の 5,414 問は公式の注釈のまま | ・64 本の動画 ID が、配られている AVA_RAW の 64 本とぴったり同じ<br>・ファイル名（`ava_raw_frame_processed`）から、同じ問題を元動画から切り出した版と考えられる | ・公式の JSON の問題が同じ 1,396 問か（追加・削除・箱の付け直しがあるか）<br>・同梱の注釈にある古い `AVA/` の 280 問は、公式の New のコードが落とす。公式の JSON にこれに当たる問題があるかは分からない | **中**。論文の値は 16 サブタスクの平均で、そのうち 6 つ（Action Location・Retrieval・Persistence・Trajectory・Sequence・Anticipation）は New AVA だけで作られる。つまり指標の 6/16（37.5%）が作り直した部分に左右される。残りの 10 サブタスクは公式の注釈のまま |
 
+**作り方の手順（列ごとの対応）**: 正本はスクリプト `repro/reconstruct/build_annotations.py`（ブランチ `repro/reconstructed`、冒頭に規則を書いた）。作ったファイルは `/mnt/HDD18TB/hayashi/data/_onestreamer_reconstructed/`（`README.md` 付き）。公式のコード（`run_script/recipes.py` の `records`）が読む列は `index, task, subtask, video, start, end, question, answer, answer_text, A〜E, eval_mode`。
+
+- OVO-Bench（`OVOBench/OVOBench_New_32frames.tsv`）
+  - Backward・Real-Time: `task` = 分類名（`backward_tracking`・`real_time_visual_perception`。公式の `metrics.py` の名前）、`subtask` = 元の `task`（EPM など）、`video` = `chunked_videos/<id>.mp4`、`start` = 0、`end` = `realtime`、`question` = 元の `question`、`A〜D` = 元の `options`、`answer` = `gt` の番号を A〜D に、`eval_mode` = `mcq_letter`
+  - Forward: 元の 1 件の `test_info` の k 番目を 1 行に。`video` = `chunked_videos/<id>_<k>.mp4`、`end` = その `realtime`。REC: `question` = 公式の REC の型に "How many times did they <activity>?" を入れたもの、`answer` = `count`、`integer_match`。SSR: 公式の SSR の型に `step` を入れたもの、`answer` = `type` が 1 なら Yes・0 なら No、`substring_match`。CRR: 公式の CRR の型に元の `question` を入れたもの、`answer` は SSR と同じ。型と答えの決め方は OVO-Bench 公式の `constant.py`・`utils/OVOBench.py`・`utils/OVOBenchScore.py` に合わせた
+  - 11/03 10:35 に REC の質問文を公式の `build_prompt` と同じ "did they" に直して作り直した（`a34bfe7`。最初は "have they" だった。GPU での実行前）
+- StreamingBench（`StreamingBench/StreamingBench.tsv`）: 元の 1 本の動画の `questions` の各問を 1 行に。`task` = Real-Time Visual Understanding、`subtask` = `task_type`、`video` = `videos/sample_N_real.mp4`、`start` = 0、`end` = `time_stamp` を秒に、`A〜D` = `options` から「A. 」を外したもの、`answer` = 元の文字、`mcq_letter`。元の `time` の欄（"[0:00:00 - 0:00:10]" など）は、公式の評価コードも使っていないので使わない
+- OVBench（`OVBench_new/ovbench_ava_raw_bbox1000.json`）: 同梱の注釈の `AVA_frame_4fps_new/<id>` の各問を、`video_id` = `AVA_RAW/<id>` の `questions` に入れた。`question`・`answer`・`answer_type`・`sub_answer_type`・`options` はそのまま、`middle_frame_timestamp` = 元の `end`。形は公式の `ovbench_new.py` の `_flatten_ava_records` が読む形に合わせた
+
 **報告の仕方**: この 3 つの値は「作り直した注釈での参考値」として、`repro-*` の値（ODV-Bench・OVO-Timing）とは分けて書く。著者から本物のファイルが届いたら、同じ手順で `repro-*` として回し直し、違いを比べる。
 
 ### 8.2 judge が要るので、採点を回さないベンチ（ProactiveVideoQA・OmniMMI の AP/SI/MD/SG・ViSpeak）
@@ -166,3 +175,4 @@ GPUS=0,1,2,3 repro/run.sh <bench> full   # 全問（run-id: repro-full）。止�
 | **合計** | **約 13,400** | **約 2.6M** | **約 0.9M** | **約 $4.4（1 ドル 150〜160 円として約 700 円）** | |
 
 → API の料金そのものは数百円程度で小さい。採点を回すかどうかで効くのは、費用よりも、アカウント・API キーの用意と、外部のサービスへデータを送ってよいかの判断。新しいアカウントには無料枠がある（シンガポールで、有効化から 90 日。量は未確認）。
+- 11/03 10:40 林の指示（ProactiveVideoQA も judge が要るので、作り直した注釈の実験を先に）で、ProactiveVideoQA の full を EGO 76/326 で止めた（残っていたワーカー 4 つも止めた）。tmux `os-queue3` を作り直し、OVO-Bench → StreamingBench → OVBench（`recon-*`）→ ProactiveVideoQA（resume）→ OmniMMI の順にした（`54bc9c8`）。10:42 OVO-Bench の smoke を開始
