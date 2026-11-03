@@ -176,3 +176,4 @@ GPUS=0,1,2,3 repro/run.sh <bench> full   # 全問（run-id: repro-full）。止�
 
 → API の料金そのものは数百円程度で小さい。採点を回すかどうかで効くのは、費用よりも、アカウント・API キーの用意と、外部のサービスへデータを送ってよいかの判断。新しいアカウントには無料枠がある（シンガポールで、有効化から 90 日。量は未確認）。
 - 11/03 10:40 林の指示（ProactiveVideoQA も judge が要るので、作り直した注釈の実験を先に）で、ProactiveVideoQA の full を EGO 76/326 で止めた（残っていたワーカー 4 つも止めた）。tmux `os-queue3` を作り直し、OVO-Bench → StreamingBench → OVBench（`recon-*`）→ ProactiveVideoQA（resume）→ OmniMMI の順にした（`54bc9c8`）。10:42 OVO-Bench の smoke を開始
+- 11/03 11:00 林の判断: OVBench は記憶の仕組みを使わず（公式の `worker.py` で VLMEvalKit の普通の動画 QA の実行部に回る。区間の画像をまとめて入れて 1 回答える）、オフラインの動画 QA を解いているのに近いので後回しでよい。今のキューの順番（OVO-Bench → StreamingBench → OVBench → ProactiveVideoQA → OmniMMI）のままで、記憶を使う 2 ベンチが先になる。見込み（粗い）: OVO-Bench 約 2.6 日（動画の合計 178 時間 × 約 1.4 倍 ÷ GPU 4 枚 + recent16 約 4 時間）、StreamingBench 約 1 日、OVBench 約 6〜10 時間
