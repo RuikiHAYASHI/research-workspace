@@ -91,7 +91,11 @@ GPUS=0,1,2,3 repro/run.sh <bench> full   # 全問（run-id: repro-full）。止�
 | ODV-Bench | 1・6,348 | 1,190 本 OK | 通った（11/03 01:44〜01:51） | 完了（11/03 01:52〜03:51、約2時間） | **71.36**（公式の採点、選択肢を読めなかった予測 0） | 71.3 / 57.6 |
 | ViSpeak | 6・800 問（動画 700 本） | 700 本 OK | 通った（11/03 05:12〜05:13） | 完了（11/03 05:13〜05:25、約12分） | judge（0〜5 点）は保留。公式の `response_is_in_time` での時刻の判定は 6 タスク平均 74.9%（点の上限 3.75） | 2.87 / 2.41（judge の点） |
 | OVO-Timing | 1・172 | 172 本 OK | 通った（11/03 03:52〜03:55） | 完了（11/03 03:55〜05:12、約1時間20分） | **42.9**（平均 F1、±2 秒。CRR 25.2・REC 63.1・SSR 40.5。公式の採点） | 41.6 / 29.4 |
-| ProactiveVideoQA | 4・1,427（EGO 326・TV 500・VAD 101・WEB 500） | 1,377 本 OK | キュー待ち | キュー待ち | 採点保留 | — |
+| ProactiveVideoQA | 4・1,427（EGO 326・TV 500・VAD 101・WEB 500） | 1,377 本 OK | 通った（11/03 05:25〜05:42） | 実行中（11/03 05:42〜。10:14 時点で EGO 70/326。終わりは 11/04 朝の見込み） | judge は回さない（§8.2） | 48.7 / 34.3（judge の点） |
+| OmniMMI | 9・2,200（PA 200 と、AP・SI・MD・SG を ASR あり・なしで） | 921 本 OK | 作り直した 3 ベンチのあと | — | PA だけローカルで採点。ほかは judge で、回さない（§8.2） | 36.6 / 29.4（5 タスクの平均） |
+| OVO-Bench（QA） | 2・3,035（memory・recent16） | 3,035 本 OK | **作り直した注釈**で、ProactiveVideoQA のあと（§8.1） | — | — | 72.1 / 58.8（Real-Time 81.4・Backward 77.9・Forward 56.9） |
+| StreamingBench Real-Time | 1・2,500 | 展開中（499 本） | **作り直した注釈**で、OVO-Bench のあと（§8.1） | — | — | 86.9 / 81.8 |
+| OVBench | 1・6,810（New AVA 以外 5,414・New AVA 1,396） | 5,414 問ぶん OK・AVA_RAW 64 本 | New AVA だけ**作り直した注釈**で、StreamingBench のあと（§8.1） | — | — | 66.8 / 55.4 |
 
 ## 6. 時系列
 
@@ -124,3 +128,41 @@ GPUS=0,1,2,3 repro/run.sh <bench> full   # 全問（run-id: repro-full）。止�
 - 11/03 04:04 データのダウンロードがすべて終わった。OVBench の展開と確認が済み、zip を削除。StreamingBench は置き方が決められないため未展開。OVO-Timing の smoke が通り、03:55 から full
 - 11/03 05:12 OVO-Timing の full が終わった。平均 F1 42.9（`Eval/judge_outputs/OneStreamer-4B/ovo_timing/repro-full/paper/ovo_timing/metrics.json`）で、論文の 41.6 より 1.3 高い（サンプリングで応答を作るので多少は揺れうる）。どのタスクも再現率が適合率より高く、応答を多めに出している。CRR では最初の応答が正解より 2 秒以上早いのが 48 問中 29 問。公式の採点は応答の時刻だけを見て中身を見ない（`ovo_timing.py` の `_f1_stats`）。05:12 キューが ViSpeak の smoke を開始し、05:13 から full。報告ページに OVO-Timing のタイムラインと具体例 18 問を追加（repro `1a0b440`）
 - 11/03 05:25 ViSpeak の full が終わった（全 800 問）。中身の採点（judge）は保留。時刻の判定だけ公式の関数で数えると 6 タスク平均 74.9%（Gesture 98.5・Termination 99.0・Wake-Up 89.0・Interruption 78.0・Anomaly 45.0・Humor 40.0）。Anomaly と Humor は最後まで応答しない問題が多い（52/200、55/100）。Wake-Up の外れ 11 問はすべて 1 秒目の早すぎる応答。05:25 キューが ProactiveVideoQA の smoke を開始。報告ページに ViSpeak の節を追加（repro `b75b97e`）
+- 11/03 10:20〜10:45 林の方針（judge で費用がかかるものより、注釈を作り直して回せるものを優先）で、OVO-Bench・StreamingBench・OVBench（New AVA）の注釈を元の公開注釈から作り直した（§8.1）。ブランチ `repro/reconstructed`（worktree `/mnt/HDD18TB/hayashi/2026_11_hayashi_onestreamer_recon`、`e7801e0`・`6da4035`・`a34bfe7`）。dry-run は OVO-Bench 3,035/3,035（2 設定）・OVBench 6,810/6,810 が通った。tmux `os-queue3`（`repro/reconstruct/queue_recon.sh`）が、ProactiveVideoQA の full が終わったら OmniMMI を止め、OVO-Bench → StreamingBench → OVBench（run-id `recon-*`）→ OmniMMI の順に回す
+
+## 8. 注釈を作り直したベンチと、judge を回さないベンチ（2026-11-03、林への報告用）
+
+### 8.1 注釈を作り直して回すベンチ（OVO-Bench・StreamingBench・OVBench）
+
+**なぜ変えたか**: 公式のコードが読む注釈ファイル 3 つ（`OVOBench_New_32frames.tsv`・`StreamingBench.tsv`・`ovbench_ava_raw_bbox1000.json`）が、公式リポジトリ・HF の MCG-NJU・各ベンチの公式配布のどれにもなかった（11/02〜11/03 に確認）。著者に頼む方法もあるが（外部への投稿なので林の判断、未実施）、林の方針で、まず元のベンチの公開注釈から作り直して回す。
+
+**共通のやり方**: 公式のコードは変えない。作り直した注釈を、公式のコードが読むファイル名で `/mnt/HDD18TB/hayashi/data/_onestreamer_reconstructed/` に置き（動画は元の場所への symlink）、ブランチ `repro/reconstructed` の `paths.json` だけをそこへ向ける。run-id は `recon-*` で、公式の注釈で回す `repro-*` と分ける。作り直しのスクリプトは `repro/reconstruct/build_annotations.py`（入力・出力・変換の規則を冒頭に書いた）。
+
+| ベンチ | 何を作り直したか（元の注釈） | 公式の注釈と同じだと言える根拠 | 違うかもしれない点 | 再現性の下がり方（AI の見立て） |
+|---|---|---|---|---|
+| OVO-Bench | TSV 全体 3,035 問。元は OVO-Bench 公式の `data/ovo_bench_new.json`（1,640 件）。同梱の `ovobench_timing.json` と中身が完全に一致することを確認。Backward・Real-Time の 1,468 問は 4 択のまま（動画 `chunked_videos/<id>.mp4`、区間 [0, realtime]）。Forward（REC・SSR・CRR）の 172 件は、OVO-Bench 公式の評価コードと同じく `test_info` の各時点を 1 問にした 1,567 問（動画 `chunked_videos/<id>_<k>.mp4`）。質問文は OVO-Bench 公式 `constant.py` の型、REC は数（`integer_match`）、SSR・CRR は Yes/No（`substring_match`） | ・問題の数 1,468 + 1,567 = 3,035 が、HF で配られている切り出し済みの動画の数（3,035 本）とぴったり同じ<br>・OneStreamer の評価コードに、Forward 用としか考えられない `integer_match`・`substring_match` の採点が用意されている<br>・OneStreamer の集計（`metrics.py`）は Backward・Real-Time・Forward の 3 分類の平均で、論文の値もその平均（(81.4+77.9+56.9)/3 = 72.1）になる | ・Forward の質問文（公式の TSV に何が書かれているか分からない。OVO-Bench 公式の型を使った）<br>・ファイル名の「32frames」が何かの選別を意味するか<br>・選択肢の書き方（「A. 」の付け方など）の細かい違い | Backward・Real-Time（2/3 の重み）: **小さい**。元の注釈も動画も公式と同じで、変換は機械的。Forward（1/3 の重み）: **中〜大**。質問文の違いで正答率が変わりうる。論文とは、まず 3 分類ごと（81.4 / 77.9 / 56.9）に比べる |
+| StreamingBench Real-Time | TSV 全体 2,500 問。元は StreamingBench 公式 GitHub の `src/data/questions_real.json`（`THUNLP-MT/StreamingBench@8929923`、499 本・2,500 問）。区間は公式の評価コード（`src/benchmark/StreamingBench.py`）と同じ [0, time_stamp]。動画は HF の zip（Real-Time の 10 個）から `real/sample_N/video.mp4` に展開し、`videos/sample_N_real.mp4` のリンクを張った | ・問題の数（2,500）とタスクの内訳が StreamingBench の Real-Time と一致<br>・論文の指標も「Real-Time」で、同じ部分集合 | ・区間の始まり。OneStreamer のコードは「動画と start の組ごとに記憶を共有する」ので、公式の TSV が start = 0 以外を使っていたら、記憶の中身が変わる<br>・選択肢の書き方の細かい違い | **小〜中**。問題の集合は同じ。区間の取り方だけが不確か |
+| OVBench | New AVA の JSON だけ（1,396 問・64 本）。元は同梱の `ovbench_split_with_fps_..._bbox1000.json` の中にある `AVA_frame_4fps_new/<id>` の問題で、質問・選択肢・箱（BBox1000）はそのまま、`middle_frame_timestamp` にその問題の end（元動画の絶対秒）を入れた。入力の区間（直前 120 秒・2fps・最大 64 枚・900 秒より前に戻らない）は公式のコードが計算する。New AVA 以外の 5,414 問は公式の注釈のまま | ・64 本の動画 ID が、配られている AVA_RAW の 64 本とぴったり同じ<br>・ファイル名（`ava_raw_frame_processed`）から、同じ問題を元動画から切り出した版と考えられる | ・公式の JSON の問題が同じ 1,396 問か（追加・削除・箱の付け直しがあるか）<br>・同梱の注釈にある古い `AVA/` の 280 問は、公式の New のコードが落とす。公式の JSON にこれに当たる問題があるかは分からない | **中**。論文の値は 16 サブタスクの平均で、そのうち 6 つ（Action Location・Retrieval・Persistence・Trajectory・Sequence・Anticipation）は New AVA だけで作られる。つまり指標の 6/16（37.5%）が作り直した部分に左右される。残りの 10 サブタスクは公式の注釈のまま |
+
+**報告の仕方**: この 3 つの値は「作り直した注釈での参考値」として、`repro-*` の値（ODV-Bench・OVO-Timing）とは分けて書く。著者から本物のファイルが届いたら、同じ手順で `repro-*` として回し直し、違いを比べる。
+
+### 8.2 judge が要るので、採点を回さないベンチ（ProactiveVideoQA・OmniMMI の AP/SI/MD/SG・ViSpeak）
+
+**回さないもの**: 推論（GPU）は回す。回さないのは、推論の結果を判定 LLM（Qwen3-235B-A22B）に採点させる部分だけ。ViSpeak は推論が済み、時刻の判定（公式の関数、judge なし）だけ数えた（6 タスク平均 74.9%）。OmniMMI の PA は judge が要らないので、推論のあとローカルで採点する。
+
+**なぜ回さないか**:
+1. 林の方針（2026-11-03）: 費用がかかる方より、注釈を作り直して回せるものを優先する
+2. 公式の設定は Alibaba Cloud の DashScope の API（`configs/judge.json`: モデル `qwen3-235b-a22b`、接続先 `dashscope.aliyuncs.com`＝中国本土の北京リージョン、温度 0、思考なし）。使うには Alibaba Cloud のアカウントと API キーが要り、ベンチの質問・参照の答え・モデルの応答を外部のサービスへ送ることになる。アカウントを作るか、どのリージョンを使うかは林の判断
+3. 139 で同じ判定 LLM を動かすのは難しい。Qwen3-235B-A22B は BF16 で約 470GB、FP8 でも約 235GB で、139 の GPU（48GB × 4 = 192GB）に載らない。量子化したり小さいモデルにしたりすると、判定の条件が論文と変わる（AI の見積もり。重みの大きさは 235B パラメータからの計算）
+4. API の判定は、提供されるモデルの版が変わると点が変わりうるので、推論より再現性が弱い（公式のコードは、成功した判定をキャッシュするので、一度採点すれば同じ点を出し直せる）
+
+**具体的な費用（見積もり）**: 公式の採点コード（`run_script/score.py`）が作る問い合わせを、API を呼ばずにそのまま作って数えた（スクリプト: scratchpad の `judge_est/estimate.py`。トークン数は Qwen3 系のトークナイザで数えた）。出力は上限（ProactiveVideoQA 32・OmniMMI 128・ViSpeak 256 token/件）まで出ると仮定した上限値。単価はシンガポール（国際）リージョンの非思考モードで、入力 5.137 元・出力 20.55 元 / 100 万 token（約 $0.70・$2.80。Alibaba Cloud ヘルプセンターの qwen3-235b-a22b のページの値を検索結果から引用。公式ページを直接開いての確認はできなかった）。公式の設定の北京リージョンの単価は確認できていない
+
+| ベンチ | 問い合わせ数 | 入力 token | 出力 token（上限） | 費用（上限） | 数え方 |
+|---|---|---|---|---|---|
+| ViSpeak | 593 | 0.16M | 0.15M | 約 $0.54 | 推論済みの全 800 問から。時刻が合った問題だけが judge に送られる |
+| ProactiveVideoQA | 約 9,000 | 約 1.85M | 約 0.29M | 約 $2.1 | 推論済みの EGO 74 問（6.3 件/問・205 token/件）から全 1,427 問に引き延ばした。TV・WEB は動画が短く応答も少ないはずなので、多めの見積もり |
+| OmniMMI（AP・SI・MD・SG） | 3,780（ASR あり・なし 各 1,890） | 0.61M | 0.48M | 約 $1.8（論文の値に要る ASR ありだけなら約 $0.9） | 推論前なので、モデルの応答の代わりに参照の答えを入れて長さを近似した |
+| **合計** | **約 13,400** | **約 2.6M** | **約 0.9M** | **約 $4.4（1 ドル 150〜160 円として約 700 円）** | |
+
+→ API の料金そのものは数百円程度で小さい。採点を回すかどうかで効くのは、費用よりも、アカウント・API キーの用意と、外部のサービスへデータを送ってよいかの判断。新しいアカウントには無料枠がある（シンガポールで、有効化から 90 日。量は未確認）。
