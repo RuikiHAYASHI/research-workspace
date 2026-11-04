@@ -1,9 +1,9 @@
 ---
 project: agentic-streaming-videoqa
 status: active
-summary: OneStreamer-4Bを公式コードで再現中。ODV-Benchは71.36（論文71.3）、OVO-Timingは平均F1 42.9（論文41.6）。139のGPU 0〜3で残りのベンチを順に実行中。
+summary: OneStreamer-4Bを公式コードで再現中。ODV-Bench 71.36（論文71.3）、OVO-Timing 平均F1 42.9（論文41.6）、StreamingBench Real-Time 86.28（論文86.9、作り直した注釈）。139のGPU 0・1でOVO-Benchを実行中。
 created: 2026-09-10
-last_updated: 2026-11-03
+last_updated: 2026-11-05
 ---
 
 # エージェント型オンラインストリーミングVideoQAの研究
@@ -147,3 +147,4 @@ Workbenchは本人だけが必要時に利用するローカル開発用UIであ
 | 2026-10-30 | MTG（中間発表後）で、ストリーミング系ベンチマークの収集と、イベントをテキストとして記録する従来研究の公開コードを動かす方針を確認。以前の図は捨てる方向。メモリとレコードの違いを議論。次回11/2 10:30。 |
 | 2026-11-02 | Streamingモデル116本の精度比較表を作成。OneStreamer-4Bを公式コードで再現することに決め、計画を作成。139でデータセットのダウンロードから始める。 |
 | 2026-11-03 | OneStreamer の再現用の非公開リポジトリを用意し（公式338e5fe、`repro/table1` でパスの設定だけ変更）、139でデータセットのダウンロードを開始。GPU 0〜3 で評価を始め、ODV-Bench は 71.36（論文 71.3）、OVO-Timing は平均 F1 42.9（論文 41.6）。11/03 林の方針で、judge（API、費用見積もり約 $4.4）より先に、未公開の注釈 3 つ（OVO-Bench・StreamingBench・OVBench New AVA）を元の公開注釈から作り直して回す（条件の違いと再現性の下がり方は実行ログ §8）。報告ページと論文解説スライドを作成（[実行ログ](experiments/2026-11-03-onestreamer-reproduction.md)）。 |
+| 2026-11-04 | StreamingBench Real-Time を作り直した注釈で回し、86.28（論文 86.9）。途中で注釈の時刻の書き間違いと壊れた配布動画（sample_332）で 2 回止まり、直して 3 回に分けて回した推論を合わせて採点した。林の依頼で GPU 2・3 を空け、以降は GPU 0・1 で OVO-Bench（Backward → Real-Time → Forward）を実行中。MTG は林の体調不良で 11/06（金）に移った（[実行ログ](experiments/2026-11-03-onestreamer-reproduction.md)）。 |
