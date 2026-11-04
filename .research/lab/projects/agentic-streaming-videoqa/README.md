@@ -3,7 +3,7 @@ project: agentic-streaming-videoqa
 status: active
 summary: OneStreamer-4Bを公式コードで再現中。ODV-Bench 71.36（論文71.3）、OVO-Timing 平均F1 42.9（論文41.6）、StreamingBench Real-Time 86.28（論文86.9、作り直した注釈）。139のGPU 0・1でOVO-Benchを実行中。
 created: 2026-09-10
-last_updated: 2026-11-05
+last_updated: 2026-11-04
 ---
 
 # エージェント型オンラインストリーミングVideoQAの研究
