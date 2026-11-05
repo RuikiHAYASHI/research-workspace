@@ -175,3 +175,13 @@ tags: [onestreamer, paper-reading, reading-log]
 - [AI] §2.1 の「Online assistants must instead retain evidence ... even when its relevance to future queries is unknown」は、質問を知らずに記録する前提を述べた文で、林の「予習」の方向と対になる
 
 **伝える流れへの反映の案**: 「論文は QA ごとに問題を書いている」とは書けない。「著者は既存手法の系統ごとに弱点を挙げている。それを図2 の 3 種類に当てはめると、こうなる（当てはめは自分たち）」と書けば、原文と自分の整理を分けられる。
+
+### 7.4 「QA ごとの対策」としてどこまで書けるか（2026-11-05）
+
+**林のまとめ**: Memory QA の対策にテキスト記録を書き、Perception QA の対策に直近の窓を持ち、Proactive QA のために答えるタイミングを合わせに行く（タイミングの説明は後で）。
+
+**AI の見解**: その形で書いてよい。ただし Perception QA の行だけ言い方に注意。
+
+- Memory QA ↔ テキスト記録: [著者] 記録は窓の外に出た証拠を残す（§3.2）。[実験] 「historical QA」が上がる（Abstract、Finding 1、表2 の ASI 63.5→71.6）。原文の言葉は「Memory QA」ではなく「historical QA」
+- Perception QA ↔ 直近の窓: 直近の窓は OneStreamer の新しい工夫ではない（既存手法 [31] も使う、§2.1）。著者の工夫は「**記憶を映像ではなくテキストで持つので、直近の窓を削らずに済む**」こと（§3.2「compact text while keeping the Recent-N visual window unchanged」）。[実験] 回答の段の文脈は FIFO 3,036 トークン、PHCM 4,308、Full 62,094（表4）。なので「直近の窓を持つ」より「記録をテキストにすることで、直近の窓を守る」と書くと原文に近い
+- Proactive QA ↔ タイミング: 制御トークン（§3.1、表5）、PSTL（§3.3）、答える時刻を補正したデータ（§4.2）。説明は林が後で書く
