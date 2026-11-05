@@ -318,3 +318,16 @@ tags: [onestreamer, paper-reading, reading-log]
   - B: 1 つの会話で、映像が届くたびに呼ぶ。システムプロンプトはベンチごとに違う。ProactiveVideoQA・ViSpeak は `shared/inference_fast.py` の `SYSTEM`、OmniMMI PA は `omnimmi/pa_prompt.txt`（Silence と Response だけ）、OVO-Timing は `vlmeval/dataset/ovo_timing.py` の `_streaming_system_prompt`
   - OVBench・ODV-Bench・OmniMMI の SG・AP・MD・SI: 質問の時点の映像をまとめて 1 回呼ぶ
 - [AI] なので全体像の「最初に渡す指示で決まる」は、正確には「**評価のコードがベンチごとに、指示文（システムプロンプト）と処理の流れを選ぶ**。モデルが自分で判断するわけではない」
+
+### 7.14 B（Proactive QA など）でも、窓より古い部分は見えないか（2026-11-05）
+
+**林の問い**: 制御トークンの図に、状況によって使うトークンが違うことも入れたい。また、Proactive QA のときも窓の長さより前の部分はモデルから見えないのか。
+
+**公式コードで確かめたこと**: 見えない。B のどのベンチも、窓を超えた古い映像と、そのときの返事を会話から消す。質問の文だけは残す
+- ProactiveVideoQA・ViSpeak・OmniMMI PA: `Eval/Proactive_Eval/shared/inference_fast.py` の `StreamingSession._append_turn`（333〜345 行目）。`max_rounds`（ProactiveVideoQA は 64 回 = 32 秒、ほかは 32 回 = 32 秒、`run_script/recipes.py`）を超えたら古いやりとりを消す。`global_question=True`（既定）なので、残った先頭の発話に質問の文を入れ直す
+- OVO-Timing: `Eval/VLMEvalKit/vlmeval/vlm/qwen3_ovotiming/inference_fast.py` の `_trim_sliding_window`（196〜220 行目）。64 枚を超えたら、最も古い映像と返事の組を消す。質問の発話は映像より前に置かれていて消えない
+- B は記録（Observe・Summary）を書かないので、窓より古いことは質問の文以外なにも残らない
+- [著者] 一方、論文の付録 A.2 は「proactive QA でも同じ履歴（記録と対話）をユーザーの指示と一緒に渡す」と書く。ここも論文とコードが違う
+- [AI] 数え上げ（OVO-Timing の REC など）では、窓の外に出た自分の前の答え（「2 回」など）も見えなくなるので、長い動画で数を正しく続けられるかは窓の長さに左右されうる。ただし OVO-Timing の公式の採点は応答の時刻だけを見て中身は見ない（再現ログ §6）
+
+**図への反映**: `materials/figures/2026-11-05-onestreamer-method/02-control-tokens` に、トークンごとに「A 記録づくり／A 回答／B Proactive QA／B Interaction」のどこで使うかの表（表5 と公式コードの指示文から）と、B でも窓の外は見えないことの注記を足した
