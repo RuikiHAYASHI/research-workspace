@@ -451,3 +451,24 @@ tags: [onestreamer, paper-reading, reading-log]
 - [実験] ただし PSTL の比較（表3）は、待ち受けて答えるベンチ（ProactiveVQA・OmniMMI・OVO-Timing）でしか測っていない。記録を使うベンチ（OVO-Bench・StreamingBench）で PSTL あり・なしを比べた結果はない
 - [著者] 論文の話の流れでも、PSTL は §1 の 3 つ目の弱点（応答の制御で Silence に引っ張られる）への答えとして出てくる。記録との関係はあまり語られていない
 - [AI] 記録づくりでも、ほとんどの秒は Silence（360 秒の例で Observe 26・Summary 2、付録 E.3）なので、Silence に引っ張られる問題は同じように起こるはず。PSTL が記録を書く頻度やタイミングに効いている可能性は高いが、論文では確かめられていない
+
+### 7.24 PSTL の説明（2026-11-05）
+
+**林の今の理解**: Silence が大量に出るので、制御トークンが切り替わったタイミングで loss を計算する、くらい。
+
+**AI の説明の要点**（§3.3、図4、式1〜3、付録 A.1、表3）
+- 林の理解は半分。「切り替わった所だけ教える」は、表3 の比べ用の **Transition Only**（18.1% を教える）で、PSTL ではない。PSTL は「**出力の始まりは全部** + **切り替わりと、同じ状態が続く所の両方を、同じ数ずつ**」教える
+- 図4 の例（Proactive QA。アンカーは Response）で数えると:
+
+  | 位置 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 |
+  |---|---|---|---|---|---|---|---|---|---|---|---|
+  | 正解 | Sil | Sil | Sil | Sil | Sil | Stb | Stb | Stb | Res | Sil | Sil |
+  | 組（前→今） | － | S→S | S→S | S→S | S→S | S→Stb | Stb→Stb | Stb→Stb | Stb→R | R→S | S→S |
+  | 図4 | mask | mask | loss | mask | mask | loss | loss | mask | loss | loss | mask |
+
+  組ごとの数: S→S 5、S→Stb 1、Stb→Stb 2、Stb→R 1、R→S 1。アンカー（Response）へ入る組の最多は Stb→R の 1 なので q = 1（式1）。どの組も最大 1 個をランダムに選ぶ（式2）→ 位置 3・6・7・9・10 の 5 個だけ loss に入る。図4 と一致
+- 教えない位置も系列には残り、後ろの予測から見える。loss から外すだけ（式3、付録 A.1）。文（Observe・Summary・Response の後）は全部教える。推論のときは PSTL は使わない
+- 記録づくり（PHCM）ではアンカーが Observe と Summary（表5）
+- なぜ「続く所」も要るか: [実験] 表3 で Transition Only は ProactiveVQA 46.7 と PSTL（48.7）に近いが、OmniMMI 27.4（PSTL 36.6）、OVO-Timing 15.3（41.6）と大きく下がる。[著者] 「今は状態を変えない」ことも直接教える必要がある
+- なぜランダムに減らすだけではだめか: [実験] PSTL と同じ 27.5% をランダムに選ぶと 26.6・27.4・1.4（表3）。[AI] ランダムだと数の少ない出力の始まり（Response など）が抜けやすい
+- 全部を教える場合: 普通の損失（CE）で 26.1・30.8・1.5、Streamo の頻度で重みを付ける損失（Focal）で 47.0・32.8・26.5（表3）
