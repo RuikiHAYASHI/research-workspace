@@ -54,6 +54,9 @@ tags: [streamingbench, onestreamer, benchmark, reproduction]
 
 - 1 本の動画に付いた 5 問の時刻を区切りにして、**記憶づくりを動画ごとに 1 回だけ**流す（`load_or_create_shared_caption`）。各質問には、その時刻までにできた記憶を渡す。OVO-Bench は問題ごとに記憶を作り直すので、ここが違う
 - 記憶づくりは 4fps・直近 128 枚（32 秒）を見て、1 秒ごとに `</Silence>`・`</Observe>`・`</Summary>` を出す（OVO-Bench と同じ設定）
+- 質問の時刻に着くたびに、直前が `</Observe>` なら `<STREAM_END>` でまとめの `</Summary>` を 1 つ書かせる（OVO-Bench と同じ）。ただし、このまとめはその質問の記憶にだけ入り、次の質問へ続く記憶には入らない。記憶づくりはそのまま次の質問の時刻まで続く（`caption_optimized.py` の `run_shared_caption_pass`）
+- 設定ファイルの違いは `share_timeline_by_video: true` と `summary_max_new_tokens: 256` の 2 つだけ。後者はコードのどこからも読まれていない（grep で確認）
+- 記憶なし（recent16）の設定は、OVO-Bench にはあるが StreamingBench にはない（`recipes.py`）
 - 回答は「記憶（最大 12,000 token）＋ 直近 16 枚（1fps、元の解像度）」で、選択肢の記号を 1 つ出す
 - 指標は全問の正答率（マイクロ平均）。論文の表9 は「2,498 問の正答率」と書いているが、配布されているのは 2,500 問。どの 2 問を外したかは書かれていない
 
