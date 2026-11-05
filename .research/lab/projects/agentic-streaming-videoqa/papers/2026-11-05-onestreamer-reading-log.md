@@ -472,3 +472,4 @@ tags: [onestreamer, paper-reading, reading-log]
 - なぜ「続く所」も要るか: [実験] 表3 で Transition Only は ProactiveVQA 46.7 と PSTL（48.7）に近いが、OmniMMI 27.4（PSTL 36.6）、OVO-Timing 15.3（41.6）と大きく下がる。[著者] 「今は状態を変えない」ことも直接教える必要がある
 - なぜランダムに減らすだけではだめか: [実験] PSTL と同じ 27.5% をランダムに選ぶと 26.6・27.4・1.4（表3）。[AI] ランダムだと数の少ない出力の始まり（Response など）が抜けやすい
 - 全部を教える場合: 普通の損失（CE）で 26.1・30.8・1.5、Streamo の頻度で重みを付ける損失（Focal）で 47.0・32.8・26.5（表3）
+- 追記（同日、林「制御トークンを予測するところだけ学習するのか」）: いいえ。[著者] 出力の文（Observe・Summary の記録、Response の後の答え）は全トークンを普通の次トークン予測で学習する（§3.3、付録 A.1「retain full supervision」）。PSTL が間引くのは制御トークンの位置の loss だけ。学習で動かすのは projector と LLM 全体（表7）。[AI] 制御トークンの loss（式3）と文の loss をどう足し合わせるか（重み）は書かれていない
