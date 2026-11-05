@@ -103,3 +103,4 @@ tags: [streamingbench, onestreamer, benchmark, reproduction]
 - [データ] タスクの名前が違う。GitHub は Object Recognition・Attribute Recognition・Action Recognition、HF と論文の表9 は Object Perception・Attribute Perception・Action Perception。名前以外にも、5 問はタスクの割り当てが違う。タスク別の比較には小さな影響がある
 - [AI] 論文の表9 の 2,498 問は、HF の CSV（タスク名が表9 と同じ）から 2 問を外したものかもしれない。HF の CSV には、GitHub の時刻の書き間違い（sample_132 の `00:12450`）がなく、`00:12:20` になっている
 - 次にできること（提案、未実施）: HF の CSV から注釈を作り直して回すと、論文の表9 とタスクの名前・時刻がそろう。また、作り直した同じ注釈で記憶なし（recent16）も回すと、記憶の効果（論文は +0.6）を再現の中で比べられる
+- 林の判断（2026-11-06）: StreamingBench の記憶なし（recent16）は今は回さない
