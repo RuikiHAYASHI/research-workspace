@@ -2,21 +2,21 @@
 import sys
 from figlib import *
 
-f = Fig(1800, 1090)
+f = Fig(1800, 1050)
 f.text(50, 62, "共通の仕組み：制御トークン", 36, DARK, "bold")
 
 # ---- 左: 5 つの専用トークンと、どの状況で使うか ----
 f.rect(40, 100, 960, 470, GRAY, "#fafafa", r=18)
 f.text(70, 148, "Qwen の語彙に専用のトークンを5つ足す（どれも 1 トークン）", 25, DARK, "bold")
 f.text(70, 182, "使うトークンは状況によって違う", 21, GRAY)
-cols = [(70, ""), (260, ""), (400, "A\n記録づくり"), (550, "A\n回答"), (700, "B\nProactive QA"), (850, "B\nInteraction")]
+cols = [(70, ""), (260, ""), (420, "A\n記録づくり"), (600, "A\n回答"), (780, "B\n待ち受けて答える")]
 for x, h in cols[2:]:
     a, b = h.split("\n")
     c = BLUE if a == "A" else GREEN
     f.text(x + 65, 214, a, 20, c, "bold", "middle")
     f.text(x + 65, 240, b, 18, c, "bold", "middle")
-use = {"Silence": (1, 0, 1, 1), "Observe": (1, 0, 0, 0), "Summary": (1, 0, 0, 0),
-       "Standby": (0, 0, 1, 0), "Response": (0, 0, 1, 1)}
+use = {"Silence": (1, 0, 1), "Observe": (1, 0, 0), "Summary": (1, 0, 0),
+       "Standby": (0, 0, 1), "Response": (0, 0, 1)}
 mean = {"Silence": "黙る", "Observe": "細部を書く", "Summary": "まとめる", "Standby": "待つ", "Response": "答える"}
 for i, n in enumerate(("Silence", "Observe", "Summary", "Standby", "Response")):
     y = 262 + i * 52
@@ -28,7 +28,8 @@ for i, n in enumerate(("Silence", "Observe", "Summary", "Standby", "Response")):
             f.add(f'<circle cx="{x + 65}" cy="{y + 20}" r="11" fill="{TOKEN_COLOR[n]}"/>')
         else:
             f.text(x + 65, y + 27, "–", 20, "#c0c4cc", "normal", "middle")
-f.text(70, 548, "A の回答では制御トークンを使わず、答え（選択肢の記号など）を直接出す", 20, BLUE)
+f.text(70, 538, "A の回答：制御トークンを使わず、答えを直接出す", 20, BLUE, "bold")
+f.text(560, 538, "B：&lt;/Response&gt; の後に答えの文章を出す", 19, GREEN, "bold")
 
 # ---- 右: 1 回の出力 ----
 f.rect(1040, 100, 720, 470, GRAY, "#fafafa", r=18)
@@ -79,7 +80,6 @@ for i in (1, 3, 5):
     x = x0 + i * 205 + 146
     f.arrow(x, y0 + 92, x, 870, BLUE, 2.5)
 
-f.text(50, 990, "※ B（Proactive QA など）でも、窓から外れた映像と返事は見えない。残るのは質問の文だけ（B は記録を書かない）", 21, DARK, "bold")
-f.text(50, 1058, "※ 窓の長さや、1 回に届く映像（clip）の長さはベンチマークによって違う", 21, DARK)
+f.text(50, 990, "※ B でも、窓から外れた映像と返事は見えない。残るのは質問の文だけ（B は記録を書かない）", 21, DARK, "bold")
 f.text(50, 1024, "※ 窓から外れた返事が見えなくなるのは公式コードの動き。論文（§3.2・付録 A.2）は「記録や対話は後の予測で使える」と書いている", 21, RED)
 f.save(sys.argv[1])
