@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1180" viewBox="0 0 1800 1180">
+<defs>
+<marker id="ah-4a5fc1" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#4a5fc1"/></marker>
+<marker id="ah-2f8f63" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#2f8f63"/></marker>
+<marker id="ah-c0392b" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#c0392b"/></marker>
+<marker id="ah-c9800e" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#c9800e"/></marker>
+<marker id="ah-6b7280" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#6b7280"/></marker>
+<marker id="ah-262a33" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#262a33"/></marker>
+</defs>
+<rect width="1800" height="1180" fill="#ffffff"/>
+<text x="50" y="62" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="36" fill="#262a33" font-weight="bold" text-anchor="start" opacity="1">データ：OneStreamer-1M の中身（表6・表5、付録 B.1）</text>
+<text x="50" y="104" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="21" fill="#262a33" font-weight="normal" text-anchor="start" opacity="1">1,160,004 件 = 新しく作った OneStreamer-Core 272,620 件 + 既存の公開データ（Streamo・JoyAI・StreamForest など）を共通の形式に直した 887,384 件</text>
+<text x="430" y="160" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="19" fill="#6b7280" font-weight="bold" text-anchor="start" opacity="1">件数（濃い色 = Core、薄い色 = 既存の公開データ）</text>
+<text x="1230" y="160" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="19" fill="#6b7280" font-weight="bold" text-anchor="start" opacity="1">Core を作った手順（図5）</text>
+<rect x="40" y="180" width="1720" height="190" rx="14" fill="#fafafa" stroke="#e5e7eb" stroke-width="1.5" opacity="1"/>
+<text x="60" y="222" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="24" fill="#262a33" font-weight="bold" text-anchor="start" opacity="1">Proactive Caption Memory</text>
+<text x="60" y="254" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="21" fill="#262a33" font-weight="normal" text-anchor="start" opacity="1">60,000 件</text>
+<text x="60" y="282" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="18" fill="#6b7280" font-weight="normal" text-anchor="start" opacity="1">うち Core 60,000</text>
+<rect x="430" y="198" width="72.2834271221368" height="40" rx="4" fill="#e3e6ee" stroke="#c7cbd6" stroke-width="1" opacity="1"/>
+<rect x="430" y="198" width="72.2834271221368" height="40" rx="4" fill="#4b5563" stroke="#4b5563" stroke-width="0" opacity="1"/>
+<text x="430" y="282" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="20" fill="#262a33" font-weight="normal" text-anchor="start" opacity="1">記録づくり（見ながら記録を書く）</text>
+<text x="430" y="330" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="19" fill="#262a33" font-weight="bold" text-anchor="start" opacity="1">制御トークン：</text>
+<rect x="572.0" y="302" width="128" height="40" rx="8" fill="#ffffff" stroke="#6b7280" stroke-width="2.5" opacity="1"/>
+<text x="636" y="329" font-family="Noto Sans Mono CJK JP, monospace" font-size="15" fill="#6b7280" font-weight="bold" text-anchor="middle" opacity="1">&lt;/Silence&gt;</text>
+<rect x="712.0" y="302" width="128" height="40" rx="8" fill="#ffffff" stroke="#4a5fc1" stroke-width="2.5" opacity="1"/>
+<text x="776" y="329" font-family="Noto Sans Mono CJK JP, monospace" font-size="15" fill="#4a5fc1" font-weight="bold" text-anchor="middle" opacity="1">&lt;/Observe&gt;</text>
+<rect x="852.0" y="302" width="128" height="40" rx="8" fill="#ffffff" stroke="#4a5fc1" stroke-width="2.5" opacity="1"/>
+<text x="916" y="329" font-family="Noto Sans Mono CJK JP, monospace" font-size="15" fill="#4a5fc1" font-weight="bold" text-anchor="middle" opacity="1">&lt;/Summary&gt;</text>
+<text x="996" y="330" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="18" fill="#262a33" font-weight="normal" text-anchor="start" opacity="1">最後に「全体を要約して」→ Response</text>
+<rect x="1230" y="198" width="500" height="46" rx="10" fill="#ffffff" stroke="#4a5fc1" stroke-width="2.5" opacity="1"/>
+<text x="1480" y="229" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="21" fill="#4a5fc1" font-weight="bold" text-anchor="middle" opacity="1">上（記録）</text>
+<rect x="40" y="385" width="1720" height="190" rx="14" fill="#ffffff" stroke="#e5e7eb" stroke-width="1.5" opacity="1"/>
+<text x="60" y="427" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="24" fill="#262a33" font-weight="bold" text-anchor="start" opacity="1">Proactive Interaction</text>
+<text x="60" y="459" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="21" fill="#262a33" font-weight="normal" text-anchor="start" opacity="1">271,570 件</text>
+<text x="60" y="487" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="18" fill="#6b7280" font-weight="normal" text-anchor="start" opacity="1">うち Core 7,941</text>
+<rect x="430" y="403" width="327.1668383926448" height="40" rx="4" fill="#e3e6ee" stroke="#c7cbd6" stroke-width="1" opacity="1"/>
+<rect x="430" y="403" width="9.566711579614806" height="40" rx="4" fill="#4b5563" stroke="#4b5563" stroke-width="0" opacity="1"/>
+<text x="430" y="487" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="20" fill="#262a33" font-weight="normal" text-anchor="start" opacity="1">1 つの指示に何度も答える（数え上げ・連続した説明・リマインドなど）</text>
+<text x="430" y="535" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="19" fill="#262a33" font-weight="bold" text-anchor="start" opacity="1">制御トークン：</text>
+<rect x="572.0" y="507" width="128" height="40" rx="8" fill="#ffffff" stroke="#6b7280" stroke-width="2.5" opacity="1"/>
+<text x="636" y="534" font-family="Noto Sans Mono CJK JP, monospace" font-size="15" fill="#6b7280" font-weight="bold" text-anchor="middle" opacity="1">&lt;/Silence&gt;</text>
+<rect x="712.0" y="507" width="128" height="40" rx="8" fill="#ffffff" stroke="#2f8f63" stroke-width="2.5" opacity="1"/>
+<text x="776" y="534" font-family="Noto Sans Mono CJK JP, monospace" font-size="15" fill="#2f8f63" font-weight="bold" text-anchor="middle" opacity="1">&lt;/Response&gt;</text>
+<text x="856" y="535" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="18" fill="#262a33" font-weight="normal" text-anchor="start" opacity="1">Standby は使わない</text>
+<rect x="1230" y="403" width="500" height="46" rx="10" fill="#ffffff" stroke="#6b7280" stroke-width="2.5" opacity="1"/>
+<text x="1480" y="434" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="21" fill="#6b7280" font-weight="bold" text-anchor="middle" opacity="1">書かれていない</text>
+<rect x="40" y="590" width="1720" height="190" rx="14" fill="#fafafa" stroke="#e5e7eb" stroke-width="1.5" opacity="1"/>
+<text x="60" y="632" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="24" fill="#262a33" font-weight="bold" text-anchor="start" opacity="1">Proactive QA</text>
+<text x="60" y="664" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="21" fill="#262a33" font-weight="normal" text-anchor="start" opacity="1">197,584 件</text>
+<text x="60" y="692" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="18" fill="#6b7280" font-weight="normal" text-anchor="start" opacity="1">うち Core 47,683</text>
+<rect x="430" y="608" width="238.03414440833797" height="40" rx="4" fill="#e3e6ee" stroke="#c7cbd6" stroke-width="1" opacity="1"/>
+<rect x="430" y="608" width="57.444844257747484" height="40" rx="4" fill="#4b5563" stroke="#4b5563" stroke-width="0" opacity="1"/>
+<text x="430" y="692" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="20" fill="#262a33" font-weight="normal" text-anchor="start" opacity="1">先に来た質問に、答えられる時刻で 1 回答える</text>
+<text x="430" y="740" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="19" fill="#262a33" font-weight="bold" text-anchor="start" opacity="1">制御トークン：</text>
+<rect x="572.0" y="712" width="128" height="40" rx="8" fill="#ffffff" stroke="#6b7280" stroke-width="2.5" opacity="1"/>
+<text x="636" y="739" font-family="Noto Sans Mono CJK JP, monospace" font-size="15" fill="#6b7280" font-weight="bold" text-anchor="middle" opacity="1">&lt;/Silence&gt;</text>
+<rect x="712.0" y="712" width="128" height="40" rx="8" fill="#ffffff" stroke="#c9800e" stroke-width="2.5" opacity="1"/>
+<text x="776" y="739" font-family="Noto Sans Mono CJK JP, monospace" font-size="15" fill="#c9800e" font-weight="bold" text-anchor="middle" opacity="1">&lt;/Standby&gt;</text>
+<rect x="852.0" y="712" width="128" height="40" rx="8" fill="#ffffff" stroke="#2f8f63" stroke-width="2.5" opacity="1"/>
+<text x="916" y="739" font-family="Noto Sans Mono CJK JP, monospace" font-size="15" fill="#2f8f63" font-weight="bold" text-anchor="middle" opacity="1">&lt;/Response&gt;</text>
+<rect x="1230" y="608" width="500" height="46" rx="10" fill="#ffffff" stroke="#2f8f63" stroke-width="2.5" opacity="1"/>
+<text x="1480" y="639" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="21" fill="#2f8f63" font-weight="bold" text-anchor="middle" opacity="1">下（QA）ほぼ確か</text>
+<rect x="40" y="795" width="1720" height="190" rx="14" fill="#ffffff" stroke="#e5e7eb" stroke-width="1.5" opacity="1"/>
+<text x="60" y="837" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="24" fill="#262a33" font-weight="bold" text-anchor="start" opacity="1">Perception &amp; Memory QA</text>
+<text x="60" y="869" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="21" fill="#262a33" font-weight="normal" text-anchor="start" opacity="1">630,850 件</text>
+<text x="60" y="897" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="18" fill="#6b7280" font-weight="normal" text-anchor="start" opacity="1">うち Core 156,996</text>
+<rect x="430" y="813" width="760.0" height="40" rx="4" fill="#e3e6ee" stroke="#c7cbd6" stroke-width="1" opacity="1"/>
+<rect x="430" y="813" width="189.13681540778316" height="40" rx="4" fill="#4b5563" stroke="#4b5563" stroke-width="0" opacity="1"/>
+<text x="430" y="897" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="20" fill="#262a33" font-weight="normal" text-anchor="start" opacity="1">知覚と記憶の QA（一般・空間・時間・数え上げ・未来予測・手順など）</text>
+<text x="430" y="945" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="19" fill="#262a33" font-weight="bold" text-anchor="start" opacity="1">制御トークン：</text>
+<text x="576" y="945" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="18" fill="#262a33" font-weight="normal" text-anchor="start" opacity="1">表5 に載っていない（論文では書かれていない）</text>
+<rect x="1230" y="813" width="500" height="46" rx="10" fill="#ffffff" stroke="#6b7280" stroke-width="2.5" opacity="1"/>
+<text x="1480" y="844" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="21" fill="#6b7280" font-weight="bold" text-anchor="middle" opacity="1">書かれていない</text>
+<text x="1230" y="280" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="17" fill="#6b7280" font-weight="normal" text-anchor="start" opacity="1">§4.1、付録 B.1</text>
+<text x="1230" y="485" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="17" fill="#6b7280" font-weight="normal" text-anchor="start" opacity="1">[AI] 数え上げは下の可能性</text>
+<text x="1230" y="690" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="17" fill="#6b7280" font-weight="normal" text-anchor="start" opacity="1">§4.2 の最後の形と同じ。明記した文はない</text>
+<text x="1230" y="895" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="17" fill="#6b7280" font-weight="normal" text-anchor="start" opacity="1">[AI] 下の可能性はある</text>
+<text x="50" y="1020" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="20" fill="#262a33" font-weight="normal" text-anchor="start" opacity="1">・学習の手順は 4 族とも同じ（同じ SFT・同じ損失）。違うのは系列の中身と PSTL のアンカーだけ</text>
+<text x="50" y="1054" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="20" fill="#262a33" font-weight="normal" text-anchor="start" opacity="1">・これとは別に LLaVA-Video のオフライン動画データも混ぜる（§5）。実際に読み込んだのは 991,773 件、詰めた後の系列は 150,261 本（表7）</text>
+<text x="50" y="1088" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="20" fill="#262a33" font-weight="normal" text-anchor="start" opacity="1">・既存データの分は図5 の手順を通らず、公開データを共通の形式に直したもの（直し方は書かれていない）</text>
+<text x="50" y="1130" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="18" fill="#6b7280" font-weight="normal" text-anchor="start" opacity="1">※ Core の件数は表6 から AI が族ごとに足した値。公開版（Hugging Face）では Perception &amp; Memory QA は制御トークンを使わず、質問の時刻に答えるだけの形（2026-11-06 に 1 件で確認）</text>
+</svg>

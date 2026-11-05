@@ -2,7 +2,8 @@
 
 - 作成: 2026-11-06
 - 対象: Zeng et al., "OneStreamer", arXiv 2610.01762v1
-- 元にした議論: 読書ログ [2026-11-05-onestreamer-reading-log.md](2026-11-05-onestreamer-reading-log.md) の §7.20〜§7.36
+- 元にした議論: 読書ログ [2026-11-05-onestreamer-reading-log.md](2026-11-05-onestreamer-reading-log.md) の §7.20〜§7.37
+- 図: [materials/figures/2026-11-06-onestreamer-training-data/](../materials/figures/2026-11-06-onestreamer-training-data/manifest.md)（01 学習、02 PSTL、03 データの中身、04 データの作り方）
 - 印: [著者] 論文の主張・記述、[実験] 論文の実験結果、[AI] AI の推測。書かれていないことは「書かれていない」と明記する
 
 ## 1. 何を学習するか
@@ -155,4 +156,6 @@
 10. Standby をどこから付けるか、Response の後も系列が続くか
 11. 系列の最初の制御トークンや、q = 0 の系列の PSTL の扱い。記録の系列の最後の Response の PSTL での扱い
 12. 学習の系列を窓（32 秒など）で切っているか（推論コードは 32 秒で切る）
-13. OneStreamer-1M の公開状況（未確認）。学習コードは公開されていない
+13. 学習コードは公開されていない
+
+※ OneStreamer-1M は Hugging Face で注釈を公開している（読書ログ §7.37）。公開版の 1 件ずつでは、3（記録の系列の最初に指示文がある）と 6（Perception & Memory QA は制御トークンなしで答えるだけの形。多肢選択式もある）が分かりそう。ただし損失のマスクと抽出の割合は公開版にも入っていない

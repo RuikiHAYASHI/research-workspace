@@ -743,3 +743,16 @@ tags: [onestreamer, paper-reading, reading-log]
 | 詳しくはデータを見ないと分からない | 正しい | ただし OneStreamer-1M が公開されているかは未確認（§7.25 付近）。学習コードは公開されていない |
 
 - 学習とデータセット作成のまとめ（§7.20〜§7.36 から）: [2026-11-06-onestreamer-training-and-data-summary.md](2026-11-06-onestreamer-training-and-data-summary.md)
+
+### 7.37 OneStreamer-1M はダウンロードできるか（2026-11-06 に確認）
+
+- **できる**。Hugging Face の `MCG-NJU/OneStreamer-1M`（https://huggingface.co/datasets/MCG-NJU/OneStreamer-1M ）。gated なし、Apache-2.0。論文のプロジェクトページ（https://mcg-nju.github.io/OneStreamer 、論文 p.1）と公式コードの README からリンクされている
+- 中身は**注釈の JSONL だけ**（136 ファイル、約 1.7 GB）。`<族>/<元データ>/<タスク>/*.jsonl` の並びで、4 つの族ごとに分かれている
+- 映像は入っていない。Core の元動画は `yyd7/OneStreamer-Core-SourceVideo`（tar の分割、約 2.55 TB。YouTube-Collected が 1.54 TB）。既存データの分は、各元データから自分で集める（データセットカードにリンクの一覧）
+- カードの注意: 「元データごとの損失のマスクと、学習だけのサンプリングの設定は含まない」。つまり PSTL で選んだ位置や、元データごとの抽出の割合は分からない
+- 形式（`onestreamer-public-meta-v1`）: `prompts`（指示・質問と時刻）、`timeline`（`silence`・`standby` は区間、`response`・`observe`・`summary`・普通の QA の `answer` は時刻と文）、`system`（元の指示文、任意）
+- 論文に書かれていなかったことのうち、公開版で分かりそうなこと（[AI] 1 件ずつ覗いただけ。全体の確認はまだ）
+  - 記録づくりの系列（Hierarchical captioning の 1 件目）: 最初に指示「Describe completed clips or key moments with </Observe>, and summarize completed higher-level parts with </Summary>.」がある。249 秒で silence 15・observe 13・summary 3。この 1 件には最後の「全体を要約して」の Response はなかった
+  - Perception & Memory QA（Core の General video QA の 1 件目）: 制御トークンを使わず、質問の時刻に `answer` を 1 つ出すだけの形。**多肢選択式**（「選択肢の記号だけで答えよ」の指示）の問題が入っている。短い答えの自由記述もある
+  - 公開版の Core の Proactive Interaction には「Alerts and reminders」（TimeLens 由来、3,062 件 × 2 ファイル）があり、論文の表6（連続した説明・数え上げだけ）と違う
+- モデルの重み `MCG-NJU/OneStreamer-4B` も Hugging Face で公開（gated なし）。学習コードは公開されていない
