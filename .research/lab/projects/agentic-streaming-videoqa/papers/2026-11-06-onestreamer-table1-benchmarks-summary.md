@@ -173,3 +173,20 @@ Overall = ( Real-Time の平均 + Backward の平均 + Forward の平均 ) / 3
 [実験] 再現の途中結果（Backward 575 問）: この合図が送られたのは 165 問（29%）。記憶の中の `</Summary>` 949 個のうち 165 個（17%）が、この合図で書かれたもの。
 
 [AI] 質問が来た時点でまとめを書かせるだけなので、未来の映像や質問の中身は漏れていない。ただし、論文の §3・付録 A.2 の「質問とは関係なく記録を書き溜める」という説明より、少しだけ質問の到着に合わせた作りになっている。論文には、この合図のことは書かれていない（付録 C.2・D を確認した範囲）。
+
+## 8. 記憶なしの結果が論文のどこにあるか（2026-11-06 追記）
+
+「記憶なし」は 2 種類ある。Full = 過去の映像を全部見る（4fps）、FIFO = 直近 16 枚（1fps）だけを見る。どちらも記録（PHCM）は使わない。
+
+| 表（ページ） | ベンチ | 記憶なしの値 | 何と比べているか |
+|---|---|---|---|
+| 表2（p.8） | OVO-Bench の ASI・EPM・Real-Time 平均・Overall、StreamingBench Real-Time | Full: ASI 67.6・EPM 63.0・RT 70.9・Overall 70.9・SB 80.5。FIFO: 63.5・62.0・80.9・70.1・86.3 | 同じモデルの記憶あり（71.6・62.6・81.4・72.1・86.9） |
+| 表4（p.9） | OVO-Bench の 360 秒の動画 1 本 | Full: GPU 25.18GB・62,094 token・TTFT 4.560 秒。FIFO: 9.69GB・3,036 token・0.094 秒 | 記憶あり（9.98GB・4,308 token・0.124 秒）。回答の段階の速さだけ |
+| 表16（p.25） | OVO-Bench（Full・FIFO の Overall）、StreamingBench（Full・FIFO）、OVBench、ODV-Bench | OneStreamer: 70.9・70.1・80.5・86.3・66.8・71.3 | 記憶を書く学習データ 60K を抜いたモデルの記憶なし（69.8・70.0・80.1・85.8・65.7・70.5） |
+| 表17（p.25） | OVO-Bench Overall、StreamingBench | FIFO: OneStreamer 70.1・86.3、60K を抜いたモデル 70.0・85.8 | それぞれの記憶あり（72.1・86.9 / 69.9・86.1） |
+| 表18（p.26） | StreamingBench、OVO-Bench Overall | No Caption Memory: 86.3・70.1（表2 の FIFO と同じ値） | Observe だけ・Summary だけ・両方 |
+| 表19（p.26） | StreamingBench の 360 秒の動画 1 本 | FIFO・Full（どちらも `</Silence>` しか出させない）: 処理 170.00 秒・1,444.75 秒、1 回の更新 0.472 秒・4.013 秒 | 記憶あり（228.96 秒・0.636 秒）。記憶づくりの段階の速さだけ |
+
+- 表1 の残りの 6 ベンチ（OVBench・ODV-Bench・ProactiveVideoQA・OmniMMI・OVO-Timing・ViSpeak）と表3 は、もともと記憶を使わずに評価している（付録 D）。なので、これらの値はすべて「記憶なし」の値で、記憶ありと比べた結果はない
+- 表20（p.27）は、OVO-Bench と StreamingBench をすべての行で記憶ありで評価している（表20 の説明）
+- 記憶なしの値がサブタスクの単位で全部そろった表はない。OVO-Bench の Forward と HLD、StreamingBench のタスク別は、記憶なしの値が載っていない
