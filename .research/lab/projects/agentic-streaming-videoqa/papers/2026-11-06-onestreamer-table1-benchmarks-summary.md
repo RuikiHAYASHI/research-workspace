@@ -137,7 +137,7 @@ Overall = ( Real-Time の平均 + Backward の平均 + Forward の平均 ) / 3
 - [実験] 再現の途中結果（記憶あり、2026-11-06 02:10 時点、Backward 568/631 問）: HLD 186 問中 185 問で「Unable to answer」を選んだ（99.5%、論文と同じ値）。EPM 63.3（297 問すべて、論文 62.6）、ASI 70.6（85/148 問、論文 71.6）
 - [データ] 「Unable to answer」という選択肢は、Backward では HLD の問題にしか出てこない（EPM・ASI の選択肢には 0 問）
 - [AI] なので、HLD の 99.5 は「映っていないことに気づけた」というより、「Unable to answer という選択肢があれば選ぶ」ふるまいでも出せる値。HLD 以外の問題に「Unable to answer」を混ぜて選ぶかどうかを確かめないと、どちらかは区別できない（未検証）。学習データ（OneStreamer-1M）に答えられない質問が入っているかは未確認
-- [AI] 仮に HLD を Qwen3-VL-4B と同じ 41.9 にすると、Backward は約 58.7、Overall は約 66.2 になる。Overall の伸び +13.3 のうち、約 6.4 点が HLD 1 つから来ている計算（表8 の値からの単純な計算）
+- [AI] 仮に HLD を Qwen3-VL-4B と同じ 41.9 にすると、Backward は約 58.7、Overall は約 65.7 になる。Overall の伸び +13.3 のうち、約 6.4 点が HLD 1 つから来ている計算（表8 の値からの単純な計算）
 
 ### 記憶（PHCM）の効果が出ているところ
 
