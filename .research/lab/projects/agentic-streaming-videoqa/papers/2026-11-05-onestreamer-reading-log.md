@@ -714,3 +714,16 @@ tags: [onestreamer, paper-reading, reading-log]
    - [AI] 考えられる形（架空の例）: 質問の時刻までの映像 → 質問「机の上にコップはいくつある？」→ 答え「3」。損失は答えの文だけ
    - 中身: 一般 QA・空間 QA（StreamForest 由来が 337,570）・時間の位置づけ・数え上げ・未来予測・手順・答えられるかの判断・人物の特定・危険の推論（表6）
 - これとは別に、LLaVA-Video のオフラインの動画データも混ぜている（§5）。形は書かれていない
+
+### 7.35 4 つの族は図5 の上（01〜03）と下（04〜06）のどちらから作られたか（2026-11-05）
+
+前提: 図5 の上下で作るのは OneStreamer-Core（新しく作った分）だけ。各族の既存データの分（Streamo・JoyAI・StreamForest など）は、どちらの手順でもなく、公開データを共通の形式に直したもの（§1・§4 冒頭）
+
+| 族 | Core の件数（表6） | 上か下か | 根拠と確かさ |
+|---|---:|---|---|
+| Proactive Caption Memory | 60,000（階層 52,500・平ら 7,500） | 上 | 確か。§4.1 の記録の手順と、付録 B.1「60,000 hierarchical and flat captioning records … to supervise evidence recording」。ただし「平ら」の作り方の説明はない |
+| Proactive QA | 47,683（一般 36,834・動画対話 10,000・異常 849） | 下 | ほぼ確か。§4.2 の最後の形（Silence → Standby → Response）が Proactive QA の形。ただし「下で作ったものが Proactive QA の族になる」とはっきり書いた文はない |
+| Proactive Interaction | 7,941（連続した説明 799・数え上げ 7,142） | 書かれていない | [AI] 付録 B.3 は下の手順の対象に「能動的なリマインド・能動的な数え上げ」を挙げるので、数え上げは下の可能性。連続した説明は不明 |
+| Perception & Memory QA | 156,996（一般 84,230 など 7 種） | 書かれていない | [AI] 付録 B.3 の対象に「状態の追跡・行動の予測」があり、下で作った QA の可能性はある。ただし最後の形（Silence → Standby → Response）にしたかは不明 |
+
+- 補足: 下の手順は、上で作って確かめた注釈（図5 の 02）も材料に使う（付録 B.3「verified streaming caption annotations」、図5 の 04「Streaming Captions」）
