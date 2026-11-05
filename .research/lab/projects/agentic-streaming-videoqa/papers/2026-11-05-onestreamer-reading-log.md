@@ -278,3 +278,29 @@ tags: [onestreamer, paper-reading, reading-log]
 **図の注意**: 論文の図3 は、2 つの状況を 1 本の流れに描いている。前提の「同時に動かした評価はない」と食い違って見えるので、そのまま使うより、状況ごとに分けた簡単な図を自分で描く方が伝わる（[AI] の提案。描くなら `materials/figures/`）
 
 **林の最初のメモ（チャットで共有）から使える部分**: 「共通の仕組み：制御トークン」「A．質問が来る前から動く」「B．質問が来た後に動く」の骨組みは、この節にほぼそのまま使える。ただし §5 の照合で「原文になし（コード由来）」とした項目（指示文で切り替える、記録が 32 秒で消える、回答で制御トークンを使わない、12,000 トークンで選ぶ、など）は、この節には入れず、「論文に書かれていないこと」の節に回す
+
+### 7.12 林の「手法」メモを「仕組み」の節に使えるか: 原文と公式コードでの確認（2026-11-05）
+
+林の最初のメモ（§5 で原文と照合したもの）の「手法」部分を、今回は公式コード（139 の `/mnt/HDD18TB/hayashi/2026_11_hayashi_onestreamer`、`87508dd`）でも確かめた。読んだのは `Eval/Proactive_Eval/OneStreamer/src/onestreamer/` の `prompts.py`・`caption_video.py`・`engine.py`・`local_runner.py`・`caption_optimized.py`（一部）、`configs/streamingbench.json`、`Eval/Proactive_Eval/shared/inference_fast.py`（一部）、重みの `tokenizer.json`・`added_tokens.json`
+
+**コードで確かめて合っていたもの**
+
+- 専用トークン 5 つは、どれも 1 つの ID で登録されている（`</Response>` 151669、`</Standby>` 151670、`</Silence>` 151671、`</Summary>` 151672、`</Observe>` 151673）
+- どちらで動くかは指示文（system prompt）で決まる。記録づくり（`prompts.py` の `V50_TRAINING_CAPTION_SYSTEM`）、回答（`MEMORY_QA_SYSTEM`）、質問が前に来る場合（`shared/inference_fast.py` の `SYSTEM`。Silence・Standby・Response の使い分けはメモの書き方どおり）で別の指示文
+- 記録づくりは 4fps・1 秒に 1 回・直近 128 枚（`streamingbench.json`: `fps` 4、`context_frames` 128、`updates_per_second` 1）。会話は直近 32 回で切る（`caption_video.py` の `self.history[-self.max_rounds:]`）。質問が前に来る場合も、直近 32 回より古いやりとりを消す（`inference_fast.py` の `max_rounds=32`。質問の文は残す）
+- 回答は選択肢の記号だけを出させる（`MEMORY_QA_SYSTEM`「output only its option letter」、`max_new_tokens` 16）。制御トークンは使わない
+- 回答の入力は「記録 + 直近 16 枚（1fps、元の解像度）+ 質問」（`local_runner.py`）。記録が 12,000 トークンを超えたら選ぶ（`render_with_budget(max_tokens=12000)`）
+- StreamingBench は同じ動画で記録を共有する（`share_timeline_by_video: true`）
+
+**直した方がよいところ**
+
+1. 「出した返事は会話に残る」「古い映像と返事は消えていく」: コードでは正しいが、2 点足す。①原文（§3.2・付録 A.2）は記録が残ると書いているので「コードでは」と添える。②**記録そのものは消えない**。会話から消えるのは記録を書いている最中のモデルの見え方だけで、記録は別に保存され、回答のときは全部（12,000 トークンまで）入る（`local_runner.py` の `MemoryBank`）。このままだと、教授が「記憶が 32 秒で消えるモデル」と受け取るおそれがある
+2. 「Summary は前の Summary の終わりからの区間をまとめる」: コードが決めているのは、保存するときに付ける**時刻のラベル**（前の Summary の後の最初の Observe の時刻から。`caption_optimized.py` の `SegmentScopeTracker`）。何をまとめるかはモデルが決め、指示文は「完了した意味のまとまりを要約する」とだけ言い、時刻もモデルが文中に書く（`V50_TRAINING_CAPTION_SYSTEM`）
+3. 呼び方: 「A．質問が来る前から動く／B．質問が来た後に動く」は、前提の「質問が後に来る／前に来る」と前後が逆の言い方になる（A = 質問が後に来る）。資料の中で言い方をそろえる。また「2 通りのタスク」の「タスク」は論文の表5 の意味とぶつかる（§7.2）
+4. 「記録の効果が関わるのは OVO-Bench・StreamingBench だけ」: 推論時に記録を使うのはこの 2 つだけで正しい。ただし記録を書く学習は OVBench・ODV-Bench も上げたと著者は主張（表16）
+
+**コードで見つけた、メモにない点**: 記録づくりの映像は小さく縮めている（`max_pixels` 100352、1 枚あたり約 10 万画素 ≒ 316×316 相当）。回答の直近 16 枚は元の解像度のまま（`recent_resize_policy='source_pixels'`）
+
+**今回コードで確かめていないもの**: ベンチごとの表（1 回に届く分・窓・映像の始まり・最初の Response のあと）の各行。fps と窓の枚数は付録 D と合う
+
+**節への入れ方（§7.10 の方針から）**: 「全体像」「共通の仕組み」「A・B の中心の箇条」は仕組みの節に使える。ベンチ名・ベンチごとの表・「その他」は結果の節へ。原文になくコードで確かめたこと（32 回で切る、12,000 トークン、記号だけ答える、など）は「論文に書かれていないこと」の節へ。林の疑問（「次の clip も同じ動作ならどうする？」）は疑問の節へ
