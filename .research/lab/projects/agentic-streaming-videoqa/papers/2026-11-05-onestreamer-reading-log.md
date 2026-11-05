@@ -118,3 +118,20 @@ tags: [onestreamer, paper-reading, reading-log]
 3. StreamingBench で、同じ作り直した注釈の FIFO（記録なし）はいくつになるか（再現の −0.6 が記録の効果と同じ大きさのため）
 4. 図3 のように記録と能動的な応答を 1 本の系列で同時に行ったときの性能は示されていない。そのとき記録が応答の邪魔をしないか
 5. Observe を書く時刻（区間の終わり）と、その区間の長さはどう決まるか（第5回で図7–9 を見る）
+
+---
+
+## 7. 議論の記録
+
+### 7.1 2 種類のタスクは、3 種類の QA のどれを対象にしているか（2026-11-05）
+
+**林の考え**: 論文は 3 種類の QA（図2）を定義しているが、このモデルが可能にした 2 つのタスクは「記憶の作り方」と「Proactive QA への対策」であり、3 つの QA のうち 2 つ（Memory QA・Perception QA）そのものに 1 対 1 で対策したものではない。
+
+**AI の見解**: 大筋は合っている。原文の根拠と、2 点の補正。
+
+- [著者] §1 第2段落（p.2）の最後で、課題を 1 文にまとめている。「forming reusable factual memory without compromising real-time perception, while learning when the available evidence warrants a response」。挙げた 3 つの弱点のうち、1・2 つ目（視覚トークンの記憶が今の知覚と取り合う／思考の跡は再利用できる事実の記録にならない）は PHCM で、3 つ目（制御トークンを全部教えると Silence に引っ張られる）は PSTL で答えている。新しく足した仕組みは「記憶」と「いつ答えるか」の 2 つで、林の考えと合う
+- 補正1: タスク A は「記憶の作り方」だけではない。後段で、質問の時刻に「記録 + 直近の映像」で 1 回答える。この後段は Memory QA と Perception QA を区別しない同じ入力で、両方に答える。図2 で見ると、Memory QA と Perception QA は「証拠のあとに質問が来る」、Proactive QA は「質問が先」。つまり **A = 質問があと（Memory QA + Perception QA）、B = 質問が先（Proactive QA）** という分かれ方になっている（[AI] 図2 の矢印と付録 D の評価設定からの読み）
+- 補正2: Perception QA には専用の仕組みがない。§3.2 第1段落（p.4）は記録を「keeping the Recent-N visual window unchanged」で足すと書く。知覚は**改善の対象というより、記憶を足しても落とさないための制約**として扱われている（[AI] §1 の「without compromising」の言い方から）。[実験] 著者は Finding 2（表2）で、知覚も少し上がったと主張する（OVO-Bench Real-Time 80.9→81.4、StreamingBench 86.3→86.9）。[AI] 差は 0.5〜0.6 点で、揺れの大きさは示されていない。[著者] 表16 では、記録を書く学習が知覚にも効くと主張する（ここも差は小さい）
+- まとめると: 3 種類の QA ↔ 仕組み は、Memory QA ↔ PHCM（記録）、Perception QA ↔ 専用なし（直近の窓を残すだけ。学習データでは Perception & Memory QA が 630,850 件と一番多い、表6）、Proactive QA ↔ 制御トークン（Silence・Standby・Response）+ PSTL + 答える時刻の補正（§4.2）
+
+**林への問い（次に話すこと）**: 表1 では OVBench・ODV-Bench も「Perception & Memory」側に入っているが、付録 D によれば推論時の記録を使わない。この 2 つは、3 種類の QA のどれを測っていると言えるか。
