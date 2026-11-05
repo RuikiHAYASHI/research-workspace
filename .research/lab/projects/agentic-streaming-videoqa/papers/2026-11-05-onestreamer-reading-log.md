@@ -304,3 +304,17 @@ tags: [onestreamer, paper-reading, reading-log]
 **今回コードで確かめていないもの**: ベンチごとの表（1 回に届く分・窓・映像の始まり・最初の Response のあと）の各行。fps と窓の枚数は付録 D と合う
 
 **節への入れ方（§7.10 の方針から）**: 「全体像」「共通の仕組み」「A・B の中心の箇条」は仕組みの節に使える。ベンチ名・ベンチごとの表・「その他」は結果の節へ。原文になくコードで確かめたこと（32 回で切る、12,000 トークン、記号だけ答える、など）は「論文に書かれていないこと」の節へ。林の疑問（「次の clip も同じ動作ならどうする？」）は疑問の節へ
+
+### 7.13 「指示」はシステムプロンプトか。実際の処理ではどう分かれているか（2026-11-05）
+
+**林の問い**: 全体像の図の「どちらで動くかは、最初に渡す指示で決まる」の「指示」はシステムプロンプトのことか。実際の処理ではどう分けられているか。
+
+**公式コードで確かめたこと**（139 の `/mnt/HDD18TB/hayashi/2026_11_hayashi_onestreamer`、`87508dd`）
+
+- 「指示」は主にシステムプロンプト。ただし記録づくりでは、最初のユーザーの発話にも「Continuously observe the video, use </Observe> … and use </Summary> …」という指示を足している（`prompts.py` の `instruction`、`caption_video.py` の `build_inputs`）
+- 実際に A と B を分けているのは、**評価のコードがベンチの名前で処理を選ぶところ**。`run_script/worker.py` 25〜30 行目で、OVO-Bench・StreamingBench は `onestreamer.local_runner`、OmniMMI は `omnimmi.local_runner`、ViSpeak は `vispeak.local_runner`、それ以外（ProactiveVideoQA・OVO-Timing・OVBench・ODV-Bench）は VLMEvalKit の実行器を使う。設定は `run_script/recipes.py` 98〜120 行目でベンチごとに決める
+- 選ばれるのはシステムプロンプトだけではなく、**処理の流れ（ループ）そのもの**
+  - A（OVO-Bench・StreamingBench）: ①記録づくりの会話（`V50_TRAINING_CAPTION_SYSTEM`、1 秒ごとに呼ぶ）と、②回答の会話（`MEMORY_QA_SYSTEM`、記録 + 直近 16 枚 + 質問で 1 回呼ぶ）を、別々の会話として 2 段で回す
+  - B: 1 つの会話で、映像が届くたびに呼ぶ。システムプロンプトはベンチごとに違う。ProactiveVideoQA・ViSpeak は `shared/inference_fast.py` の `SYSTEM`、OmniMMI PA は `omnimmi/pa_prompt.txt`（Silence と Response だけ）、OVO-Timing は `vlmeval/dataset/ovo_timing.py` の `_streaming_system_prompt`
+  - OVBench・ODV-Bench・OmniMMI の SG・AP・MD・SI: 質問の時点の映像をまとめて 1 回呼ぶ
+- [AI] なので全体像の「最初に渡す指示で決まる」は、正確には「**評価のコードがベンチごとに、指示文（システムプロンプト）と処理の流れを選ぶ**。モデルが自分で判断するわけではない」
