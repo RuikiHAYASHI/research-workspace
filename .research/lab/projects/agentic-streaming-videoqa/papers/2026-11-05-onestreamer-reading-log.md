@@ -8,6 +8,7 @@ tags: [onestreamer, paper-reading, reading-log]
 
 - 論文: Zeng et al., "OneStreamer: Unifying Perception, Memory, and Proactive Response in Streaming Video Interaction", arXiv 2610.01762v1（PDF 29 ページ。林がアップロードした PDF を読んだ）
 - 目的: AI が要約して終わりにせず、林が節ごとに読み、自分の言葉で説明できるようにする（2026-10-30 MTG の反省から）
+- ゴール（2026-11-05 林）: 教授との MTG 用に、**論文を読んでいない人が理解できる Markdown の資料**を作る。林が理解するのは前提で、その資料ができあがることがゴール。資料の正本は `materials/` に置く
 - 関連: [本文 1〜6 章の日本語訳（AI 訳、2026-11-04。付録は未訳）](2026-11-04-onestreamer-paper-translation-ja.md)、[解説メモ（AI 作、2026-11-04）](2026-11-04-onestreamer-method-notes.md)、[再現ログ](../experiments/2026-11-03-onestreamer-reproduction.md)、[選定の経緯](../materials/2026-11-04-onestreamer-selection-flow-mtg-materials.md)
 - 書き方: 「§3.2」「式1」「図3」「表2」「p.4」は原文の節・式・図・表・PDF のページ。各項目に **[著者]**（著者の主張）、**[実験]**（表・図の数字で示されたこと）、**[AI]**（AI の推論）、**[コード]**（原文になく、公式コードを読んだ AI の記録から来たもの。今回は原文だけを見て、コードは見直していない）を付ける
 - 解説メモ（2026-11-04）は、林の指示により、まだ直さない。食い違いはこのログの §4 に書く
