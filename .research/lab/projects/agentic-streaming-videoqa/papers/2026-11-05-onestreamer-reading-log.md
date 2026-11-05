@@ -741,3 +741,5 @@ tags: [onestreamer, paper-reading, reading-log]
 | PSTL = 多い Silence を学習しすぎない | ほぼ正しい | 対象は Silence だけでなく状態トークン全般（続く Standby なども）。答え始めのトークン（出力アンカー）は全部残し、同じ遷移が続く部分を上限まで間引く。間引いたトークンも入力の並びには残り、状態の損失から外すだけ。文の損失には影響しない。使うのは状態トークンの 27.5%（§3.3、式1–3、表3）。「Silence を減らす」だけなら Random Sparse と同じだが、それは大幅に悪い（表3）ので、「変化と持続の代表を選ぶ」ことが効いている |
 | 1M の中身: PHCM 用・Proactive QA 用・Interaction 用・シンプルな QA 用 | ほぼ正しい | 4 つの族と対応（表6）。ただし 4 つ目の Perception & Memory QA の形（その場で答える普通の QA なのか、Silence → Standby → Response の形なのか）は書かれていない（§7.32）。ほかに LLaVA-Video のオフラインデータも混ぜている（§5） |
 | 詳しくはデータを見ないと分からない | 正しい | ただし OneStreamer-1M が公開されているかは未確認（§7.25 付近）。学習コードは公開されていない |
+
+- 学習とデータセット作成のまとめ（§7.20〜§7.36 から）: [2026-11-06-onestreamer-training-and-data-summary.md](2026-11-06-onestreamer-training-and-data-summary.md)
