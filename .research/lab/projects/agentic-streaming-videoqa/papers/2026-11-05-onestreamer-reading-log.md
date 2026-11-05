@@ -367,3 +367,20 @@ tags: [onestreamer, paper-reading, reading-log]
 - 上: 表を「A 記録づくり／A 回答／B Proactive QA／B Interaction」の 4 列に戻し、右に各場面の 1 行説明を置いた
 - 中: 論文の図6 上段（記録づくり → 回答）、図11 の 3 段目（Proactive QA。Silence → Standby → Response）、図6 下段（Interaction。数え上げ）を切り出して載せた（CC BY 4.0、出典を図に記載）。図6 上段は論文のデモで `</Response>` を付けて答えているので、評価の回答では制御トークンを使わないことを 1 行添えた
 - 下: 32 秒の時点と 33 秒の時点を並べ、33 秒が入ると窓がずれて 1 秒目の映像と返事が見えなくなる図にした
+
+### 7.18 記録づくりの窓の中身の形と時刻（2026-11-05）
+
+**林の問い**（図には載せない）: 窓の中は「記録の積み重ね + 画像列」なのか。時刻はどう付くのか（3 秒で Silence なら「3s: </Silence>」のようになるのか）。画像列にも時刻は付くのか。
+
+**公式コードで確かめたこと**（`onestreamer/caption_video.py` の `encode`・`build_inputs`、`video.py` の `iter_stream_frames`、`prompts.py`、`memory.py`）
+- 窓の中は、**1 秒ごとに「ユーザー = 映像」「アシスタント = 返事」が交互に並ぶ会話**。記録の一覧と画像列を分けて置く形ではない。直近 32 組を残し、残った先頭のユーザー発話に指示文を付け直す
+- **時刻は映像の側に付く**。1 秒の映像（4 枚）は、Qwen3-VL が 2 枚ずつ 1 まとまりにするので 2 まとまりになり、それぞれの前に 2 枚の平均時刻（例 `<3.1 seconds>`・`<3.6 seconds>`）、最後にその 1 秒の区間（例 `<3.0-4.0 seconds>`）が付く
+- **返事の側には、コードは時刻を付けない**。返事はモデルが出した文そのまま（例 `</Silence>`）。ただし指示文（`V50_TRAINING_CAPTION_SYSTEM`）は、Observe・Summary の文の中にモデル自身が時刻を書くよう求めている（`[16.0 seconds]`、`[0.0 - 20.0 seconds]` の形）
+- 例（3 秒目に Silence、4 秒目に Observe）:
+  ```text
+  [user]      <3.1 seconds>[映像 2 枚]<3.6 seconds>[映像 2 枚]<3.0-4.0 seconds>
+  [assistant] </Silence>
+  [user]      <4.1 seconds>[映像 2 枚]<4.6 seconds>[映像 2 枚]<4.0-5.0 seconds>
+  [assistant] </Observe> [4.0 seconds] （細部の文）
+  ```
+- **回答に使う記録は、会話とは別の一覧**。Observe・Summary の返事だけを（種類, 始まり, 終わり, 文）で保存する。Silence は入らない。時刻はその返事を出した 1 秒の区間（Summary の始まりは前の Summary の後の最初の Observe）。回答のときは `[4s-5s] （文）` の行にして、Summary の一覧 → Observe の一覧の順に並べる
