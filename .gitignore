@@ -1,0 +1,2 @@
+# artifacts/ の HTML が使う動画・画像（ベンチの動画の切り出し。大きいので git では追跡しない）
+artifacts/**/media/
