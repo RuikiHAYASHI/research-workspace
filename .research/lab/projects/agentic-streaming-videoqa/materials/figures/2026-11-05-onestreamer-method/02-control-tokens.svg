@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1040" viewBox="0 0 1800 1040">
+<defs>
+<marker id="ah-4a5fc1" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#4a5fc1"/></marker>
+<marker id="ah-2f8f63" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#2f8f63"/></marker>
+<marker id="ah-c0392b" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#c0392b"/></marker>
+<marker id="ah-c9800e" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#c9800e"/></marker>
+<marker id="ah-6b7280" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#6b7280"/></marker>
+<marker id="ah-262a33" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#262a33"/></marker>
+</defs>
+<rect width="1800" height="1040" fill="#ffffff"/>
+<text x="50" y="62" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="36" fill="#262a33" font-weight="bold" text-anchor="start" opacity="1">共通の仕組み：制御トークン</text>
+<rect x="40" y="100" width="560" height="470" rx="18" fill="#fafafa" stroke="#6b7280" stroke-width="3" opacity="1"/>
+<text x="70" y="150" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="25" fill="#262a33" font-weight="bold" text-anchor="start" opacity="1">Qwen の語彙に専用のトークンを5つ足す</text>
+<text x="70" y="186" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="21" fill="#6b7280" font-weight="normal" text-anchor="start" opacity="1">どれも 1 トークンとして登録されている</text>
+<rect x="100.0" y="222" width="200" height="40" rx="8" fill="#ffffff" stroke="#6b7280" stroke-width="2.5" opacity="1"/>
+<text x="200" y="249" font-family="Noto Sans Mono CJK JP, monospace" font-size="21" fill="#6b7280" font-weight="bold" text-anchor="middle" opacity="1">&lt;/Silence&gt;</text>
+<text x="330" y="251" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="25" fill="#262a33" font-weight="bold" text-anchor="start" opacity="1">黙る</text>
+<rect x="100.0" y="288" width="200" height="40" rx="8" fill="#ffffff" stroke="#4a5fc1" stroke-width="2.5" opacity="1"/>
+<text x="200" y="315" font-family="Noto Sans Mono CJK JP, monospace" font-size="21" fill="#4a5fc1" font-weight="bold" text-anchor="middle" opacity="1">&lt;/Observe&gt;</text>
+<text x="330" y="317" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="25" fill="#262a33" font-weight="bold" text-anchor="start" opacity="1">細部を書く</text>
+<rect x="100.0" y="354" width="200" height="40" rx="8" fill="#ffffff" stroke="#4a5fc1" stroke-width="2.5" opacity="1"/>
+<text x="200" y="381" font-family="Noto Sans Mono CJK JP, monospace" font-size="21" fill="#4a5fc1" font-weight="bold" text-anchor="middle" opacity="1">&lt;/Summary&gt;</text>
+<text x="330" y="383" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="25" fill="#262a33" font-weight="bold" text-anchor="start" opacity="1">まとめる</text>
+<rect x="100.0" y="420" width="200" height="40" rx="8" fill="#ffffff" stroke="#c9800e" stroke-width="2.5" opacity="1"/>
+<text x="200" y="447" font-family="Noto Sans Mono CJK JP, monospace" font-size="21" fill="#c9800e" font-weight="bold" text-anchor="middle" opacity="1">&lt;/Standby&gt;</text>
+<text x="330" y="449" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="25" fill="#262a33" font-weight="bold" text-anchor="start" opacity="1">待つ</text>
+<rect x="100.0" y="486" width="200" height="40" rx="8" fill="#ffffff" stroke="#2f8f63" stroke-width="2.5" opacity="1"/>
+<text x="200" y="513" font-family="Noto Sans Mono CJK JP, monospace" font-size="21" fill="#2f8f63" font-weight="bold" text-anchor="middle" opacity="1">&lt;/Response&gt;</text>
+<text x="330" y="515" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="25" fill="#262a33" font-weight="bold" text-anchor="start" opacity="1">答える</text>
+<rect x="640" y="100" width="1120" height="470" rx="18" fill="#fafafa" stroke="#6b7280" stroke-width="3" opacity="1"/>
+<text x="670" y="150" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="25" fill="#262a33" font-weight="bold" text-anchor="start" opacity="1">モデルはまずトークンを1つ出し、必要なら続けて文章を出す</text>
+<rect x="680" y="250" width="290" height="150" rx="14" fill="#ffffff" stroke="#4a5fc1" stroke-width="2.5" opacity="1"/>
+<text x="825" y="298" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="24" fill="#4a5fc1" font-weight="bold" text-anchor="middle" opacity="1">入力</text>
+<text x="825" y="336" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="21" fill="#262a33" font-weight="normal" text-anchor="middle" opacity="1">直近の映像</text>
+<text x="825" y="368" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="21" fill="#262a33" font-weight="normal" text-anchor="middle" opacity="1">＋ これまでの会話</text>
+<line x1="974" y1="325" x2="1036" y2="325" stroke="#262a33" stroke-width="4" marker-end="url(#ah-262a33)"/>
+<rect x="1042" y="270" width="200" height="110" rx="14" fill="#262a33" stroke="#262a33" stroke-width="3" opacity="1"/>
+<text x="1142" y="334" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="25" fill="#ffffff" font-weight="bold" text-anchor="middle" opacity="1">OneStreamer</text>
+<path d="M1246,325 L1280,325 L1280,240 L1306,240" fill="none" stroke="#262a33" stroke-width="3" marker-end="url(#ah-262a33)"/>
+<path d="M1280,325 L1306,325" fill="none" stroke="#262a33" stroke-width="3" marker-end="url(#ah-262a33)"/>
+<path d="M1280,325 L1280,410 L1306,410" fill="none" stroke="#262a33" stroke-width="3" marker-end="url(#ah-262a33)"/>
+<text x="1310" y="210" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="20" fill="#6b7280" font-weight="normal" text-anchor="start" opacity="1">出力の例</text>
+<rect x="1305.0" y="220" width="150" height="40" rx="8" fill="#ffffff" stroke="#6b7280" stroke-width="2.5" opacity="1"/>
+<text x="1380" y="247" font-family="Noto Sans Mono CJK JP, monospace" font-size="18" fill="#6b7280" font-weight="bold" text-anchor="middle" opacity="1">&lt;/Silence&gt;</text>
+<text x="1470" y="248" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="21" fill="#6b7280" font-weight="normal" text-anchor="start" opacity="1">（文は続かない）</text>
+<rect x="1305.0" y="305" width="150" height="40" rx="8" fill="#ffffff" stroke="#4a5fc1" stroke-width="2.5" opacity="1"/>
+<text x="1380" y="332" font-family="Noto Sans Mono CJK JP, monospace" font-size="18" fill="#4a5fc1" font-weight="bold" text-anchor="middle" opacity="1">&lt;/Observe&gt;</text>
+<text x="1470" y="333" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="21" fill="#262a33" font-weight="normal" text-anchor="start" opacity="1">細部の文…</text>
+<rect x="1305.0" y="390" width="150" height="40" rx="8" fill="#ffffff" stroke="#2f8f63" stroke-width="2.5" opacity="1"/>
+<text x="1380" y="417" font-family="Noto Sans Mono CJK JP, monospace" font-size="18" fill="#2f8f63" font-weight="bold" text-anchor="middle" opacity="1">&lt;/Response&gt;</text>
+<text x="1470" y="418" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="21" fill="#262a33" font-weight="normal" text-anchor="start" opacity="1">答えの文…</text>
+<text x="670" y="520" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="21" fill="#6b7280" font-weight="normal" text-anchor="start" opacity="1">トークンの種類で、文章を続けるかが決まる（Observe・Summary・Response は文章が続く）</text>
+<rect x="40" y="600" width="1720" height="360" rx="18" fill="#fafafa" stroke="#6b7280" stroke-width="3" opacity="1"/>
+<text x="70" y="650" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="25" fill="#262a33" font-weight="bold" text-anchor="start" opacity="1">出した返事は会話に残り、次の入力になる。映像は直近の窓だけ残す</text>
+<rect x="80" y="730" width="90" height="54" rx="4" fill="#262a33" stroke="#262a33" stroke-width="1" opacity="0.35"/>
+<rect x="84.0" y="734" width="82.0" height="46" rx="2" fill="#9aa3b5" stroke="#9aa3b5" stroke-width="0" opacity="0.35"/>
+<text x="125" y="810" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="18" fill="#6b7280" font-weight="normal" text-anchor="middle" opacity="0.35">映像</text>
+<rect x="178" y="737" width="96" height="40" rx="8" fill="#ffffff" stroke="#6b7280" stroke-width="2.5" opacity="0.35"/>
+<text x="226" y="763" font-family="Noto Sans Mono CJK JP, monospace" font-size="14" fill="#6b7280" font-weight="bold" text-anchor="middle" opacity="0.35">&lt;/Silence&gt;</text>
+<text x="226" y="810" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="18" fill="#6b7280" font-weight="normal" text-anchor="middle" opacity="0.35">返事</text>
+<rect x="285" y="730" width="90" height="54" rx="4" fill="#262a33" stroke="#262a33" stroke-width="1" opacity="0.35"/>
+<rect x="289.0" y="734" width="82.0" height="46" rx="2" fill="#9aa3b5" stroke="#9aa3b5" stroke-width="0" opacity="0.35"/>
+<text x="330" y="810" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="18" fill="#6b7280" font-weight="normal" text-anchor="middle" opacity="0.35">映像</text>
+<rect x="383" y="737" width="96" height="40" rx="8" fill="#ffffff" stroke="#4a5fc1" stroke-width="2.5" opacity="0.35"/>
+<text x="431" y="763" font-family="Noto Sans Mono CJK JP, monospace" font-size="14" fill="#4a5fc1" font-weight="bold" text-anchor="middle" opacity="0.35">&lt;/Observe&gt;</text>
+<text x="431" y="810" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="18" fill="#6b7280" font-weight="normal" text-anchor="middle" opacity="0.35">返事</text>
+<rect x="490" y="730" width="90" height="54" rx="4" fill="#262a33" stroke="#262a33" stroke-width="1" opacity="0.35"/>
+<rect x="494.0" y="734" width="82.0" height="46" rx="2" fill="#9aa3b5" stroke="#9aa3b5" stroke-width="0" opacity="0.35"/>
+<text x="535" y="810" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="18" fill="#6b7280" font-weight="normal" text-anchor="middle" opacity="0.35">映像</text>
+<rect x="588" y="737" width="96" height="40" rx="8" fill="#ffffff" stroke="#6b7280" stroke-width="2.5" opacity="0.35"/>
+<text x="636" y="763" font-family="Noto Sans Mono CJK JP, monospace" font-size="14" fill="#6b7280" font-weight="bold" text-anchor="middle" opacity="0.35">&lt;/Silence&gt;</text>
+<text x="636" y="810" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="18" fill="#6b7280" font-weight="normal" text-anchor="middle" opacity="0.35">返事</text>
+<rect x="695" y="730" width="90" height="54" rx="4" fill="#262a33" stroke="#262a33" stroke-width="1" opacity="1"/>
+<rect x="699.0" y="734" width="82.0" height="46" rx="2" fill="#9aa3b5" stroke="#9aa3b5" stroke-width="0" opacity="1"/>
+<text x="740" y="810" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="18" fill="#6b7280" font-weight="normal" text-anchor="middle" opacity="1">映像</text>
+<rect x="793" y="737" width="96" height="40" rx="8" fill="#ffffff" stroke="#4a5fc1" stroke-width="2.5" opacity="1"/>
+<text x="841" y="763" font-family="Noto Sans Mono CJK JP, monospace" font-size="14" fill="#4a5fc1" font-weight="bold" text-anchor="middle" opacity="1">&lt;/Summary&gt;</text>
+<text x="841" y="810" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="18" fill="#6b7280" font-weight="normal" text-anchor="middle" opacity="1">返事</text>
+<rect x="900" y="730" width="90" height="54" rx="4" fill="#262a33" stroke="#262a33" stroke-width="1" opacity="1"/>
+<rect x="904.0" y="734" width="82.0" height="46" rx="2" fill="#9aa3b5" stroke="#9aa3b5" stroke-width="0" opacity="1"/>
+<text x="945" y="810" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="18" fill="#6b7280" font-weight="normal" text-anchor="middle" opacity="1">映像</text>
+<rect x="998" y="737" width="96" height="40" rx="8" fill="#ffffff" stroke="#6b7280" stroke-width="2.5" opacity="1"/>
+<text x="1046" y="763" font-family="Noto Sans Mono CJK JP, monospace" font-size="14" fill="#6b7280" font-weight="bold" text-anchor="middle" opacity="1">&lt;/Silence&gt;</text>
+<text x="1046" y="810" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="18" fill="#6b7280" font-weight="normal" text-anchor="middle" opacity="1">返事</text>
+<rect x="1105" y="730" width="90" height="54" rx="4" fill="#262a33" stroke="#262a33" stroke-width="1" opacity="1"/>
+<rect x="1109.0" y="734" width="82.0" height="46" rx="2" fill="#9aa3b5" stroke="#9aa3b5" stroke-width="0" opacity="1"/>
+<text x="1150" y="810" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="18" fill="#6b7280" font-weight="normal" text-anchor="middle" opacity="1">映像</text>
+<rect x="1203" y="737" width="96" height="40" rx="8" fill="#ffffff" stroke="#4a5fc1" stroke-width="2.5" opacity="1"/>
+<text x="1251" y="763" font-family="Noto Sans Mono CJK JP, monospace" font-size="14" fill="#4a5fc1" font-weight="bold" text-anchor="middle" opacity="1">&lt;/Observe&gt;</text>
+<text x="1251" y="810" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="18" fill="#6b7280" font-weight="normal" text-anchor="middle" opacity="1">返事</text>
+<rect x="1310" y="730" width="90" height="54" rx="4" fill="#262a33" stroke="#262a33" stroke-width="1" opacity="1"/>
+<rect x="1314.0" y="734" width="82.0" height="46" rx="2" fill="#9aa3b5" stroke="#9aa3b5" stroke-width="0" opacity="1"/>
+<text x="1355" y="810" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="18" fill="#6b7280" font-weight="normal" text-anchor="middle" opacity="1">映像</text>
+<rect x="1408" y="737" width="96" height="40" rx="8" fill="#ffffff" stroke="#6b7280" stroke-width="2.5" opacity="1"/>
+<text x="1456" y="763" font-family="Noto Sans Mono CJK JP, monospace" font-size="14" fill="#6b7280" font-weight="bold" text-anchor="middle" opacity="1">&lt;/Silence&gt;</text>
+<text x="1456" y="810" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="18" fill="#6b7280" font-weight="normal" text-anchor="middle" opacity="1">返事</text>
+<rect x="1515" y="730" width="90" height="54" rx="4" fill="#262a33" stroke="#262a33" stroke-width="1" opacity="1"/>
+<rect x="1519.0" y="734" width="82.0" height="46" rx="2" fill="#9aa3b5" stroke="#9aa3b5" stroke-width="0" opacity="1"/>
+<text x="1560" y="810" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="18" fill="#6b7280" font-weight="normal" text-anchor="middle" opacity="1">映像</text>
+<text x="1661" y="766" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="22" fill="#262a33" font-weight="bold" text-anchor="middle" opacity="1">→ 今</text>
+<rect x="683" y="708" width="1032" height="120" rx="12" fill="none" stroke="#4a5fc1" stroke-width="3.5" opacity="1"/>
+<text x="1199.0" y="696" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="21" fill="#4a5fc1" font-weight="bold" text-anchor="middle" opacity="1">窓：モデルが見る範囲（直近の映像と返事）</text>
+<text x="381.5" y="696" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="21" fill="#6b7280" font-weight="bold" text-anchor="middle" opacity="1">窓から外れた映像と返事：見えなくなる</text>
+<rect x="80" y="875" width="1640" height="58" rx="12" fill="#f4f6fd" stroke="#4a5fc1" stroke-width="2.5" opacity="1"/>
+<text x="900" y="912" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="21" fill="#4a5fc1" font-weight="bold" text-anchor="middle" opacity="1">Observe・Summary の返事は、記録として別に保存される（窓から外れても消えない）</text>
+<line x1="431" y1="822" x2="431" y2="870" stroke="#4a5fc1" stroke-width="2.5" marker-end="url(#ah-4a5fc1)"/>
+<line x1="841" y1="822" x2="841" y2="870" stroke="#4a5fc1" stroke-width="2.5" marker-end="url(#ah-4a5fc1)"/>
+<line x1="1251" y1="822" x2="1251" y2="870" stroke="#4a5fc1" stroke-width="2.5" marker-end="url(#ah-4a5fc1)"/>
+<text x="50" y="990" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="21" fill="#262a33" font-weight="normal" text-anchor="start" opacity="1">※ 窓の長さや、1 回に届く映像（clip）の長さはベンチマークによって違う</text>
+<text x="50" y="1024" font-family="Noto Sans CJK JP, Noto Sans JP, sans-serif" font-size="21" fill="#c0392b" font-weight="normal" text-anchor="start" opacity="1">※ 窓から外れた返事が見えなくなるのは公式コードの動き。論文（§3.2・付録 A.2）は「記録は後の予測で使える」と書いている</text>
+</svg>
