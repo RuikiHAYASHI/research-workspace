@@ -1,2 +1,4 @@
 # artifacts/ の HTML が使う動画・画像（ベンチの動画の切り出し。大きいので git では追跡しない）
 artifacts/**/media/
+# 動画・画像を埋め込んだ HTML（約 32MB）。生成スクリプト（OneStreamer の repro/table1 の repro/report/build_inference_guide.py）で作り直せるので追跡しない
+artifacts/onestreamer-inference/index.html
