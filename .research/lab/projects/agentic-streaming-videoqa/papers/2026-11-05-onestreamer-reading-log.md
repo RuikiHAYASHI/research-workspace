@@ -631,3 +631,21 @@ tags: [onestreamer, paper-reading, reading-log]
    - ない。書かれているデータの族は Proactive Caption Memory・Proactive Interaction・Proactive QA・Perception & Memory QA の 4 つ（表6、付録 B.1、図5 左）。「記録を書いた後の質問に記録で答える」ための族やデータの作り方は書かれていない
    - 図2 の「Memory QA」はデータの族の名前ではない。Perception & Memory QA（630,850 件）は「オンラインの知覚と記憶」の教師と書かれているが（付録 B.1）、記録を入力に含む形かは書かれていない
    - §4.2 の QA の作り方の最後は「Silence → Standby → Response」の系列（Proactive QA の形）。OneStreamer-Core の Perception & Memory QA（一般 84,230 など）がこの手順で作られたのか、別の形にしたのかも書かれていない
+
+### 7.30 図5 と表6 の対応の確認（2026-11-05）
+
+**林の理解**: 図5 の 01〜03 が「記録から回答」のケースのデータ作り、04〜06 が Proactive QA のケースのデータ作り。表6 の 4 つの族のうち上 3 つは Proactive QA のケース（Silence・Response・Standby）、一番下の族は Silence・Observe・Summary と最後の Response。
+
+**AI の確認**（表5・表6、付録 B.1〜B.3、図5）
+- 図5 の 01〜03: 記録のデータ作りで合っている。ただし「記録から回答」ではなく「**記録づくり**」。答えにあたるのは、映像の最後の「全体を要約して」への Response だけで、途中の質問に記録で答えるデータではない（§7.29）
+- 図5 の 04〜06: QA のデータ作り。最後の形は Silence → Standby → Response（Proactive QA の形）で合っている
+- 表6 の族の並びは逆。記録のデータは**一番上**の族
+
+  | 表6 の族（上から） | 件数 | 制御トークン（表5） | 主な出どころ |
+  |---|---:|---|---|
+  | Proactive Caption Memory | 60,000 | Silence・Observe・Summary（最後に全体の要約の Response） | 図5 の 01〜03（全部 OneStreamer-Core） |
+  | Proactive Interaction | 271,570 | Silence・Response（Standby なし） | 大部分は既存データ（JoyAI・Streamo など）。Core は 7,941 |
+  | Proactive QA | 197,584 | Silence・Standby・Response | 既存データと Core（47,683）。Core は 04〜06 で作ったと読める |
+  | Perception & Memory QA | 630,850 | **表5 に載っていない**（制御トークンを使うか書かれていない） | 大部分は既存データ（StreamForest など）。Core は 156,996 |
+
+- [AI] 04〜06 の手順で作ったのが Core のどの族か（Proactive QA だけか、Perception & Memory QA や Interaction も含むか）は書かれていない。表6 の Core の件数は AI が表から足した値
