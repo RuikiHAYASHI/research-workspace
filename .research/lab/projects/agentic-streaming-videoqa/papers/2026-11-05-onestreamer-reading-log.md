@@ -331,3 +331,22 @@ tags: [onestreamer, paper-reading, reading-log]
 - [AI] 数え上げ（OVO-Timing の REC など）では、窓の外に出た自分の前の答え（「2 回」など）も見えなくなるので、長い動画で数を正しく続けられるかは窓の長さに左右されうる。ただし OVO-Timing の公式の採点は応答の時刻だけを見て中身は見ない（再現ログ §6）
 
 **図への反映**: `materials/figures/2026-11-05-onestreamer-method/02-control-tokens` に、トークンごとに「A 記録づくり／A 回答／B Proactive QA／B Interaction」のどこで使うかの表（表5 と公式コードの指示文から）と、B でも窓の外は見えないことの注記を足した
+
+### 7.15 「共通の仕組み」で説明すること、A・B の問題の形と採点（2026-11-05）
+
+**林の考え**: 状況ごとに使う制御トークンが違うことは必要。そうすると状況の説明も要る（初見の人に「Interaction」は通じない）。ならここで A・B の答え方まで説明してもよいのでは。A は記録づくりで制御トークンを使い、回答では答えを直接出す。問題は多肢選択式。B は多肢選択式がなく自由記述。Proactive QA は Response が 1 回出たら答えとし、Interaction は最後まで見て Response をつなげる？（詳しくない）
+
+**公式コードで確かめたこと**（`run_script/score.py`、`onestreamer/local_runner.py`・`prompts.py`、`omnimmi/scoring.py` の `pa_metrics`、`vispeak/local_runner.py`・`scoring.py`、`vlmeval/dataset/ovo_timing.py`）
+
+- A の問題の形: **ほとんどは多肢選択式だが、全部ではない**。StreamingBench Real-Time と OVO-Bench の Backward・Real-Time は 4 択で、選択肢の記号を答える（`MEMORY_QA_SYSTEM`）。OVO-Bench の Forward（REC・SSR・CRR）は、REC が回数（数字）、SSR・CRR が Yes/No で、答えをそのまま書く（`MEMORY_DIRECT_QA_SYSTEM`、採点は `integer_match`・`substring_match`）。採点はどれも正答率
+- B の問題の形: 多肢選択式はなく、`</Response>` の後に自由な文を書く。これは林の理解どおり。ただし**何を採点するかはベンチで違う**
+  - ProactiveVideoQA: 最後まで続け、**出した応答すべて**を、それぞれの時刻と一緒に採点する。中身は判定 LLM が 1〜3 で評価し、時刻と合わせて PAUC にする
+  - ViSpeak: **最初の応答で打ち切る**。応答の時刻が正解の時刻から 2 秒以内なら、中身を判定 LLM が 0〜5 点で採点
+  - OmniMMI PA: 最後まで続けるが、採点は**最初の応答の時刻**が正解の区間に入るかだけ。中身は見ない
+  - OVO-Timing: 最後まで続け、**すべての応答の時刻**を正解の時刻と比べる（F1、±2 秒）。中身は見ない
+- Proactive QA と Proactive Interaction: 論文の**学習データの分け方**（表5・表6）。1 つの指示に 1 回答えるか、何度も答えるか（Interaction は Standby を使わない）。評価のベンチをこの 2 つに分けた記述は論文にない。評価で「何回目までの応答を使うか」を決めているのは、各ベンチの評価コード（上の 4 行）。Interaction でも応答を「つなげる」処理はなく、各応答がその時刻で別々に採点される
+
+**AI の見解（この節の中身の案）**: 林の言うとおり、Interaction の列を置くなら説明が要る。ただ、§7.10 の方針（概念は必要な場所で出す）から、この節は「A 記録づくり／A 回答／B」の 3 列にして、Interaction という言葉は出さないのを勧める。問題の形と採点は、次の A・B の節で説明する方が、その節の流れの中で自然に必要になる
+- 共通の仕組み: 5 つのトークン、まずトークンを 1 つ出す、返事は会話に残る、映像は直近の窓だけ。A 記録づくり／A 回答／B でどれを使うか
+- A の節: 記録づくり → 回答。問題はほとんど 4 択（OVO-Bench Forward だけ数字か Yes/No）。採点は正答率
+- B の節: 待ち受けて答える。答えは自由な文。1 回で打ち切るベンチと最後まで続けるベンチがあり、中身を採点するベンチ（ProactiveVideoQA・ViSpeak）と時刻だけを採点するベンチ（OVO-Timing・OmniMMI PA）がある
