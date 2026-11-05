@@ -18,6 +18,7 @@ tags: [ovbench, odv-bench, onestreamer, benchmark, reproduction]
 [論文・実験] 表1 では「Perception & Memory」側に入っているが、OneStreamer の記憶（`</Observe>`・`</Summary>`）は使わない。公式コードは、OVBench・ODV-Bench を VLMEvalKit の普通の動画 QA の処理に回す（`run_script/worker.py`。記憶を使う処理に回るのは OVO-Bench・StreamingBench だけ）。
 
 - 質問ごとに決まった区間の映像を、一定の fps でコマに切って、全部まとめてモデルに入れ、1 回だけ答えさせる
+- 区間の始まり（[データ]）: ODV-Bench は 6,348 問すべてが動画の先頭（0 秒）から。OVBench は New AVA 以外の 5,414 問のうち 5,366 問が先頭からで、48 問は注釈の `start` が 0 より後。New AVA の 1,396 問は直前 120 秒だけを、最大 64 枚に間引いて入れる（2fps なら 240 枚になるところ）。それ以外は区間のコマを fps どおりに全部入れる（上限 4,096 枚に届く問題はない）
 - 区間は「質問の時点まで」なので未来は見えない。ただし途中で記憶を作ったり、逐次に処理したりはしない。[AI] 実際にやっていることは、区間を切り取ったオフラインの動画 QA に近い（林の 11/03 の判断と同じ）
 - 答えはすべて選択肢の記号（2〜4 択）。採点は記号が一致するか
 
