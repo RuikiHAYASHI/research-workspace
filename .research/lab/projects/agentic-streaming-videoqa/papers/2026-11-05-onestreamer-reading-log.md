@@ -690,3 +690,27 @@ tags: [onestreamer, paper-reading, reading-log]
 - 実際には、正解の系列を前もって全部持っているので、この繰り返しを順番に回すのではなく、系列全体を 1 回で読み、後ろを見ない仕組み（因果的なマスク）で全位置の予測を同時に出す。結果は順番に回すのと同じ
 - PSTL: どの位置を損失に入れるかは、**正解の系列だけ**から決まる（正解の制御トークンの組を数えて q を決め、選ぶ。式1・2）。モデルの出力を待つ必要はない。系列の最後（Response と答えの文を含む）まで正解が最初からあるので、話は合う。損失は、系列全体を読んで全位置の予測が出た後に、選んだ位置と文の位置で計算する
 - 架空の例（確率は説明用の作り物）: Proactive QA の正解が「Silence, Silence, Standby, Response + 答え」のとき、1 つ目の位置で予測が Silence 0.7・Standby 0.2・Response 0.1 なら、そこの損失は −log 0.7。2 つ目の位置の入力には、モデルの予測に関係なく正解の Silence が入る
+
+### 7.34 4 つの族の学習を具体例で（2026-11-05、分かる範囲で）
+
+共通（§7.33）: どの族も 1 回の SFT の中で、正解の系列を teacher forcing で読み、出力の位置で損失を取る。文は全部、制御トークンは PSTL で選んだ位置だけ。違うのは系列の中身と PSTL のアンカー
+
+1. **Proactive Caption Memory（60,000 件、記録づくり）**
+   - 例（図8 の料理動画の一部、正解）: 89 秒 `</Observe> [89s] The cohesive dough ball rests on a white plate…`、94・98・104 秒も Observe、106 秒ごろ `</Summary> [89s-106s] The finished dough is removed from the mixer…`、その他の秒は `</Silence>`。映像が終わったらユーザーの「全体を要約して」→ `</Response>` + 動画全体の説明（付録 B.2、図5 の 03）
+   - 損失: 各秒の制御トークン（PSTL、アンカーは Observe・Summary）、記録の文の全トークン、最後の Response の後の全体の説明の全トークン
+   - PSTL の効き方（[AI] 架空の数え方）: 360 秒で Observe 26・Summary 2 なら（付録 E.3 の推論の例の数を借りた）、Silence→Observe は多くて 26 程度なので q ≈ 26 以下。Silence→Silence は 300 前後あるので、そのうち q 個だけが損失に入る
+   - 書かれていない: 系列の最初に記録づくりの指示があるか。最後の Response が PSTL でどう扱われるか（表5 の PHCM の制御トークンに Response はない）
+2. **Proactive Interaction（271,570 件、何度も答える）**
+   - 例（図6 下段の数え上げ）: 最初に指示「How many times does the event: showing something to the camera happen?」。00:00・00:04 は `</Silence>`、00:05 `</Response> 1 time`、00:09 `</Silence>`、00:11 `</Response> 2 times`、00:15 `</Silence>`、00:17 `</Response> 3 times`。図は抜き出した時刻だけで、実際の系列には間の秒も並ぶ
+   - 損失: 制御トークン（PSTL、アンカーは Response。Standby は使わない、表5）、各 Response の後の答えの文
+   - 図6 は推論の結果の図。学習データの正解も同じ形だと読める（表5・表6）が、この動画が学習データというわけではない
+3. **Proactive QA（197,584 件、1 回答える）**
+   - 例（図11 の 3 段目）: 最初に質問「How is the dough shaped during the preparation process?」。00:19〜00:23 `</Silence>`、00:24・00:25 `</Standby>`、00:26 `</Response> The dough is shaped into a ring.`
+   - 学習データでは、Response の時刻を §4.2 の手順（証拠区間の中で、答えられる一番早いあたり）で決め、その前の証拠が出始めた所から Standby、それより前は Silence（付録 B.3）
+   - 損失: 制御トークン（PSTL、アンカーは Response。図4 の例では q = 1）、答えの文
+   - 書かれていない: Response の後も系列が続くか（図4 は Response の後に Silence が 2 つある）。Standby を付け始める位置
+4. **Perception & Memory QA（630,850 件、普通の QA）**
+   - 形は**書かれていない**。表5 に載っていないので、制御トークンや PSTL は使っていない可能性が高い（[AI] 推測）
+   - [AI] 考えられる形（架空の例）: 質問の時刻までの映像 → 質問「机の上にコップはいくつある？」→ 答え「3」。損失は答えの文だけ
+   - 中身: 一般 QA・空間 QA（StreamForest 由来が 337,570）・時間の位置づけ・数え上げ・未来予測・手順・答えられるかの判断・人物の特定・危険の推論（表6）
+- これとは別に、LLaVA-Video のオフラインの動画データも混ぜている（§5）。形は書かれていない
