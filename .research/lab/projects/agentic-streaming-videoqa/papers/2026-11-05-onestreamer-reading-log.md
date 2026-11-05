@@ -618,3 +618,16 @@ tags: [onestreamer, paper-reading, reading-log]
    - 記録のデータの系列: 質問なし。映像 + 各時刻の Silence / Observe（+ 文）/ Summary（+ 文）。最後に「全体を要約して」+ Response（+ 全体の説明）。学ぶのは「記録を書くこと」
    - Proactive QA の系列: 先に質問。映像 + 各時刻の Silence / Standby / Response（+ 答えの文）。学ぶのは「いつ・何を答えるか」
    - **「記録 → 回答」（記録を書いた後に来た質問に、記録を使って答える）の形の学習データは、論文に書かれていない**。評価の A の回答の形（記録の塊 + 直近 16 枚 + 質問 → 制御トークンなしで答える）の学習も書かれていない。近いのは普通の QA（Perception & Memory QA）だが、その系列の形も書かれていない
+
+### 7.29 データの分け方・答えの形式・「記録→回答」のデータについての確認（2026-11-05）
+
+1. **データは記録と Proactive で分けて作り、学習で分けたかは書かれていない、でよいか**
+   - データ: 分けて作っている。記録のデータ（§4.1、図5 の 01〜03）と QA のデータ（§4.2、図5 の 04〜06）は別の手順。データの族も 4 つに分かれる（表6、図5 左）
+   - 学習: 「段や別のモデルに分けず、混ぜた全体で 1 段の SFT」は**書いてある**（§5「single-stage supervised fine-tuning on the OneStreamer-1M … together with offline data sampled from LLaVA-Video」）。1 段の中での扱い（族ごとの混ぜ方・バッチの組み方、どのケースかをモデルにどう伝えるか）は**書かれていない**
+2. **OneStreamer-1M には多肢選択式の問題がないのか**
+   - **書かれていない**（ある・ないのどちらも）。表6 は課題の種類と元データと件数だけで、答えの形式（選択式か自由記述か）の説明はない
+   - 記録のデータの系列については林の理解どおり: 動画を最後まで見ながら記録を書き、映像が終わったらユーザーの「全体を要約して」の指示に `</Response>` + 動画全体の説明で答える（付録 B.2、図5 の 03「Video end: User: Summarize the full video → </Response> Global Caption」）
+3. **「記録 → 回答」と Proactive QA を明確に分けてデータを作った、という文章はないのか**
+   - ない。書かれているデータの族は Proactive Caption Memory・Proactive Interaction・Proactive QA・Perception & Memory QA の 4 つ（表6、付録 B.1、図5 左）。「記録を書いた後の質問に記録で答える」ための族やデータの作り方は書かれていない
+   - 図2 の「Memory QA」はデータの族の名前ではない。Perception & Memory QA（630,850 件）は「オンラインの知覚と記憶」の教師と書かれているが（付録 B.1）、記録を入力に含む形かは書かれていない
+   - §4.2 の QA の作り方の最後は「Silence → Standby → Response」の系列（Proactive QA の形）。OneStreamer-Core の Perception & Memory QA（一般 84,230 など）がこの手順で作られたのか、別の形にしたのかも書かれていない
